@@ -19,7 +19,7 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
       aria-labelledby="about-modal-title"
     >
       <div 
-        className="bg-card dark:bg-[#1f1f1f] rounded-2xl w-full max-w-md p-6 border border-black/10 dark:border-[#333] relative fade-in-up"
+        className="bg-card dark:bg-[#1f1f1f] rounded-2xl w-full max-w-md p-6 border border-card-border dark:border-zinc-800 relative fade-in-up"
         onClick={e => e.stopPropagation()}
       >
         <button 

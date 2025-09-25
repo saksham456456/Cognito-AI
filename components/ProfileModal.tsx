@@ -36,7 +36,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onSave, cu
       aria-labelledby="profile-modal-title"
     >
       <div 
-        className="bg-card dark:bg-[#1f1f1f] rounded-2xl w-full max-w-sm p-6 border border-black/10 dark:border-[#333] relative fade-in-up"
+        className="bg-card dark:bg-[#1f1f1f] rounded-2xl w-full max-w-sm p-6 border border-card-border dark:border-zinc-800 relative fade-in-up"
         onClick={e => e.stopPropagation()}
       >
         <button 
@@ -60,7 +60,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onSave, cu
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-                    className="mt-1 w-full bg-input dark:bg-[#292929] border border-black/10 dark:border-[#404040] rounded-lg px-3 py-2 text-card-foreground dark:text-gray-200 focus:outline-none focus:border-primary dark:focus:border-yellow-400 transition-colors"
+                    className="mt-1 w-full bg-input dark:bg-[#292929] border border-input-border dark:border-zinc-700 rounded-lg px-3 py-2 text-card-foreground dark:text-gray-200 focus:outline-none focus:border-primary dark:focus:border-yellow-400 transition-colors"
                     placeholder="Enter your name"
                 />
             </div>
@@ -68,13 +68,13 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onSave, cu
         <div className="mt-6 flex justify-end gap-3">
             <button
                 onClick={onClose}
-                className="px-4 py-2 rounded-lg bg-input hover:bg-input-border dark:bg-[#292929] dark:hover:bg-[#404040] transition-colors border border-black/10 dark:border-[#404040]"
+                className="px-4 py-2 rounded-lg bg-input hover:bg-input-border dark:bg-[#292929] dark:hover:bg-[#404040] transition-colors border border-card-border dark:border-zinc-700"
             >
                 Cancel
             </button>
             <button
                 onClick={handleSave}
-                className="px-4 py-2 rounded-lg bg-primary dark:bg-yellow-400 text-primary-foreground dark:text-black hover:bg-yellow-400 dark:hover:bg-yellow-300 transition-colors border border-black/20 dark:border-transparent"
+                className="px-4 py-2 rounded-lg bg-primary dark:bg-yellow-400 text-primary-foreground dark:text-black hover:bg-yellow-400 dark:hover:bg-yellow-300 transition-colors border border-primary-foreground/20 dark:border-transparent"
             >
                 Save Changes
             </button>

@@ -323,8 +323,8 @@ const App: React.FC = () => {
             />
              {isSidebarOpen && <div onClick={() => setIsSidebarOpen(false)} className="fixed inset-0 bg-black/50 z-10 md:hidden"></div>}
             <div className="flex-1 flex flex-col relative">
-                <header className="flex items-center p-4 border-b border-black/10 dark:border-[#333] md:hidden">
-                    <button onClick={() => setIsSidebarOpen(true)} className="p-1 rounded-md border border-transparent hover:border-black/10 dark:hover:border-[#404040]">
+                <header className="flex items-center p-4 border-b border-card-border dark:border-zinc-800 md:hidden">
+                    <button onClick={() => setIsSidebarOpen(true)} className="p-1 rounded-md border border-transparent hover:border-card-border dark:hover:border-zinc-700">
                         <MenuIcon className="h-6 w-6" />
                     </button>
                     <h1 className="text-xl font-semibold text-primary dark:text-yellow-400 tracking-wider mx-auto">{activeChat?.title || 'COGNITO'}</h1>

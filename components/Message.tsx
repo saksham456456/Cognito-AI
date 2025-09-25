@@ -43,8 +43,8 @@ const MessageComponent: React.FC<MessageProps> = ({ message, isLastMessage, onCo
     isExpanded ? 'max-w-3xl' : 'max-w-xl'
   } ${
     isUser
-      ? 'bg-primary dark:bg-yellow-500 text-primary-foreground dark:text-black rounded-br-none border border-black/10 dark:border-yellow-600'
-      : 'bg-card dark:bg-[#1f1f1f] text-card-foreground dark:text-gray-200 rounded-bl-none border border-black/10 dark:border-[#333]'
+      ? 'bg-primary dark:bg-yellow-500 text-primary-foreground dark:text-black rounded-br-none border border-card-border dark:border-yellow-700'
+      : 'bg-card dark:bg-[#1f1f1f] text-card-foreground dark:text-gray-200 rounded-bl-none border border-card-border dark:border-zinc-800'
   }`;
 
   const handleCopy = () => {
@@ -55,14 +55,14 @@ const MessageComponent: React.FC<MessageProps> = ({ message, isLastMessage, onCo
 
   const MessageActions = () => (
     <div className="absolute -bottom-2 right-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-      <button onClick={handleCopy} className="p-1.5 rounded-full bg-input hover:bg-input-border dark:bg-[#292929] dark:hover:bg-[#404040] transition-colors border border-black/10 dark:border-[#404040]">
+      <button onClick={handleCopy} className="p-1.5 rounded-full bg-input hover:bg-input-border dark:bg-[#292929] dark:hover:bg-[#404040] transition-colors border border-card-border dark:border-zinc-700">
         {isCopied ? <CheckIcon className="w-4 h-4 text-green-500" /> : <ClipboardIcon className="w-4 h-4 text-card-foreground/60 dark:text-gray-400" />}
       </button>
-      <button onClick={() => onSpeak(message)} className="p-1.5 rounded-full bg-input hover:bg-input-border dark:bg-[#292929] dark:hover:bg-[#404040] transition-colors border border-black/10 dark:border-[#404040]">
+      <button onClick={() => onSpeak(message)} className="p-1.5 rounded-full bg-input hover:bg-input-border dark:bg-[#292929] dark:hover:bg-[#404040] transition-colors border border-card-border dark:border-zinc-700">
         <Volume2Icon className={`w-4 h-4 ${isSpeaking ? 'text-primary dark:text-yellow-400' : 'text-card-foreground/60 dark:text-gray-400'}`} />
       </button>
       {isLastMessage && (
-        <button onClick={onRegenerate} className="p-1.5 rounded-full bg-input hover:bg-input-border dark:bg-[#292929] dark:hover:bg-[#404040] transition-colors border border-black/10 dark:border-[#404040]">
+        <button onClick={onRegenerate} className="p-1.5 rounded-full bg-input hover:bg-input-border dark:bg-[#292929] dark:hover:bg-[#404040] transition-colors border border-card-border dark:border-zinc-700">
           <RefreshIcon className="w-4 h-4 text-card-foreground/60 dark:text-gray-400" />
         </button>
       )}
@@ -72,7 +72,7 @@ const MessageComponent: React.FC<MessageProps> = ({ message, isLastMessage, onCo
   return (
     <div className={containerClasses}>
       {!isUser && (
-        <div className="flex-shrink-0 h-8 w-8 rounded-full bg-card dark:bg-[#1f1f1f] flex items-center justify-center border border-black/10 dark:border-[#333]">
+        <div className="flex-shrink-0 h-8 w-8 rounded-full bg-card dark:bg-[#1f1f1f] flex items-center justify-center border border-card-border dark:border-zinc-800">
           <CognitoLogo className="h-6 w-6" />
         </div>
       )}
