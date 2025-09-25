@@ -58,8 +58,8 @@ export const CognitoLogoText = ({ className }: { className?: string }) => {
   return (
     <div className={`flex flex-col items-center ${className}`}>
         <CognitoLogo className="h-16 w-16" />
-        <h1 className="text-2xl font-bold tracking-widest text-primary mt-2" style={{ textShadow: '0 0 8px hsl(45 90% 60% / 0.5)'}}>COGNITO</h1>
-        <p className="text-card-foreground/70 text-sm">Your Personal AI Assistant</p>
+        <h1 className="text-2xl font-bold tracking-widest text-primary dark:text-yellow-400 mt-2" style={{ textShadow: '0 0 8px hsl(45 90% 60% / 0.5)'}}>COGNITO</h1>
+        <p className="text-card-foreground/70 dark:text-gray-400 text-sm">Your Personal AI Assistant</p>
     </div>
   )
 }

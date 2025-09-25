@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
@@ -28,13 +28,22 @@
         width: 6px;
       }
       .custom-scrollbar::-webkit-scrollbar-track {
+        background: hsl(0 0% 90%);
+      }
+      .dark .custom-scrollbar::-webkit-scrollbar-track {
         background: hsl(0 0% 12%);
       }
       .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: hsl(45 90% 60%);
+        background: hsl(45 90% 55%);
         border-radius: 3px;
       }
+      .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: hsl(45 90% 60%);
+      }
       .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+         background: hsl(45 90% 50%);
+      }
+      .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
          background: hsl(45 90% 50%);
       }
     </style>
@@ -44,14 +53,15 @@
       theme: {
         extend: {
           colors: {
-            background: 'hsl(0 0% 8%)',
-            card: 'hsl(0 0% 12%)',
-            'card-foreground': 'hsl(0 0% 95%)',
-            'card-border': 'hsl(0 0% 20%)',
-            primary: 'hsl(45 90% 60%)',
-            'primary-foreground': 'hsl(45 90% 10%)',
-            'input': 'hsl(0 0% 16%)',
-            'input-border': 'hsl(0 0% 25%)',
+            // Light Theme (Default)
+            background: 'hsl(0 0% 98%)',
+            card: 'hsl(0 0% 100%)',
+            'card-foreground': 'hsl(0 0% 10%)',
+            'card-border': 'hsl(0 0% 90%)',
+            primary: 'hsl(45, 90%, 55%)',
+            'primary-foreground': 'hsl(45, 90%, 5%)',
+            'input': 'hsl(0 0% 95%)',
+            'input-border': 'hsl(0 0% 85%)',
           },
           animation: {
             'typing-bounce': 'typing-bounce 1.4s infinite ease-in-out both',

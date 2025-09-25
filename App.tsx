@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getAiResponse, getTitleForChat } from './services/geminiService';
-import { getAllChats, saveChat, deleteChat, migrateFromLocalStorage } from './services/dbService';
+import { getAllChats, saveChat, deleteChat, migrateFromLocalStorage, deleteAllChats } from './services/dbService';
 import type { Message, Chat } from './types';
 import LoadingScreen from './components/LoadingScreen';
 import MessageComponent from './components/Message';
@@ -10,14 +10,27 @@ import Sidebar from './components/Sidebar';
 import { MenuIcon } from './components/icons';
 
 const App: React.FC = () => {
+    const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
     const [isAppLoading, setIsAppLoading] = useState(true);
     const [isAiLoading, setIsAiLoading] = useState(false);
     const [chats, setChats] = useState<Chat[]>([]);
     const [activeChatId, setActiveChatId] = useState<string | null>(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const saveTimeoutRef = useRef<number | null>(null);
 
     const activeChat = chats.find(c => c.id === activeChatId);
+
+    // Theme management
+    useEffect(() => {
+        if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+        localStorage.setItem('theme', theme);
+    }, [theme]);
 
     // Load from IndexedDB on initial render
     useEffect(() => {
@@ -29,25 +42,25 @@ const App: React.FC = () => {
             } catch (error) {
                 console.error("Failed to load chats from DB:", error);
             } finally {
-                // Keep a minimum loading time for aesthetics
                 setTimeout(() => setIsAppLoading(false), 500);
             }
         }
         loadData();
     }, []);
 
-    // Debounced effect to save the active chat to IndexedDB
+    // Debounced effect to save the active chat
     useEffect(() => {
+        if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
         if (!activeChat) return;
 
-        const handler = setTimeout(() => {
+        saveTimeoutRef.current = window.setTimeout(() => {
             saveChat(activeChat);
-        }, 1000); // Debounce saves by 1 second
+        }, 1000);
 
         return () => {
-            clearTimeout(handler);
+            if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
         };
-    }, [activeChat?.messages, activeChat?.title]); // Re-run when content or title changes
+    }, [activeChat]);
     
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -62,7 +75,7 @@ const App: React.FC = () => {
             isNewChat = true;
             const newChatId = Date.now().toString();
             const newChat: Chat = { id: newChatId, title: "New Conversation", messages: [] };
-            await saveChat(newChat); // Persist the new chat immediately
+            await saveChat(newChat);
             setChats(prev => [newChat, ...prev]);
             setActiveChatId(newChatId);
             currentChatId = newChatId;
@@ -88,11 +101,9 @@ const App: React.FC = () => {
                 fullResponse += chunk;
                 setChats(prev => prev.map(chat => {
                     if (chat.id === currentChatId) {
-                        const newMessages = [...chat.messages];
-                        const lastMessage = newMessages[newMessages.length - 1];
-                        if (lastMessage && lastMessage.id === modelMessageId) {
-                            lastMessage.content = fullResponse; // More efficient update
-                        }
+                        const newMessages = chat.messages.map(msg => 
+                            msg.id === modelMessageId ? { ...msg, content: fullResponse } : msg
+                        );
                         return { ...chat, messages: newMessages };
                     }
                     return chat;
@@ -107,13 +118,71 @@ const App: React.FC = () => {
         } catch (error) {
              console.error("Error getting AI response:", error);
             setChats(prev => prev.map(chat => {
-                 if (chat.id === currentChatId) {
-                    const newMessages = [...chat.messages];
-                    const lastMessage = newMessages[newMessages.length - 1];
-                     if (lastMessage && lastMessage.id === modelMessageId) {
-                        lastMessage.content = "Something went wrong. Please check your connection or API key.";
-                     }
-                     return { ...chat, messages: newMessages };
+                if (chat.id === currentChatId) {
+                    return {
+                        ...chat,
+                        messages: chat.messages.map(msg =>
+                            msg.id === modelMessageId
+                                ? { ...msg, content: "Something went wrong. Please check your connection or API key." }
+                                : msg
+                        )
+                    };
+                }
+                return chat;
+            }));
+        } finally {
+            setIsAiLoading(false);
+        }
+    };
+    
+    const handleRegenerateResponse = async () => {
+        if (!activeChat || isAiLoading) return;
+        const messages = [...activeChat.messages];
+        const lastModelMessageIndex = messages.map(m => m.role).lastIndexOf('model');
+        if (lastModelMessageIndex < 0) return;
+
+        const lastUserMessageIndex = messages.slice(0, lastModelMessageIndex).map(m => m.role).lastIndexOf('user');
+        if (lastUserMessageIndex < 0) return;
+
+        const lastUserMessageContent = messages[lastUserMessageIndex].content;
+        const history = messages.slice(0, lastUserMessageIndex);
+
+        const modelMessageId = (Date.now() + 1).toString();
+        const modelPlaceholder: Message = { id: modelMessageId, role: 'model', content: '' };
+        
+        setChats(prev => prev.map(c => 
+            c.id === activeChat.id 
+                ? { ...c, messages: [...history, messages[lastUserMessageIndex], modelPlaceholder] } 
+                : c
+        ));
+        
+        setIsAiLoading(true);
+        let fullResponse = '';
+        try {
+            await getAiResponse(history, lastUserMessageContent, (chunk) => {
+                fullResponse += chunk;
+                setChats(prev => prev.map(chat => {
+                    if (chat.id === activeChat.id) {
+                         const newMessages = chat.messages.map(msg => 
+                            msg.id === modelMessageId ? { ...msg, content: fullResponse } : msg
+                        );
+                        return { ...chat, messages: newMessages };
+                    }
+                    return chat;
+                }));
+            });
+        } catch (error) {
+             console.error("Error regenerating AI response:", error);
+             setChats(prev => prev.map(chat => {
+                 if (chat.id === activeChat.id) {
+                     return {
+                        ...chat,
+                        messages: chat.messages.map(msg =>
+                            msg.id === modelMessageId
+                                ? { ...msg, content: "Failed to regenerate. Please try again." }
+                                : msg
+                        )
+                    };
                  }
                  return chat;
             }));
@@ -121,6 +190,7 @@ const App: React.FC = () => {
             setIsAiLoading(false);
         }
     };
+
 
     const handleNewChat = () => {
         setActiveChatId(null);
@@ -140,40 +210,85 @@ const App: React.FC = () => {
         const chatToDeleteIndex = chats.findIndex(c => c.id === id);
         if (chatToDeleteIndex < 0) return;
 
-        // First, persist the deletion to the database
+        if (id === activeChatId && saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+            saveTimeoutRef.current = null;
+        }
+
+        const remainingChats = chats.filter(c => c.id !== id);
+        setChats(remainingChats);
+
+        if (activeChatId === id) {
+            setActiveChatId(remainingChats.length > 0 ? remainingChats[Math.max(0, chatToDeleteIndex - 1)].id : null);
+        }
+
         try {
             await deleteChat(id);
         } catch (error) {
             console.error("Failed to delete chat from DB:", error);
-            // Optionally, inform the user that deletion failed
-            alert("Error: Could not delete the chat. Please try again.");
-            return; // Stop execution if DB operation fails
-        }
-
-        // If DB deletion is successful, then update the UI state
-        const remainingChats = chats.filter(c => c.id !== id);
-        setChats(remainingChats);
-
-        // Finally, determine and set the next active chat
-        if (activeChatId === id) {
-            if (remainingChats.length === 0) {
-                // No chats left, go to the welcome screen
-                setActiveChatId(null);
-            } else {
-                // Select the chat that was before the deleted one, or the first chat.
-                const newActiveIndex = Math.max(0, chatToDeleteIndex - 1);
-                setActiveChatId(remainingChats[newActiveIndex].id);
-            }
+            alert("Error: Could not permanently delete the chat. It may reappear after a refresh.");
         }
     };
 
+    const handleDeleteAllChats = async () => {
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+            saveTimeoutRef.current = null;
+        }
+
+        setChats([]);
+        setActiveChatId(null);
+        setIsSidebarOpen(false);
+
+        try {
+            await deleteAllChats();
+        } catch (error) {
+            console.error("Failed to delete all chats from DB:", error);
+            alert("Error: Could not delete all chats. They may reappear after a refresh.");
+        }
+    };
+
+    const handleCopyText = (text: string) => {
+        navigator.clipboard.writeText(text);
+    };
+
+    const handleToggleSpeak = (message: Message) => {
+        if (speakingMessageId === message.id) {
+            speechSynthesis.cancel();
+            setSpeakingMessageId(null);
+        } else {
+            speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(message.content);
+            utterance.onend = () => setSpeakingMessageId(null);
+            utterance.onerror = () => setSpeakingMessageId(null);
+            speechSynthesis.speak(utterance);
+            setSpeakingMessageId(message.id);
+        }
+    };
+
+    const handleExportChat = () => {
+        if (!activeChat) return;
+        const fileContent = activeChat.messages
+            .map(msg => `${msg.role === 'user' ? 'User' : 'Cognito'}: ${msg.content}`)
+            .join('\n\n');
+        
+        const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${activeChat.title.replace(/ /g, '_')}.txt`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    };
 
     if (isAppLoading) {
         return <LoadingScreen />;
     }
 
     return (
-        <div className="bg-background min-h-screen flex text-white overflow-hidden">
+        <div className="bg-background dark:bg-[#141414] min-h-screen flex text-card-foreground dark:text-gray-200 overflow-hidden">
             <Sidebar 
                 chats={chats}
                 activeChatId={activeChatId}
@@ -181,18 +296,22 @@ const App: React.FC = () => {
                 onSelectChat={handleSelectChat}
                 onRenameChat={handleRenameChat}
                 onDeleteChat={handleDeleteChat}
+                onDeleteAllChats={handleDeleteAllChats}
                 isSidebarOpen={isSidebarOpen}
+                theme={theme}
+                setTheme={setTheme}
+                onExportChat={handleExportChat}
             />
              {isSidebarOpen && <div onClick={() => setIsSidebarOpen(false)} className="fixed inset-0 bg-black/50 z-10 md:hidden"></div>}
             <div className="flex-1 flex flex-col relative">
-                <header className="flex items-center p-4 border-b border-card-border md:hidden">
+                <header className="flex items-center p-4 border-b border-card-border dark:border-[#333] md:hidden">
                     <button onClick={() => setIsSidebarOpen(true)} className="p-1">
                         <MenuIcon className="h-6 w-6" />
                     </button>
-                    <h1 className="text-xl font-semibold text-primary tracking-wider mx-auto">{activeChat?.title || 'COGNITO'}</h1>
+                    <h1 className="text-xl font-semibold text-primary dark:text-yellow-400 tracking-wider mx-auto">{activeChat?.title || 'COGNITO'}</h1>
                 </header>
                 <main className="flex-1 flex flex-col relative overflow-hidden">
-                    <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
+                    <div className="absolute inset-0 flex items-center justify-center opacity-5 dark:opacity-[0.02] pointer-events-none">
                         <CognitoLogo className="h-96 w-96" />
                     </div>
                     <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
@@ -205,7 +324,14 @@ const App: React.FC = () => {
                             <>
                                 {activeChat.messages.map((msg, index) => (
                                     <div key={msg.id} style={{ animationDelay: `${index * 100}ms` }} className="fade-in-up">
-                                        <MessageComponent message={msg} />
+                                        <MessageComponent 
+                                            message={msg}
+                                            isLastMessage={index === activeChat.messages.length - 1 && msg.role === 'model'}
+                                            onCopy={handleCopyText}
+                                            onSpeak={handleToggleSpeak}
+                                            onRegenerate={handleRegenerateResponse}
+                                            speakingMessageId={speakingMessageId}
+                                        />
                                     </div>
                                 ))}
                             </>

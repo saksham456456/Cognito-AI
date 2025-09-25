@@ -73,6 +73,19 @@ export async function deleteChat(chatId: string): Promise<void> {
     });
 }
 
+export async function deleteAllChats(): Promise<void> {
+    const db = await getDb();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(CHATS_STORE_NAME, 'readwrite');
+        const store = transaction.objectStore(CHATS_STORE_NAME);
+        const request = store.clear();
+
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => resolve();
+    });
+}
+
+
 /**
  * Migrates chats from localStorage to IndexedDB if they exist.
  * This is a one-time operation.

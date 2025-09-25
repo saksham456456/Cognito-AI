@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import type { Chat } from '../types';
 import { CognitoLogo } from './Logo';
-import { PlusIcon, MessageSquareIcon, SearchIcon, PencilIcon, TrashIcon, CheckIcon, XIcon } from './icons';
+import { PlusIcon, MessageSquareIcon, SearchIcon, PencilIcon, TrashIcon, CheckIcon, XIcon, UserCircleIcon, SunIcon, MoonIcon, DownloadIcon, InfoIcon } from './icons';
 
 interface SidebarProps {
   chats: Chat[];
@@ -10,7 +10,11 @@ interface SidebarProps {
   onSelectChat: (id: string) => void;
   onRenameChat: (id: string, newTitle: string) => void;
   onDeleteChat: (id: string) => void;
+  onDeleteAllChats: () => void;
   isSidebarOpen: boolean;
+  theme: string;
+  setTheme: (theme: string) => void;
+  onExportChat: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -20,7 +24,11 @@ const Sidebar: React.FC<SidebarProps> = ({
   onSelectChat,
   onRenameChat,
   onDeleteChat,
-  isSidebarOpen
+  onDeleteAllChats,
+  isSidebarOpen,
+  theme,
+  setTheme,
+  onExportChat
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingChatId, setEditingChatId] = useState<string | null>(null);
@@ -53,27 +61,37 @@ const Sidebar: React.FC<SidebarProps> = ({
           onDeleteChat(chatId);
       }
   }
+  
+  const handleClearAll = () => {
+    if (window.confirm("Are you sure you want to delete all conversations? This action cannot be undone.")) {
+      onDeleteAllChats();
+    }
+  };
+
+  const toggleTheme = () => {
+      setTheme(theme === 'light' ? 'dark' : 'light');
+  };
 
   return (
-    <aside className={`absolute md:relative z-20 flex-shrink-0 w-80 bg-card border-r border-card-border flex flex-col transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
-      <div className="p-4 border-b border-card-border flex items-center justify-between">
+    <aside className={`absolute md:relative z-20 flex-shrink-0 w-80 bg-card dark:bg-[#1f1f1f] border-r border-card-border dark:border-[#333] flex flex-col transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
+      <div className="p-4 border-b border-card-border dark:border-[#333] flex items-center justify-between">
         <div className="flex items-center gap-3">
           <CognitoLogo className="h-8 w-8" />
-          <h1 className="text-xl font-semibold text-primary tracking-wider">COGNITO</h1>
+          <h1 className="text-xl font-semibold text-primary dark:text-yellow-400 tracking-wider">COGNITO</h1>
         </div>
-        <button onClick={onNewChat} className="p-2 rounded-md hover:bg-input transition-colors">
+        <button onClick={onNewChat} className="p-2 rounded-md hover:bg-input dark:hover:bg-[#292929] transition-colors">
           <PlusIcon className="w-6 h-6" />
         </button>
       </div>
       <div className="p-4">
         <div className="relative">
-            <SearchIcon className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-card-foreground/40"/>
+            <SearchIcon className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-card-foreground/40 dark:text-gray-600"/>
             <input
                 type="text"
                 placeholder="Search history..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-input border border-input-border rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:border-primary transition-colors"
+                className="w-full bg-input dark:bg-[#292929] border border-input-border dark:border-[#404040] rounded-lg pl-10 pr-4 py-2 text-card-foreground dark:text-gray-200 focus:outline-none focus:border-primary dark:focus:border-yellow-400 transition-colors"
             />
         </div>
       </div>
@@ -84,7 +102,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               <div
                 onClick={() => onSelectChat(chat.id)}
                 className={`group flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
-                  activeChatId === chat.id ? 'bg-primary/20' : 'hover:bg-input'
+                  activeChatId === chat.id ? 'bg-primary/20 dark:bg-yellow-400/10' : 'hover:bg-input dark:hover:bg-[#292929]'
                 }`}
               >
                 {editingChatId === chat.id ? (
@@ -110,13 +128,13 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
                     {editingChatId === chat.id ? (
                         <>
-                            <button onClick={handleRenameSave} className="p-1 rounded hover:bg-primary/30"><CheckIcon className="w-4 h-4 text-green-400"/></button>
-                            <button onClick={handleRenameCancel} className="p-1 rounded hover:bg-primary/30"><XIcon className="w-4 h-4 text-red-400"/></button>
+                            <button onClick={handleRenameSave} className="p-1 rounded hover:bg-primary/30 dark:hover:bg-yellow-400/20"><CheckIcon className="w-4 h-4 text-green-500"/></button>
+                            <button onClick={handleRenameCancel} className="p-1 rounded hover:bg-primary/30 dark:hover:bg-yellow-400/20"><XIcon className="w-4 h-4 text-red-500"/></button>
                         </>
                     ) : (
                         <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => handleRenameStart(chat)} className="p-1 rounded hover:bg-primary/30"><PencilIcon className="w-4 h-4"/></button>
-                            <button onClick={() => handleDelete(chat.id)} className="p-1 rounded hover:bg-primary/30"><TrashIcon className="w-4 h-4"/></button>
+                            <button onClick={() => handleRenameStart(chat)} className="p-1 rounded hover:bg-primary/30 dark:hover:bg-yellow-400/20"><PencilIcon className="w-4 h-4"/></button>
+                            <button onClick={() => handleDelete(chat.id)} className="p-1 rounded hover:bg-primary/30 dark:hover:bg-yellow-400/20"><TrashIcon className="w-4 h-4"/></button>
                         </div>
                     )}
                 </div>
@@ -126,6 +144,46 @@ const Sidebar: React.FC<SidebarProps> = ({
           ))}
         </ul>
       </nav>
+      <div className="p-2 border-t border-card-border dark:border-[#333]">
+          <div className="mt-2 p-2 rounded-lg bg-input/50 dark:bg-[#292929]/50 flex items-center justify-between">
+              <div className="flex items-center gap-3 truncate">
+                  <UserCircleIcon className="w-10 h-10 text-primary dark:text-yellow-400" />
+                  <div className="truncate">
+                      <p className="font-semibold text-card-foreground dark:text-gray-200">Guest User</p>
+                      <p className="text-xs text-card-foreground/60 dark:text-gray-500">Welcome back</p>
+                  </div>
+              </div>
+              <div className="flex items-center gap-1">
+                <button onClick={toggleTheme} className="p-2 rounded-md hover:bg-input dark:hover:bg-[#404040] transition-colors">
+                    {theme === 'light' ? <MoonIcon className="w-5 h-5"/> : <SunIcon className="w-5 h-5"/>}
+                </button>
+                <a href="https://github.com/your-repo" target="_blank" rel="noopener noreferrer" className="p-2 rounded-md hover:bg-input dark:hover:bg-[#404040] transition-colors">
+                    <InfoIcon className="w-5 h-5" />
+                </a>
+              </div>
+          </div>
+          <ul className="space-y-1 mt-2">
+              <li>
+                  <button
+                      onClick={onExportChat}
+                      disabled={!activeChatId}
+                      className="w-full flex items-center gap-3 p-2 rounded-md text-sm text-card-foreground/80 dark:text-gray-300 hover:bg-input dark:hover:bg-[#292929] transition-colors group disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                      <DownloadIcon className="w-5 h-5 text-card-foreground/60 dark:text-gray-400 transition-colors" />
+                      <span>Export Chat</span>
+                  </button>
+              </li>
+              <li>
+                  <button
+                      onClick={handleClearAll}
+                      className="w-full flex items-center gap-3 p-2 rounded-md text-sm text-card-foreground/80 dark:text-gray-300 hover:bg-red-500/10 hover:text-red-400 transition-colors group"
+                  >
+                      <TrashIcon className="w-5 h-5 text-card-foreground/60 dark:text-gray-400 group-hover:text-red-400 transition-colors" />
+                      <span>Clear conversations</span>
+                  </button>
+              </li>
+          </ul>
+      </div>
     </aside>
   );
 };
