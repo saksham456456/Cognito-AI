@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import type { Chat } from '../types';
 import { CognitoLogo } from './Logo';
@@ -15,6 +16,9 @@ interface SidebarProps {
   theme: string;
   setTheme: (theme: string) => void;
   onExportChat: () => void;
+  userName: string;
+  onProfileClick: () => void;
+  onAboutClick: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -28,7 +32,10 @@ const Sidebar: React.FC<SidebarProps> = ({
   isSidebarOpen,
   theme,
   setTheme,
-  onExportChat
+  onExportChat,
+  userName,
+  onProfileClick,
+  onAboutClick
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingChatId, setEditingChatId] = useState<string | null>(null);
@@ -73,13 +80,13 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
 
   return (
-    <aside className={`absolute md:relative z-20 flex-shrink-0 w-80 bg-card dark:bg-[#1f1f1f] border-r border-card-border dark:border-[#333] flex flex-col transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
-      <div className="p-4 border-b border-card-border dark:border-[#333] flex items-center justify-between">
+    <aside className={`absolute md:relative z-20 flex-shrink-0 w-80 bg-card dark:bg-[#1f1f1f] border-r border-black/10 dark:border-[#333] flex flex-col transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
+      <div className="p-4 border-b border-black/10 dark:border-[#333] flex items-center justify-between">
         <div className="flex items-center gap-3">
           <CognitoLogo className="h-8 w-8" />
           <h1 className="text-xl font-semibold text-primary dark:text-yellow-400 tracking-wider">COGNITO</h1>
         </div>
-        <button onClick={onNewChat} className="p-2 rounded-md hover:bg-input dark:hover:bg-[#292929] transition-colors">
+        <button onClick={onNewChat} className="p-2 rounded-md hover:bg-input dark:hover:bg-[#292929] transition-colors border border-transparent hover:border-black/10 dark:hover:border-[#404040]">
           <PlusIcon className="w-6 h-6" />
         </button>
       </div>
@@ -91,7 +98,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 placeholder="Search history..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-input dark:bg-[#292929] border border-input-border dark:border-[#404040] rounded-lg pl-10 pr-4 py-2 text-card-foreground dark:text-gray-200 focus:outline-none focus:border-primary dark:focus:border-yellow-400 transition-colors"
+                className="w-full bg-input dark:bg-[#292929] border border-black/10 dark:border-[#404040] rounded-lg pl-10 pr-4 py-2 text-card-foreground dark:text-gray-200 focus:outline-none focus:border-primary dark:focus:border-yellow-400 transition-colors"
             />
         </div>
       </div>
@@ -144,22 +151,22 @@ const Sidebar: React.FC<SidebarProps> = ({
           ))}
         </ul>
       </nav>
-      <div className="p-2 border-t border-card-border dark:border-[#333]">
-          <div className="mt-2 p-2 rounded-lg bg-input/50 dark:bg-[#292929]/50 flex items-center justify-between">
-              <div className="flex items-center gap-3 truncate">
+      <div className="p-2 border-t border-black/10 dark:border-[#333]">
+          <div className="mt-2 p-2 rounded-lg bg-input/50 dark:bg-[#292929]/50 flex items-center justify-between border border-black/10 dark:border-[#404040]">
+              <button onClick={onProfileClick} className="flex items-center gap-3 truncate text-left p-1 -m-1 rounded-md hover:bg-input dark:hover:bg-[#292929]">
                   <UserCircleIcon className="w-10 h-10 text-primary dark:text-yellow-400" />
                   <div className="truncate">
-                      <p className="font-semibold text-card-foreground dark:text-gray-200">Guest User</p>
+                      <p className="font-semibold text-card-foreground dark:text-gray-200">{userName}</p>
                       <p className="text-xs text-card-foreground/60 dark:text-gray-500">Welcome back</p>
                   </div>
-              </div>
+              </button>
               <div className="flex items-center gap-1">
                 <button onClick={toggleTheme} className="p-2 rounded-md hover:bg-input dark:hover:bg-[#404040] transition-colors">
                     {theme === 'light' ? <MoonIcon className="w-5 h-5"/> : <SunIcon className="w-5 h-5"/>}
                 </button>
-                <a href="https://github.com/your-repo" target="_blank" rel="noopener noreferrer" className="p-2 rounded-md hover:bg-input dark:hover:bg-[#404040] transition-colors">
+                <button onClick={onAboutClick} className="p-2 rounded-md hover:bg-input dark:hover:bg-[#404040] transition-colors">
                     <InfoIcon className="w-5 h-5" />
-                </a>
+                </button>
               </div>
           </div>
           <ul className="space-y-1 mt-2">

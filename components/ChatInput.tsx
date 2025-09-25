@@ -11,7 +11,7 @@ interface ChatInputProps {
 const SuggestionButton = ({ text, onClick }: { text: string; onClick: () => void }) => (
     <button
         onClick={onClick}
-        className="px-4 py-2 bg-card border border-card-border dark:bg-[#1f1f1f] dark:border-[#333] rounded-lg text-card-foreground/80 dark:text-gray-300 hover:bg-primary/20 hover:border-primary/50 dark:hover:bg-yellow-400/10 dark:hover:border-yellow-400/50 transition-colors duration-200"
+        className="px-4 py-2 bg-card border border-black/10 dark:border-[#333] rounded-lg text-card-foreground/80 dark:text-gray-300 hover:bg-primary/20 hover:border-primary/50 dark:hover:bg-yellow-400/10 dark:hover:border-yellow-400/50 transition-colors duration-200"
     >
         {text}
     </button>
@@ -64,7 +64,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, showSug
                 ))}
             </div>
         )}
-        <form onSubmit={handleSubmit} className="flex items-end gap-2 p-2 bg-input dark:bg-[#292929] rounded-xl border border-input-border dark:border-[#404040] focus-within:border-primary dark:focus-within:border-yellow-400 transition-colors">
+        <form onSubmit={handleSubmit} className="flex items-end gap-2 p-2 bg-input dark:bg-[#292929] rounded-xl border border-black/10 dark:border-[#404040] focus-within:border-primary dark:focus-within:border-yellow-400 transition-colors">
         <textarea
             ref={textareaRef}
             value={inputValue}
@@ -78,7 +78,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, showSug
         <button
             type="submit"
             disabled={isLoading || !inputValue.trim()}
-            className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary dark:bg-yellow-400 text-primary-foreground dark:text-black flex items-center justify-center transition-opacity duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-yellow-400 dark:hover:bg-yellow-300"
+            className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary dark:bg-yellow-400 text-primary-foreground dark:text-black flex items-center justify-center transition-opacity duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-yellow-400 dark:hover:bg-yellow-300 border border-black/20 dark:border-transparent"
         >
             {isLoading ? (
                 <div className="w-5 h-5 border-2 border-primary-foreground dark:border-black border-t-transparent rounded-full animate-spin"></div>

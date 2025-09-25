@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { getAiResponse, getTitleForChat } from './services/geminiService';
 import { getAllChats, saveChat, deleteChat, migrateFromLocalStorage, deleteAllChats } from './services/dbService';
@@ -8,6 +9,8 @@ import ChatInput from './components/ChatInput';
 import { CognitoLogo, CognitoLogoText } from './components/Logo';
 import Sidebar from './components/Sidebar';
 import { MenuIcon } from './components/icons';
+import AboutModal from './components/AboutModal';
+import ProfileModal from './components/ProfileModal';
 
 const App: React.FC = () => {
     const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
@@ -17,6 +20,9 @@ const App: React.FC = () => {
     const [activeChatId, setActiveChatId] = useState<string | null>(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
+    const [userName, setUserName] = useState(() => localStorage.getItem('userName') || 'Guest User');
+    const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const saveTimeoutRef = useRef<number | null>(null);
 
@@ -31,6 +37,11 @@ const App: React.FC = () => {
         }
         localStorage.setItem('theme', theme);
     }, [theme]);
+
+    // User name management
+    useEffect(() => {
+        localStorage.setItem('userName', userName);
+    }, [userName]);
 
     // Load from IndexedDB on initial render
     useEffect(() => {
@@ -283,6 +294,11 @@ const App: React.FC = () => {
         URL.revokeObjectURL(url);
     };
 
+    const handleSaveProfile = (newName: string) => {
+        setUserName(newName);
+        setIsProfileModalOpen(false);
+    };
+
     if (isAppLoading) {
         return <LoadingScreen />;
     }
@@ -301,11 +317,14 @@ const App: React.FC = () => {
                 theme={theme}
                 setTheme={setTheme}
                 onExportChat={handleExportChat}
+                userName={userName}
+                onProfileClick={() => setIsProfileModalOpen(true)}
+                onAboutClick={() => setIsAboutModalOpen(true)}
             />
              {isSidebarOpen && <div onClick={() => setIsSidebarOpen(false)} className="fixed inset-0 bg-black/50 z-10 md:hidden"></div>}
             <div className="flex-1 flex flex-col relative">
-                <header className="flex items-center p-4 border-b border-card-border dark:border-[#333] md:hidden">
-                    <button onClick={() => setIsSidebarOpen(true)} className="p-1">
+                <header className="flex items-center p-4 border-b border-black/10 dark:border-[#333] md:hidden">
+                    <button onClick={() => setIsSidebarOpen(true)} className="p-1 rounded-md border border-transparent hover:border-black/10 dark:hover:border-[#404040]">
                         <MenuIcon className="h-6 w-6" />
                     </button>
                     <h1 className="text-xl font-semibold text-primary dark:text-yellow-400 tracking-wider mx-auto">{activeChat?.title || 'COGNITO'}</h1>
@@ -346,6 +365,17 @@ const App: React.FC = () => {
                     />
                 </main>
             </div>
+
+            <AboutModal 
+                isOpen={isAboutModalOpen}
+                onClose={() => setIsAboutModalOpen(false)}
+            />
+            <ProfileModal 
+                isOpen={isProfileModalOpen}
+                onClose={() => setIsProfileModalOpen(false)}
+                onSave={handleSaveProfile}
+                currentName={userName}
+            />
         </div>
     );
 };
