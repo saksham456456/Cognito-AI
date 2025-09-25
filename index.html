@@ -52,6 +52,15 @@
             'primary-foreground': 'hsl(45 90% 10%)',
             'input': 'hsl(0 0% 16%)',
             'input-border': 'hsl(0 0% 25%)',
+          },
+          animation: {
+            'typing-bounce': 'typing-bounce 1.4s infinite ease-in-out both',
+          },
+          keyframes: {
+            'typing-bounce': {
+              '0%, 100%': { transform: 'scale(0.8)', opacity: '0.6' },
+              '50%': { transform: 'scale(1.1)', opacity: '1' },
+            }
           }
         }
       }

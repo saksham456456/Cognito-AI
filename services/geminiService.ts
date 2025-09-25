@@ -8,7 +8,11 @@ if (!process.env.API_KEY) {
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 const model = 'gemini-2.5-flash';
 
-export async function getAiResponse(history: Message[], newMessage: string): Promise<string> {
+export async function getAiResponse(
+    history: Message[],
+    newMessage: string,
+    onStream: (chunk: string) => void
+): Promise<void> {
     const chatHistory = history.map(msg => ({
         role: msg.role as 'user' | 'model',
         parts: [{ text: msg.content }]
@@ -22,11 +26,13 @@ export async function getAiResponse(history: Message[], newMessage: string): Pro
                 systemInstruction: 'You are Cognito, a friendly and conversational AI assistant. Your personality is helpful, slightly witty, and you always provide clear, concise answers. Your goal is to assist users effectively with their tasks and questions.',
             },
         });
-        const response = await chat.sendMessage({ message: newMessage });
-        return response.text;
+        const stream = await chat.sendMessageStream({ message: newMessage });
+        for await (const chunk of stream) {
+            onStream(chunk.text);
+        }
     } catch (error) {
         console.error("Error sending message to Gemini API:", error);
-        return "Sorry, I encountered an error. Please try again.";
+        onStream("Sorry, I encountered an error. Please try again.");
     }
 }
 

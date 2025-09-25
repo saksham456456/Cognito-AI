@@ -1,4 +1,3 @@
-
 import React from 'react';
 import type { Message } from '../types';
 import { CognitoLogo } from './Logo';
@@ -7,8 +6,18 @@ interface MessageProps {
   message: Message;
 }
 
+const TypingIndicator = () => (
+    <div className="flex items-center gap-1.5">
+      <span className="h-2 w-2 bg-card-foreground/50 rounded-full animate-typing-bounce [animation-delay:-0.3s]"></span>
+      <span className="h-2 w-2 bg-card-foreground/50 rounded-full animate-typing-bounce [animation-delay:-0.15s]"></span>
+      <span className="h-2 w-2 bg-card-foreground/50 rounded-full animate-typing-bounce"></span>
+    </div>
+);
+
+
 const MessageComponent: React.FC<MessageProps> = ({ message }) => {
   const isUser = message.role === 'user';
+  const isTyping = message.role === 'model' && !message.content;
 
   const containerClasses = `flex items-start gap-3 w-full ${isUser ? 'justify-end' : 'justify-start'}`;
   const bubbleClasses = `max-w-xl px-4 py-3 rounded-2xl ${
@@ -25,7 +34,7 @@ const MessageComponent: React.FC<MessageProps> = ({ message }) => {
         </div>
       )}
       <div className={bubbleClasses}>
-        <p className="whitespace-pre-wrap">{message.content}</p>
+        {isTyping ? <TypingIndicator /> : <p className="whitespace-pre-wrap">{message.content}</p>}
       </div>
     </div>
   );

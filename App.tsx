@@ -30,9 +30,8 @@ const App: React.FC = () => {
 
     // Save to localStorage whenever chats change
     useEffect(() => {
-        if (chats.length > 0) {
-            localStorage.setItem('cognito-chats', JSON.stringify(chats));
-        }
+        // Do not check for chats.length to ensure empty array is saved after deleting last chat
+        localStorage.setItem('cognito-chats', JSON.stringify(chats));
     }, [chats]);
     
     useEffect(() => {
@@ -40,40 +39,66 @@ const App: React.FC = () => {
     }, [activeChat?.messages]);
 
     const handleSendMessage = async (content: string) => {
-        let targetChatId = activeChatId;
+        let currentChatId = activeChatId;
         let isNewChat = false;
-
-        if (!targetChatId) {
+        
+        if (!currentChatId) {
             isNewChat = true;
-            const newChat: Chat = { id: Date.now().toString(), title: "New Chat", messages: [] };
+            const newChatId = Date.now().toString();
+            const newChat: Chat = { id: newChatId, title: "New Conversation", messages: [] };
             setChats(prev => [newChat, ...prev]);
-            setActiveChatId(newChat.id);
-            targetChatId = newChat.id;
+            setActiveChatId(newChatId);
+            currentChatId = newChatId;
         }
 
         const userMessage: Message = { id: Date.now().toString(), role: 'user', content };
-        setChats(prev => prev.map(c => c.id === targetChatId ? { ...c, messages: [...c.messages, userMessage] } : c));
-
+        const modelMessageId = (Date.now() + 1).toString();
+        const modelPlaceholder: Message = { id: modelMessageId, role: 'model', content: '' };
+        
+        const history = chats.find(c => c.id === currentChatId)?.messages || [];
+        
+        setChats(prev => prev.map(c => 
+            c.id === currentChatId 
+                ? { ...c, messages: [...c.messages, userMessage, modelPlaceholder] } 
+                : c
+        ));
+        
         setIsAiLoading(true);
-
-        const currentHistory = chats.find(c => c.id === targetChatId)?.messages || [];
-
+        
+        let fullResponse = '';
         try {
-            const aiResponse = await getAiResponse(currentHistory, content);
-            const modelMessage: Message = { id: (Date.now() + 1).toString(), role: 'model', content: aiResponse };
-            
-            const updatedMessages = [...currentHistory, userMessage, modelMessage];
-            
-            setChats(prev => prev.map(c => c.id === targetChatId ? { ...c, messages: updatedMessages } : c));
-            
-            if (isNewChat) {
-                const newTitle = await getTitleForChat(updatedMessages);
-                setChats(prev => prev.map(c => c.id === targetChatId ? { ...c, title: newTitle } : c));
-            }
+            await getAiResponse(history, content, (chunk) => {
+                fullResponse += chunk;
+                setChats(prev => prev.map(chat => {
+                    if (chat.id === currentChatId) {
+                        const newMessages = [...chat.messages];
+                        const lastMessage = newMessages[newMessages.length - 1];
+                        if (lastMessage && lastMessage.id === modelMessageId) {
+                            lastMessage.content += chunk;
+                        }
+                        return { ...chat, messages: newMessages };
+                    }
+                    return chat;
+                }));
+            });
 
+            if (isNewChat) {
+                const finalMessages = [...history, userMessage, { ...modelPlaceholder, content: fullResponse }];
+                const newTitle = await getTitleForChat(finalMessages);
+                setChats(prev => prev.map(c => c.id === currentChatId ? { ...c, title: newTitle } : c));
+            }
         } catch (error) {
-            const errorMessage: Message = { id: (Date.now() + 1).toString(), role: 'model', content: "Something went wrong. Please check your connection or API key." };
-            setChats(prev => prev.map(c => c.id === targetChatId ? { ...c, messages: [...c.messages, errorMessage] } : c));
+            setChats(prev => prev.map(chat => {
+                 if (chat.id === currentChatId) {
+                    const newMessages = [...chat.messages];
+                    const lastMessage = newMessages[newMessages.length - 1];
+                     if (lastMessage && lastMessage.id === modelMessageId) {
+                        lastMessage.content = "Something went wrong. Please check your connection or API key.";
+                     }
+                     return { ...chat, messages: newMessages };
+                 }
+                 return chat;
+            }));
         } finally {
             setIsAiLoading(false);
         }
@@ -141,11 +166,6 @@ const App: React.FC = () => {
                                         <MessageComponent message={msg} />
                                     </div>
                                 ))}
-                                {isAiLoading && activeChatId === activeChat.id && (
-                                    <div className="fade-in-up">
-                                        <MessageComponent message={{id: 'loading', role: 'model', content: '...'}}/>
-                                    </div>
-                                )}
                             </>
                         )}
                         <div ref={messagesEndRef} />
