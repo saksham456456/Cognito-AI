@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, type Chat } from "@google/genai";
 import type { Message } from '../types';
 
 if (!process.env.API_KEY) {
@@ -9,22 +9,21 @@ const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 const model = 'gemini-2.5-flash';
 
 export async function getAiResponse(history: Message[], newMessage: string): Promise<string> {
-    const sessionHistory = history.map(msg => ({
+    const chatHistory = history.map(msg => ({
         role: msg.role as 'user' | 'model',
         parts: [{ text: msg.content }]
     }));
 
-    const chatSession = ai.chats.create({
-        model,
-        history: sessionHistory,
-        config: {
-            systemInstruction: 'You are Cognito, a friendly and conversational AI assistant. Your personality is helpful, slightly witty, and you always provide clear, concise answers. Your goal is to assist users effectively with their tasks and questions.',
-        },
-    });
-
     try {
-        const result = await chatSession.sendMessage({ message: newMessage });
-        return result.text;
+        const chat: Chat = ai.chats.create({
+            model,
+            history: chatHistory,
+            config: {
+                systemInstruction: 'You are Cognito, a friendly and conversational AI assistant. Your personality is helpful, slightly witty, and you always provide clear, concise answers. Your goal is to assist users effectively with their tasks and questions.',
+            },
+        });
+        const response = await chat.sendMessage({ message: newMessage });
+        return response.text;
     } catch (error) {
         console.error("Error sending message to Gemini API:", error);
         return "Sorry, I encountered an error. Please try again.";
@@ -40,7 +39,7 @@ export async function getTitleForChat(messages: Message[]): Promise<string> {
     try {
         const response = await ai.models.generateContent({
             model,
-            contents: prompt,
+            contents: [{ role: 'user', parts: [{text: prompt}] }],
         });
         
         return response.text.replace(/["\.]/g, '').trim();
