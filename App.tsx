@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getAiResponse, getTitleForChat } from './services/geminiService';
+import { getAllChats, saveChat, deleteChat, migrateFromLocalStorage } from './services/dbService';
 import type { Message, Chat } from './types';
 import LoadingScreen from './components/LoadingScreen';
 import MessageComponent from './components/Message';
@@ -18,21 +19,35 @@ const App: React.FC = () => {
 
     const activeChat = chats.find(c => c.id === activeChatId);
 
-    // Load from localStorage on initial render
+    // Load from IndexedDB on initial render
     useEffect(() => {
-        const savedChats = localStorage.getItem('cognito-chats');
-        if (savedChats) {
-            setChats(JSON.parse(savedChats));
+        async function loadData() {
+            try {
+                await migrateFromLocalStorage(); // One-time migration
+                const dbChats = await getAllChats();
+                setChats(dbChats);
+            } catch (error) {
+                console.error("Failed to load chats from DB:", error);
+            } finally {
+                // Keep a minimum loading time for aesthetics
+                setTimeout(() => setIsAppLoading(false), 500);
+            }
         }
-         const timer = setTimeout(() => setIsAppLoading(false), 1500);
-        return () => clearTimeout(timer);
+        loadData();
     }, []);
 
-    // Save to localStorage whenever chats change
+    // Debounced effect to save the active chat to IndexedDB
     useEffect(() => {
-        // Do not check for chats.length to ensure empty array is saved after deleting last chat
-        localStorage.setItem('cognito-chats', JSON.stringify(chats));
-    }, [chats]);
+        if (!activeChat) return;
+
+        const handler = setTimeout(() => {
+            saveChat(activeChat);
+        }, 1000); // Debounce saves by 1 second
+
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [activeChat?.messages, activeChat?.title]); // Re-run when content or title changes
     
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -40,22 +55,24 @@ const App: React.FC = () => {
 
     const handleSendMessage = async (content: string) => {
         let currentChatId = activeChatId;
+        let history: Message[] = [];
         let isNewChat = false;
         
         if (!currentChatId) {
             isNewChat = true;
             const newChatId = Date.now().toString();
             const newChat: Chat = { id: newChatId, title: "New Conversation", messages: [] };
+            await saveChat(newChat); // Persist the new chat immediately
             setChats(prev => [newChat, ...prev]);
             setActiveChatId(newChatId);
             currentChatId = newChatId;
+        } else {
+            history = chats.find(c => c.id === currentChatId)?.messages || [];
         }
 
         const userMessage: Message = { id: Date.now().toString(), role: 'user', content };
         const modelMessageId = (Date.now() + 1).toString();
         const modelPlaceholder: Message = { id: modelMessageId, role: 'model', content: '' };
-        
-        const history = chats.find(c => c.id === currentChatId)?.messages || [];
         
         setChats(prev => prev.map(c => 
             c.id === currentChatId 
@@ -74,7 +91,7 @@ const App: React.FC = () => {
                         const newMessages = [...chat.messages];
                         const lastMessage = newMessages[newMessages.length - 1];
                         if (lastMessage && lastMessage.id === modelMessageId) {
-                            lastMessage.content += chunk;
+                            lastMessage.content = fullResponse; // More efficient update
                         }
                         return { ...chat, messages: newMessages };
                     }
@@ -83,11 +100,12 @@ const App: React.FC = () => {
             });
 
             if (isNewChat) {
-                const finalMessages = [...history, userMessage, { ...modelPlaceholder, content: fullResponse }];
+                const finalMessages = [userMessage, { ...modelPlaceholder, content: fullResponse }];
                 const newTitle = await getTitleForChat(finalMessages);
                 setChats(prev => prev.map(c => c.id === currentChatId ? { ...c, title: newTitle } : c));
             }
         } catch (error) {
+             console.error("Error getting AI response:", error);
             setChats(prev => prev.map(chat => {
                  if (chat.id === currentChatId) {
                     const newMessages = [...chat.messages];
@@ -118,10 +136,34 @@ const App: React.FC = () => {
         setChats(prev => prev.map(c => c.id === id ? { ...c, title: newTitle } : c));
     };
 
-    const handleDeleteChat = (id: string) => {
-        setChats(prev => prev.filter(c => c.id !== id));
+    const handleDeleteChat = async (id: string) => {
+        const chatToDeleteIndex = chats.findIndex(c => c.id === id);
+        if (chatToDeleteIndex < 0) return;
+
+        // First, persist the deletion to the database
+        try {
+            await deleteChat(id);
+        } catch (error) {
+            console.error("Failed to delete chat from DB:", error);
+            // Optionally, inform the user that deletion failed
+            alert("Error: Could not delete the chat. Please try again.");
+            return; // Stop execution if DB operation fails
+        }
+
+        // If DB deletion is successful, then update the UI state
+        const remainingChats = chats.filter(c => c.id !== id);
+        setChats(remainingChats);
+
+        // Finally, determine and set the next active chat
         if (activeChatId === id) {
-            setActiveChatId(null);
+            if (remainingChats.length === 0) {
+                // No chats left, go to the welcome screen
+                setActiveChatId(null);
+            } else {
+                // Select the chat that was before the deleted one, or the first chat.
+                const newActiveIndex = Math.max(0, chatToDeleteIndex - 1);
+                setActiveChatId(remainingChats[newActiveIndex].id);
+            }
         }
     };
 
