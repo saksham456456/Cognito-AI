@@ -23,8 +23,10 @@ const App: React.FC = () => {
     const [userName, setUserName] = useState(() => localStorage.getItem('userName') || 'Guest User');
     const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+    
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const saveTimeoutRef = useRef<number | null>(null);
+    const chatsRef = useRef<Chat[]>(chats);
 
     const activeChat = chats.find(c => c.id === activeChatId);
 
@@ -42,6 +44,11 @@ const App: React.FC = () => {
     useEffect(() => {
         localStorage.setItem('userName', userName);
     }, [userName]);
+    
+    // Keep a ref to the latest chats state for race condition prevention
+    useEffect(() => {
+        chatsRef.current = chats;
+    }, [chats]);
 
     // Load from IndexedDB on initial render
     useEffect(() => {
@@ -59,17 +66,30 @@ const App: React.FC = () => {
         loadData();
     }, []);
 
-    // Debounced effect to save the active chat
+    // This effect debounces saves and prevents a race condition on delete.
     useEffect(() => {
-        if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-        if (!activeChat) return;
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+        if (!activeChat) {
+            return;
+        }
+
+        const chatToSave = { ...activeChat };
 
         saveTimeoutRef.current = window.setTimeout(() => {
-            saveChat(activeChat);
+            // Final check before saving: Does the chat still exist in the current state?
+            // This prevents a race condition where a deleted chat is saved.
+            const chatStillExists = chatsRef.current.some(c => c.id === chatToSave.id);
+            if (chatStillExists) {
+                saveChat(chatToSave);
+            }
         }, 1000);
 
         return () => {
-            if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+            }
         };
     }, [activeChat]);
     
@@ -86,7 +106,7 @@ const App: React.FC = () => {
             isNewChat = true;
             const newChatId = Date.now().toString();
             const newChat: Chat = { id: newChatId, title: "New Conversation", messages: [] };
-            await saveChat(newChat);
+            // No need to save here, the useEffect will handle it.
             setChats(prev => [newChat, ...prev]);
             setActiveChatId(newChatId);
             currentChatId = newChatId;
@@ -221,32 +241,28 @@ const App: React.FC = () => {
         const chatToDeleteIndex = chats.findIndex(c => c.id === id);
         if (chatToDeleteIndex < 0) return;
 
-        if (id === activeChatId && saveTimeoutRef.current) {
-            clearTimeout(saveTimeoutRef.current);
-            saveTimeoutRef.current = null;
-        }
-
+        // Update UI state first. This will trigger the save useEffect's cleanup for the
+        // active chat if it's the one being deleted, cancelling any scheduled save.
         const remainingChats = chats.filter(c => c.id !== id);
         setChats(remainingChats);
 
         if (activeChatId === id) {
-            setActiveChatId(remainingChats.length > 0 ? remainingChats[Math.max(0, chatToDeleteIndex - 1)].id : null);
+            const newActiveId = remainingChats.length > 0 
+                ? remainingChats[Math.max(0, chatToDeleteIndex - 1)].id 
+                : null;
+            setActiveChatId(newActiveId);
         }
 
         try {
             await deleteChat(id);
         } catch (error) {
             console.error("Failed to delete chat from DB:", error);
+            // Optionally, revert state or show a more persistent error
             alert("Error: Could not permanently delete the chat. It may reappear after a refresh.");
         }
     };
 
     const handleDeleteAllChats = async () => {
-        if (saveTimeoutRef.current) {
-            clearTimeout(saveTimeoutRef.current);
-            saveTimeoutRef.current = null;
-        }
-
         setChats([]);
         setActiveChatId(null);
         setIsSidebarOpen(false);
