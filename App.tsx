@@ -2,32 +2,25 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { getAiResponse, getTitleForChat } from './services/geminiService';
-import { getAllChats, saveChat, deleteChat, migrateFromLocalStorage, deleteAllChats } from './services/dbService';
 import type { Message, Chat } from './types';
-import LoadingScreen from './components/LoadingScreen';
 import MessageComponent from './components/Message';
 import ChatInput from './components/ChatInput';
 import { CognitoLogo, CognitoLogoText } from './components/Logo';
 import Sidebar from './components/Sidebar';
 import { MenuIcon } from './components/icons';
-import AboutModal from './components/AboutModal';
 import ProfileModal from './components/ProfileModal';
 
 const App: React.FC = () => {
     const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
-    const [isAppLoading, setIsAppLoading] = useState(true);
     const [isAiLoading, setIsAiLoading] = useState(false);
     const [chats, setChats] = useState<Chat[]>([]);
     const [activeChatId, setActiveChatId] = useState<string | null>(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
     const [userName, setUserName] = useState(() => localStorage.getItem('userName') || 'Guest User');
-    const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
     
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const saveTimeoutRef = useRef<number | null>(null);
-    const chatsRef = useRef<Chat[]>(chats);
 
     const activeChat = chats.find(c => c.id === activeChatId);
 
@@ -46,57 +39,6 @@ const App: React.FC = () => {
         localStorage.setItem('userName', userName);
     }, [userName]);
     
-    // Keep a ref to the latest chats state for race condition prevention
-    useEffect(() => {
-        chatsRef.current = chats;
-    }, [chats]);
-
-    // Load from IndexedDB on initial render
-    useEffect(() => {
-        async function loadData() {
-            try {
-                await migrateFromLocalStorage(); // One-time migration
-                const dbChats = await getAllChats();
-                setChats(dbChats);
-            } catch (error) {
-                console.error("Failed to load chats from DB:", error);
-            } finally {
-                setTimeout(() => setIsAppLoading(false), 500);
-            }
-        }
-        loadData();
-    }, []);
-
-    // This effect debounces saves and prevents a race condition on delete.
-    useEffect(() => {
-        if (saveTimeoutRef.current) {
-            clearTimeout(saveTimeoutRef.current);
-        }
-        if (!activeChat) {
-            return;
-        }
-
-        const chatToSave = { ...activeChat };
-
-        saveTimeoutRef.current = window.setTimeout(async () => {
-            // Check if chat still exists before saving
-            const chatStillExists = chatsRef.current.some(c => c.id === chatToSave.id);
-            if (chatStillExists && chatToSave.messages.length > 0) {
-                try {
-                    await saveChat(chatToSave);
-                } catch (error) {
-                    console.error("Failed to save chat:", error);
-                }
-            }
-        }, 1000);
-
-        return () => {
-            if (saveTimeoutRef.current) {
-                clearTimeout(saveTimeoutRef.current);
-            }
-        };
-    }, [activeChat]);
-    
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [activeChat?.messages]);
@@ -110,7 +52,6 @@ const App: React.FC = () => {
             isNewChat = true;
             const newChatId = Date.now().toString();
             const newChat: Chat = { id: newChatId, title: "New Conversation", messages: [] };
-            // No need to save here, the useEffect will handle it.
             setChats(prev => [newChat, ...prev]);
             setActiveChatId(newChatId);
             currentChatId = newChatId;
@@ -241,54 +182,6 @@ const App: React.FC = () => {
         setChats(prev => prev.map(c => c.id === id ? { ...c, title: newTitle } : c));
     };
 
-    const handleDeleteChat = async (id: string) => {
-        const chatToDeleteIndex = chats.findIndex(c => c.id === id);
-        if (chatToDeleteIndex < 0) {
-            console.warn("Attempted to delete a chat that doesn't exist in state:", id);
-            return;
-        }
-
-        // Stop any pending save operation before proceeding.
-        if (saveTimeoutRef.current) {
-            clearTimeout(saveTimeoutRef.current);
-            saveTimeoutRef.current = null;
-        }
-
-        try {
-            // Pessimistic update: first delete from the persistent layer.
-            await deleteChat(id);
-
-            // Then update the UI state.
-            const remainingChats = chats.filter(c => c.id !== id);
-            
-            // If the deleted chat was the active one, select a new one.
-            if (activeChatId === id) {
-                const newActiveId = remainingChats.length > 0
-                    ? remainingChats[Math.max(0, chatToDeleteIndex - 1)].id
-                    : null;
-                setActiveChatId(newActiveId);
-            }
-
-            setChats(remainingChats);
-        } catch (error) {
-            console.error("Failed to delete chat from DB:", error);
-            alert("Error: Could not delete the chat. Please try again.");
-        }
-    };
-
-    const handleDeleteAllChats = async () => {
-        setChats([]);
-        setActiveChatId(null);
-        setIsSidebarOpen(false);
-
-        try {
-            await deleteAllChats();
-        } catch (error) {
-            console.error("Failed to delete all chats from DB:", error);
-            alert("Error: Could not delete all chats. They may reappear after a refresh.");
-        }
-    };
-
     const handleCopyText = (text: string) => {
         navigator.clipboard.writeText(text);
     };
@@ -329,10 +222,6 @@ const App: React.FC = () => {
         setIsProfileModalOpen(false);
     };
 
-    if (isAppLoading) {
-        return <LoadingScreen />;
-    }
-
     return (
         <div className="bg-background dark:bg-[#141414] min-h-screen flex text-card-foreground dark:text-gray-200 overflow-hidden">
             <Sidebar 
@@ -341,15 +230,12 @@ const App: React.FC = () => {
                 onNewChat={handleNewChat}
                 onSelectChat={handleSelectChat}
                 onRenameChat={handleRenameChat}
-                onDeleteChat={handleDeleteChat}
-                onDeleteAllChats={handleDeleteAllChats}
                 isSidebarOpen={isSidebarOpen}
                 theme={theme}
                 setTheme={setTheme}
                 onExportChat={handleExportChat}
                 userName={userName}
                 onProfileClick={() => setIsProfileModalOpen(true)}
-                onAboutClick={() => setIsAboutModalOpen(true)}
             />
              {isSidebarOpen && <div onClick={() => setIsSidebarOpen(false)} className="fixed inset-0 bg-black/50 z-10 md:hidden"></div>}
             <div className="flex-1 flex flex-col relative">
@@ -396,10 +282,6 @@ const App: React.FC = () => {
                 </main>
             </div>
 
-            <AboutModal 
-                isOpen={isAboutModalOpen}
-                onClose={() => setIsAboutModalOpen(false)}
-            />
             <ProfileModal 
                 isOpen={isProfileModalOpen}
                 onClose={() => setIsProfileModalOpen(false)}

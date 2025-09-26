@@ -1,8 +1,9 @@
 
+
 import React, { useState, useMemo } from 'react';
 import type { Chat } from '../types';
 import { CognitoLogo } from './Logo';
-import { PlusIcon, MessageSquareIcon, SearchIcon, PencilIcon, TrashIcon, CheckIcon, XIcon, UserCircleIcon, SunIcon, MoonIcon, DownloadIcon, InfoIcon } from './icons';
+import { PlusIcon, MessageSquareIcon, SearchIcon, PencilIcon, CheckIcon, XIcon, UserCircleIcon, SunIcon, MoonIcon, DownloadIcon } from './icons';
 
 interface SidebarProps {
   chats: Chat[];
@@ -10,15 +11,12 @@ interface SidebarProps {
   onNewChat: () => void;
   onSelectChat: (id: string) => void;
   onRenameChat: (id: string, newTitle: string) => void;
-  onDeleteChat: (id: string) => void;
-  onDeleteAllChats: () => void;
   isSidebarOpen: boolean;
   theme: string;
   setTheme: (theme: string) => void;
   onExportChat: () => void;
   userName: string;
   onProfileClick: () => void;
-  onAboutClick: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -27,15 +25,12 @@ const Sidebar: React.FC<SidebarProps> = ({
   onNewChat,
   onSelectChat,
   onRenameChat,
-  onDeleteChat,
-  onDeleteAllChats,
   isSidebarOpen,
   theme,
   setTheme,
   onExportChat,
   userName,
   onProfileClick,
-  onAboutClick
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingChatId, setEditingChatId] = useState<string | null>(null);
@@ -47,18 +42,21 @@ const Sidebar: React.FC<SidebarProps> = ({
     ), [chats, searchTerm]);
 
   const handleRenameStart = (e: React.MouseEvent, chat: Chat) => {
+    e.preventDefault();
     e.stopPropagation();
     setEditingChatId(chat.id);
     setEditingTitle(chat.title);
   };
 
   const handleRenameCancel = (e?: React.MouseEvent) => {
+    e?.preventDefault();
     e?.stopPropagation();
     setEditingChatId(null);
     setEditingTitle('');
   };
 
   const handleRenameSave = (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     if (editingChatId && editingTitle.trim()) {
       onRenameChat(editingChatId, editingTitle.trim());
@@ -66,19 +64,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     handleRenameCancel();
   };
   
-  const handleDelete = (e: React.MouseEvent, chatId: string) => {
-      e.stopPropagation();
-      if (window.confirm("Are you sure you want to delete this chat?")) {
-          onDeleteChat(chatId);
-      }
-  }
-  
-  const handleClearAll = () => {
-    if (window.confirm("Are you sure you want to delete all conversations? This action cannot be undone.")) {
-      onDeleteAllChats();
-    }
-  };
-
   const toggleTheme = () => {
       setTheme(theme === 'light' ? 'dark' : 'light');
   };
@@ -145,7 +130,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                     ) : (
                         <div className="opacity-0 group-hover:opacity-100 transition-opacity">
                             <button onClick={(e) => handleRenameStart(e, chat)} className="p-1 rounded hover:bg-primary/30 dark:hover:bg-yellow-400/20"><PencilIcon className="w-4 h-4"/></button>
-                            <button onClick={(e) => handleDelete(e, chat.id)} className="p-1 rounded hover:bg-primary/30 dark:hover:bg-yellow-400/20"><TrashIcon className="w-4 h-4"/></button>
                         </div>
                     )}
                 </div>
@@ -168,9 +152,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <button onClick={toggleTheme} className="p-2 rounded-md hover:bg-input dark:hover:bg-[#404040] transition-colors">
                     {theme === 'light' ? <MoonIcon className="w-5 h-5"/> : <SunIcon className="w-5 h-5"/>}
                 </button>
-                <button onClick={onAboutClick} className="p-2 rounded-md hover:bg-input dark:hover:bg-[#404040] transition-colors">
-                    <InfoIcon className="w-5 h-5" />
-                </button>
               </div>
           </div>
           <ul className="space-y-1 mt-2">
@@ -182,15 +163,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                   >
                       <DownloadIcon className="w-5 h-5 text-card-foreground/60 dark:text-gray-400 transition-colors" />
                       <span>Export Chat</span>
-                  </button>
-              </li>
-              <li>
-                  <button
-                      onClick={handleClearAll}
-                      className="w-full flex items-center gap-3 p-2 rounded-md text-sm text-card-foreground/80 dark:text-gray-300 hover:bg-red-500/10 hover:text-red-400 transition-colors group"
-                  >
-                      <TrashIcon className="w-5 h-5 text-card-foreground/60 dark:text-gray-400 group-hover:text-red-400 transition-colors" />
-                      <span>Clear conversations</span>
                   </button>
               </li>
           </ul>
