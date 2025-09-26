@@ -18,6 +18,8 @@ interface SidebarProps {
   userName: string;
   onProfileClick: () => void;
   onAboutClick: () => void;
+  theme: 'light' | 'dark';
+  onToggleTheme: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -33,6 +35,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   userName,
   onProfileClick,
   onAboutClick,
+  theme,
+  onToggleTheme,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingChatId, setEditingChatId] = useState<string | null>(null);
@@ -153,6 +157,17 @@ const Sidebar: React.FC<SidebarProps> = ({
               </button>
           </div>
           <ul className="space-y-1 mt-2">
+              <li>
+                  <button
+                      onClick={onToggleTheme}
+                      className="w-full flex items-center gap-3 p-2 rounded-md text-sm text-card-foreground/80 dark:text-gray-300 hover:bg-input dark:hover:bg-[#292929] transition-colors group"
+                  >
+                      {theme === 'light' 
+                          ? <MoonIcon className="w-5 h-5 text-card-foreground/60 dark:text-gray-400" /> 
+                          : <SunIcon className="w-5 h-5 text-card-foreground/60 dark:text-gray-400" />}
+                      <span>{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>
+                  </button>
+              </li>
               <li>
                   <button
                       onClick={onAboutClick}

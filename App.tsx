@@ -1,11 +1,12 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import { getAiResponse, getTitleForChat } from './services/geminiService';
 import { saveChat, loadChats, deleteChat, deleteAllChats } from './services/dbService';
 import type { Message, Chat } from './types';
 import MessageComponent from './components/Message';
 import ChatInput from './components/ChatInput';
-import { CognitoLogo, CognitoLogoText } from './components/Logo';
+import { CognitoLogo } from './components/Logo';
 import Sidebar from './components/Sidebar';
 import { MenuIcon } from './components/icons';
 import ProfileModal from './components/ProfileModal';
@@ -22,6 +23,7 @@ const App: React.FC = () => {
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
     const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
     const [isDbLoading, setIsDbLoading] = useState(true);
+    const [theme, setTheme] = useState<'light' | 'dark'>(() => (localStorage.getItem('theme') as 'light' | 'dark') || 'dark');
     
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const saveTimeoutRef = useRef<number | null>(null);
@@ -54,8 +56,13 @@ const App: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        document.documentElement.classList.add('dark');
-    }, []);
+        if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+        localStorage.setItem('theme', theme);
+    }, [theme]);
 
     useEffect(() => {
         localStorage.setItem('userName', userName);
@@ -308,6 +315,10 @@ const App: React.FC = () => {
         setIsProfileModalOpen(false);
     };
 
+    const handleToggleTheme = () => {
+        setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+    };
+
     if (isDbLoading) {
         return <LoadingScreen />;
     }
@@ -327,27 +338,36 @@ const App: React.FC = () => {
                 userName={userName}
                 onProfileClick={() => setIsProfileModalOpen(true)}
                 onAboutClick={() => setIsAboutModalOpen(true)}
+                theme={theme}
+                onToggleTheme={handleToggleTheme}
             />
              {isSidebarOpen && <div onClick={() => setIsSidebarOpen(false)} className="fixed inset-0 bg-black/50 z-10 md:hidden"></div>}
             <div className="flex-1 flex flex-col relative">
-                <header className="flex items-center p-4 border-b border-card-border dark:border-zinc-800 md:hidden">
-                    <button onClick={() => setIsSidebarOpen(true)} className="p-1 rounded-md border border-transparent hover:border-card-border dark:hover:border-zinc-700">
+                <header className="flex items-center justify-center p-4 border-b border-card-border dark:border-zinc-800 relative">
+                    <button onClick={() => setIsSidebarOpen(true)} className="p-1 rounded-md border border-transparent hover:border-card-border dark:hover:border-zinc-700 absolute left-4 top-1/2 -translate-y-1/2 md:hidden">
                         <MenuIcon className="h-6 w-6" />
                     </button>
-                    <h1 className="text-xl font-semibold text-primary dark:text-yellow-400 tracking-wider mx-auto">{activeChat?.title || 'COGNITO'}</h1>
+                    <h1 className={`text-xl font-semibold tracking-wider text-center truncate px-12 md:px-0 ${activeChat ? 'text-primary dark:text-yellow-400' : 'text-card-foreground/70 dark:text-gray-400'}`}>
+                        {activeChat ? activeChat.title : 'Your Personal AI Assistant'}
+                    </h1>
                 </header>
                 <main className="flex-1 flex flex-col relative overflow-hidden">
-                    <div className="absolute inset-0 flex items-center justify-center opacity-50 pointer-events-none">
+                    <div className="absolute inset-0 flex items-center justify-center opacity-5 dark:opacity-50 pointer-events-none">
                         <CognitoLogo className="h-96 w-96" />
                     </div>
                     <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-                        <div className="max-w-3xl mx-auto space-y-6">
                         {!activeChat ? (
-                            <div className="flex flex-col items-center justify-center h-full pt-20">
-                                <CognitoLogoText />
+                           <div className="flex h-full items-center justify-center">
+                                <div className="relative text-center flex flex-col items-center gap-4" style={{ top: '-5rem' }}>
+                                    <CognitoLogo className="w-24 h-24" />
+                                    <div className="text-center">
+                                        <h1 className="text-3xl font-bold text-card-foreground dark:text-gray-200">Hello, {userName}!</h1>
+                                        <p className="text-card-foreground/60 dark:text-gray-400">How can I help you today?</p>
+                                    </div>
+                                </div>
                             </div>
                         ) : (
-                            <>
+                            <div className="max-w-3xl mx-auto space-y-6">
                                 {activeChat.messages.map((msg, index) => (
                                     <div key={msg.id} style={{ animationDelay: `${index * 100}ms` }} className="fade-in-up">
                                         <MessageComponent 
@@ -360,10 +380,9 @@ const App: React.FC = () => {
                                         />
                                     </div>
                                 ))}
-                            </>
+                                <div ref={messagesEndRef} />
+                            </div>
                         )}
-                        <div ref={messagesEndRef} />
-                        </div>
                     </div>
                     <ChatInput 
                         onSendMessage={handleSendMessage} 
