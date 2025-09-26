@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import type { Chat } from '../types';
 import { CognitoLogo } from './Logo';
-import { PlusIcon, MessageSquareIcon, SearchIcon, PencilIcon, CheckIcon, XIcon, UserCircleIcon, SunIcon, MoonIcon, DownloadIcon } from './icons';
+import { PlusIcon, MessageSquareIcon, SearchIcon, PencilIcon, CheckIcon, XIcon, UserCircleIcon, SunIcon, MoonIcon, DownloadIcon, TrashIcon } from './icons';
 
 interface SidebarProps {
   chats: Chat[];
@@ -11,6 +11,8 @@ interface SidebarProps {
   onNewChat: () => void;
   onSelectChat: (id: string) => void;
   onRenameChat: (id: string, newTitle: string) => void;
+  onDeleteChat: (id: string) => void;
+  onDeleteAllChats: () => void;
   isSidebarOpen: boolean;
   theme: string;
   setTheme: (theme: string) => void;
@@ -25,6 +27,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   onNewChat,
   onSelectChat,
   onRenameChat,
+  onDeleteChat,
+  onDeleteAllChats,
   isSidebarOpen,
   theme,
   setTheme,
@@ -63,6 +67,12 @@ const Sidebar: React.FC<SidebarProps> = ({
     }
     handleRenameCancel();
   };
+
+  const handleDelete = (e: React.MouseEvent, id: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onDeleteChat(id);
+  }
   
   const toggleTheme = () => {
       setTheme(theme === 'light' ? 'dark' : 'light');
@@ -113,23 +123,22 @@ const Sidebar: React.FC<SidebarProps> = ({
                         onClick={(e) => e.stopPropagation()}
                     />
                 ) : (
-                    <>
-                        <div className="flex items-center gap-3 truncate">
-                            <MessageSquareIcon className="w-5 h-5 flex-shrink-0" />
-                            <span className="truncate">{chat.title}</span>
-                        </div>
-                    </>
+                    <div className="flex items-center gap-3 truncate">
+                        <MessageSquareIcon className="w-5 h-5 flex-shrink-0" />
+                        <span className="truncate">{chat.title}</span>
+                    </div>
                 )}
 
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 flex-shrink-0">
                     {editingChatId === chat.id ? (
                         <>
                             <button onClick={handleRenameSave} className="p-1 rounded hover:bg-primary/30 dark:hover:bg-yellow-400/20"><CheckIcon className="w-4 h-4 text-green-500"/></button>
                             <button onClick={handleRenameCancel} className="p-1 rounded hover:bg-primary/30 dark:hover:bg-yellow-400/20"><XIcon className="w-4 h-4 text-red-500"/></button>
                         </>
                     ) : (
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button onClick={(e) => handleRenameStart(e, chat)} className="p-1 rounded hover:bg-primary/30 dark:hover:bg-yellow-400/20"><PencilIcon className="w-4 h-4"/></button>
+                            <button onClick={(e) => handleDelete(e, chat.id)} className="p-1 rounded hover:bg-primary/30 dark:hover:bg-yellow-400/20"><TrashIcon className="w-4 h-4 text-card-foreground/70 dark:text-gray-400 hover:text-red-500"/></button>
                         </div>
                     )}
                 </div>
@@ -163,6 +172,16 @@ const Sidebar: React.FC<SidebarProps> = ({
                   >
                       <DownloadIcon className="w-5 h-5 text-card-foreground/60 dark:text-gray-400 transition-colors" />
                       <span>Export Chat</span>
+                  </button>
+              </li>
+              <li>
+                  <button
+                      onClick={onDeleteAllChats}
+                      disabled={chats.length === 0}
+                      className="w-full flex items-center gap-3 p-2 rounded-md text-sm text-red-500 hover:bg-red-500/10 transition-colors group disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                      <TrashIcon className="w-5 h-5" />
+                      <span>Clear Conversations</span>
                   </button>
               </li>
           </ul>

@@ -1,7 +1,7 @@
 
-
 import React, { useState, useEffect, useRef } from 'react';
 import { getAiResponse, getTitleForChat } from './services/geminiService';
+import { saveChat, loadChats, deleteChat, deleteAllChats } from './services/dbService';
 import type { Message, Chat } from './types';
 import MessageComponent from './components/Message';
 import ChatInput from './components/ChatInput';
@@ -9,6 +9,7 @@ import { CognitoLogo, CognitoLogoText } from './components/Logo';
 import Sidebar from './components/Sidebar';
 import { MenuIcon } from './components/icons';
 import ProfileModal from './components/ProfileModal';
+import LoadingScreen from './components/LoadingScreen';
 
 const App: React.FC = () => {
     const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
@@ -19,12 +20,32 @@ const App: React.FC = () => {
     const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
     const [userName, setUserName] = useState(() => localStorage.getItem('userName') || 'Guest User');
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+    const [isDbLoading, setIsDbLoading] = useState(true);
     
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const saveTimeoutRef = useRef<number | null>(null);
+    const chatsRef = useRef(chats);
+    chatsRef.current = chats;
 
     const activeChat = chats.find(c => c.id === activeChatId);
 
-    // Theme management
+    useEffect(() => {
+        const init = async () => {
+            try {
+                const loadedChats = await loadChats();
+                setChats(loadedChats);
+                if (loadedChats.length > 0) {
+                    setActiveChatId(loadedChats[0].id);
+                }
+            } catch (error) {
+                console.error("Failed to load chats from database:", error);
+            } finally {
+                setIsDbLoading(false);
+            }
+        };
+        init();
+    }, []);
+
     useEffect(() => {
         if (theme === 'dark') {
             document.documentElement.classList.add('dark');
@@ -34,10 +55,30 @@ const App: React.FC = () => {
         localStorage.setItem('theme', theme);
     }, [theme]);
 
-    // User name management
     useEffect(() => {
         localStorage.setItem('userName', userName);
     }, [userName]);
+
+    useEffect(() => {
+        if (!activeChat || isDbLoading) return;
+
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+
+        saveTimeoutRef.current = window.setTimeout(() => {
+            const chatToSave = chatsRef.current.find(c => c.id === activeChat.id);
+            if (chatToSave) {
+                saveChat(chatToSave).catch(error => console.error("Failed to save chat:", error));
+            }
+        }, 500);
+
+        return () => {
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+            }
+        };
+    }, [activeChat?.messages, activeChat?.title, isDbLoading]);
     
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -52,6 +93,7 @@ const App: React.FC = () => {
             isNewChat = true;
             const newChatId = Date.now().toString();
             const newChat: Chat = { id: newChatId, title: "New Conversation", messages: [] };
+            await saveChat(newChat);
             setChats(prev => [newChat, ...prev]);
             setActiveChatId(newChatId);
             currentChatId = newChatId;
@@ -167,7 +209,6 @@ const App: React.FC = () => {
         }
     };
 
-
     const handleNewChat = () => {
         setActiveChatId(null);
         setIsSidebarOpen(false);
@@ -179,7 +220,46 @@ const App: React.FC = () => {
     };
     
     const handleRenameChat = (id: string, newTitle: string) => {
-        setChats(prev => prev.map(c => c.id === id ? { ...c, title: newTitle } : c));
+        setChats(prev => {
+            const newChats = prev.map(c => (c.id === id ? { ...c, title: newTitle } : c));
+            const chatToSave = newChats.find(c => c.id === id);
+            if (chatToSave) {
+                saveChat(chatToSave).catch(err => console.error("Failed to save renamed chat", err));
+            }
+            return newChats;
+        });
+    };
+
+    const handleDeleteChat = async (id: string) => {
+        try {
+            await deleteChat(id);
+            const chatToDeleteIndex = chats.findIndex(c => c.id === id);
+            const remainingChats = chats.filter(c => c.id !== id);
+            setChats(remainingChats);
+
+            if (activeChatId === id) {
+                if (remainingChats.length > 0) {
+                    const newActiveIndex = Math.max(0, chatToDeleteIndex - 1);
+                    setActiveChatId(remainingChats[newActiveIndex].id);
+                } else {
+                    setActiveChatId(null);
+                }
+            }
+        } catch (error) {
+            console.error("Failed to delete chat:", error);
+        }
+    };
+
+    const handleDeleteAllChats = async () => {
+        if (window.confirm("Are you sure you want to delete all conversations? This action cannot be undone.")) {
+            try {
+                await deleteAllChats();
+                setChats([]);
+                setActiveChatId(null);
+            } catch (error) {
+                console.error("Failed to delete all chats:", error);
+            }
+        }
     };
 
     const handleCopyText = (text: string) => {
@@ -222,6 +302,10 @@ const App: React.FC = () => {
         setIsProfileModalOpen(false);
     };
 
+    if (isDbLoading) {
+        return <LoadingScreen />;
+    }
+
     return (
         <div className="bg-background dark:bg-[#141414] min-h-screen flex text-card-foreground dark:text-gray-200 overflow-hidden">
             <Sidebar 
@@ -230,6 +314,8 @@ const App: React.FC = () => {
                 onNewChat={handleNewChat}
                 onSelectChat={handleSelectChat}
                 onRenameChat={handleRenameChat}
+                onDeleteChat={handleDeleteChat}
+                onDeleteAllChats={handleDeleteAllChats}
                 isSidebarOpen={isSidebarOpen}
                 theme={theme}
                 setTheme={setTheme}
@@ -251,13 +337,13 @@ const App: React.FC = () => {
                     </div>
                     <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
                         <div className="max-w-3xl mx-auto space-y-6">
-                        {!activeChat ? (
+                        {!activeChatId && chats.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-full pt-20">
                                 <CognitoLogoText />
                             </div>
                         ) : (
                             <>
-                                {activeChat.messages.map((msg, index) => (
+                                {activeChat?.messages.map((msg, index) => (
                                     <div key={msg.id} style={{ animationDelay: `${index * 100}ms` }} className="fade-in-up">
                                         <MessageComponent 
                                             message={msg}
@@ -277,7 +363,7 @@ const App: React.FC = () => {
                     <ChatInput 
                         onSendMessage={handleSendMessage} 
                         isLoading={isAiLoading} 
-                        showSuggestions={!activeChat || activeChat.messages.length === 0}
+                        showSuggestions={!activeChatId && chats.length === 0}
                     />
                 </main>
             </div>
