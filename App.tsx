@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import { getAiResponse, getTitleForChat } from './services/geminiService';
 import { getAllChats, saveChat, deleteChat, migrateFromLocalStorage, deleteAllChats } from './services/dbService';
@@ -77,12 +78,15 @@ const App: React.FC = () => {
 
         const chatToSave = { ...activeChat };
 
-        saveTimeoutRef.current = window.setTimeout(() => {
-            // Final check before saving: Does the chat still exist in the current state?
-            // This prevents a race condition where a deleted chat is saved.
+        saveTimeoutRef.current = window.setTimeout(async () => {
+            // Check if chat still exists before saving
             const chatStillExists = chatsRef.current.some(c => c.id === chatToSave.id);
-            if (chatStillExists) {
-                saveChat(chatToSave);
+            if (chatStillExists && chatToSave.messages.length > 0) {
+                try {
+                    await saveChat(chatToSave);
+                } catch (error) {
+                    console.error("Failed to save chat:", error);
+                }
             }
         }, 1000);
 
@@ -239,26 +243,36 @@ const App: React.FC = () => {
 
     const handleDeleteChat = async (id: string) => {
         const chatToDeleteIndex = chats.findIndex(c => c.id === id);
-        if (chatToDeleteIndex < 0) return;
+        if (chatToDeleteIndex < 0) {
+            console.warn("Attempted to delete a chat that doesn't exist in state:", id);
+            return;
+        }
 
-        // Update UI state first. This will trigger the save useEffect's cleanup for the
-        // active chat if it's the one being deleted, cancelling any scheduled save.
-        const remainingChats = chats.filter(c => c.id !== id);
-        setChats(remainingChats);
-
-        if (activeChatId === id) {
-            const newActiveId = remainingChats.length > 0 
-                ? remainingChats[Math.max(0, chatToDeleteIndex - 1)].id 
-                : null;
-            setActiveChatId(newActiveId);
+        // Stop any pending save operation before proceeding.
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+            saveTimeoutRef.current = null;
         }
 
         try {
+            // Pessimistic update: first delete from the persistent layer.
             await deleteChat(id);
+
+            // Then update the UI state.
+            const remainingChats = chats.filter(c => c.id !== id);
+            
+            // If the deleted chat was the active one, select a new one.
+            if (activeChatId === id) {
+                const newActiveId = remainingChats.length > 0
+                    ? remainingChats[Math.max(0, chatToDeleteIndex - 1)].id
+                    : null;
+                setActiveChatId(newActiveId);
+            }
+
+            setChats(remainingChats);
         } catch (error) {
             console.error("Failed to delete chat from DB:", error);
-            // Optionally, revert state or show a more persistent error
-            alert("Error: Could not permanently delete the chat. It may reappear after a refresh.");
+            alert("Error: Could not delete the chat. Please try again.");
         }
     };
 

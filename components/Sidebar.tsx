@@ -46,24 +46,28 @@ const Sidebar: React.FC<SidebarProps> = ({
       chat.title.toLowerCase().includes(searchTerm.toLowerCase())
     ), [chats, searchTerm]);
 
-  const handleRenameStart = (chat: Chat) => {
+  const handleRenameStart = (e: React.MouseEvent, chat: Chat) => {
+    e.stopPropagation();
     setEditingChatId(chat.id);
     setEditingTitle(chat.title);
   };
 
-  const handleRenameCancel = () => {
+  const handleRenameCancel = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     setEditingChatId(null);
     setEditingTitle('');
   };
 
-  const handleRenameSave = () => {
+  const handleRenameSave = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (editingChatId && editingTitle.trim()) {
       onRenameChat(editingChatId, editingTitle.trim());
     }
     handleRenameCancel();
   };
   
-  const handleDelete = (chatId: string) => {
+  const handleDelete = (e: React.MouseEvent, chatId: string) => {
+      e.stopPropagation();
       if (window.confirm("Are you sure you want to delete this chat?")) {
           onDeleteChat(chatId);
       }
@@ -117,8 +121,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                         type="text"
                         value={editingTitle}
                         onChange={(e) => setEditingTitle(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleRenameSave()}
-                        onBlur={handleRenameCancel}
+                        onKeyDown={(e) => e.key === 'Enter' && handleRenameSave(e as any)}
+                        onBlur={() => handleRenameCancel()}
                         className="flex-grow bg-transparent focus:outline-none"
                         autoFocus
                         onClick={(e) => e.stopPropagation()}
@@ -132,7 +136,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     </>
                 )}
 
-                <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center gap-1">
                     {editingChatId === chat.id ? (
                         <>
                             <button onClick={handleRenameSave} className="p-1 rounded hover:bg-primary/30 dark:hover:bg-yellow-400/20"><CheckIcon className="w-4 h-4 text-green-500"/></button>
@@ -140,8 +144,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                         </>
                     ) : (
                         <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => handleRenameStart(chat)} className="p-1 rounded hover:bg-primary/30 dark:hover:bg-yellow-400/20"><PencilIcon className="w-4 h-4"/></button>
-                            <button onClick={() => handleDelete(chat.id)} className="p-1 rounded hover:bg-primary/30 dark:hover:bg-yellow-400/20"><TrashIcon className="w-4 h-4"/></button>
+                            <button onClick={(e) => handleRenameStart(e, chat)} className="p-1 rounded hover:bg-primary/30 dark:hover:bg-yellow-400/20"><PencilIcon className="w-4 h-4"/></button>
+                            <button onClick={(e) => handleDelete(e, chat.id)} className="p-1 rounded hover:bg-primary/30 dark:hover:bg-yellow-400/20"><TrashIcon className="w-4 h-4"/></button>
                         </div>
                     )}
                 </div>
