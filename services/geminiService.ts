@@ -32,7 +32,15 @@ export async function getAiResponse(
         }
     } catch (error) {
         console.error("Error sending message to Gemini API:", error);
-        onStream("Sorry, I encountered an error. Please try again.");
+        let detailedMessage = "Sorry, I encountered an error. Please try again.";
+        
+        if (error instanceof Error && error.message) {
+            if (error.message.includes("RESOURCE_EXHAUSTED") || error.message.includes("429")) {
+                detailedMessage = "API rate limit exceeded. Please wait and try again. For more details, check your plan and billing details.";
+            }
+        }
+        
+        throw new Error(detailedMessage);
     }
 }
 

@@ -4,7 +4,7 @@ const DB_NAME = 'CognitoAI-DB';
 const DB_VERSION = 1;
 const CHATS_STORE_NAME = 'chats';
 
-let db: IDBDatabase;
+let db: IDBDatabase | null = null;
 
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -14,16 +14,26 @@ function openDB(): Promise<IDBDatabase> {
 
     const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-    request.onerror = () => reject(request.error);
+    request.onerror = () => {
+        console.error("IndexedDB error:", request.error);
+        reject(request.error);
+    };
+    
     request.onsuccess = () => {
       db = request.result;
+      
+      db.onclose = () => {
+        console.warn("Database connection closed by browser.");
+        db = null;
+      };
+
       resolve(db);
     };
 
     request.onupgradeneeded = (event) => {
-      const db = (event.target as IDBOpenDBRequest).result;
-      if (!db.objectStoreNames.contains(CHATS_STORE_NAME)) {
-        db.createObjectStore(CHATS_STORE_NAME, { keyPath: 'id' });
+      const dbInstance = (event.target as IDBOpenDBRequest).result;
+      if (!dbInstance.objectStoreNames.contains(CHATS_STORE_NAME)) {
+        dbInstance.createObjectStore(CHATS_STORE_NAME, { keyPath: 'id' });
       }
     };
   });

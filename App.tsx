@@ -32,10 +32,16 @@ const App: React.FC = () => {
     useEffect(() => {
         const init = async () => {
             try {
+                const startTime = Date.now();
                 const loadedChats = await loadChats();
                 setChats(loadedChats);
                 if (loadedChats.length > 0) {
                     setActiveChatId(loadedChats[0].id);
+                }
+                const elapsedTime = Date.now() - startTime;
+                const minLoadingTime = 1500; // 1.5 seconds
+                if (elapsedTime < minLoadingTime) {
+                    await new Promise(resolve => setTimeout(resolve, minLoadingTime - elapsedTime));
                 }
             } catch (error) {
                 console.error("Failed to load chats from database:", error);
@@ -133,7 +139,7 @@ const App: React.FC = () => {
                 const newTitle = await getTitleForChat(finalMessages);
                 setChats(prev => prev.map(c => c.id === currentChatId ? { ...c, title: newTitle } : c));
             }
-        } catch (error) {
+        } catch (error: any) {
              console.error("Error getting AI response:", error);
             setChats(prev => prev.map(chat => {
                 if (chat.id === currentChatId) {
@@ -141,7 +147,7 @@ const App: React.FC = () => {
                         ...chat,
                         messages: chat.messages.map(msg =>
                             msg.id === modelMessageId
-                                ? { ...msg, content: "Something went wrong. Please check your connection or API key." }
+                                ? { ...msg, content: error.message || "Something went wrong. Please check your connection or API key." }
                                 : msg
                         )
                     };
@@ -189,7 +195,7 @@ const App: React.FC = () => {
                     return chat;
                 }));
             });
-        } catch (error) {
+        } catch (error: any) {
              console.error("Error regenerating AI response:", error);
              setChats(prev => prev.map(chat => {
                  if (chat.id === activeChat.id) {
@@ -197,7 +203,7 @@ const App: React.FC = () => {
                         ...chat,
                         messages: chat.messages.map(msg =>
                             msg.id === modelMessageId
-                                ? { ...msg, content: "Failed to regenerate. Please try again." }
+                                ? { ...msg, content: error.message || "Failed to regenerate. Please try again." }
                                 : msg
                         )
                     };
@@ -332,18 +338,18 @@ const App: React.FC = () => {
                     <h1 className="text-xl font-semibold text-primary dark:text-yellow-400 tracking-wider mx-auto">{activeChat?.title || 'COGNITO'}</h1>
                 </header>
                 <main className="flex-1 flex flex-col relative overflow-hidden">
-                    <div className="absolute inset-0 flex items-center justify-center opacity-5 dark:opacity-[0.02] pointer-events-none">
+                    <div className="absolute inset-0 flex items-center justify-center opacity-50 pointer-events-none">
                         <CognitoLogo className="h-96 w-96" />
                     </div>
                     <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
                         <div className="max-w-3xl mx-auto space-y-6">
-                        {!activeChatId && chats.length === 0 ? (
+                        {!activeChat ? (
                             <div className="flex flex-col items-center justify-center h-full pt-20">
                                 <CognitoLogoText />
                             </div>
                         ) : (
                             <>
-                                {activeChat?.messages.map((msg, index) => (
+                                {activeChat.messages.map((msg, index) => (
                                     <div key={msg.id} style={{ animationDelay: `${index * 100}ms` }} className="fade-in-up">
                                         <MessageComponent 
                                             message={msg}
@@ -363,7 +369,7 @@ const App: React.FC = () => {
                     <ChatInput 
                         onSendMessage={handleSendMessage} 
                         isLoading={isAiLoading} 
-                        showSuggestions={!activeChatId && chats.length === 0}
+                        showSuggestions={!activeChat || activeChat.messages.length === 0}
                     />
                 </main>
             </div>
