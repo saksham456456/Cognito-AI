@@ -10,9 +10,9 @@ import Sidebar from './components/Sidebar';
 import { MenuIcon } from './components/icons';
 import ProfileModal from './components/ProfileModal';
 import LoadingScreen from './components/LoadingScreen';
+import AboutModal from './components/AboutModal';
 
 const App: React.FC = () => {
-    const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
     const [isAiLoading, setIsAiLoading] = useState(false);
     const [chats, setChats] = useState<Chat[]>([]);
     const [activeChatId, setActiveChatId] = useState<string | null>(null);
@@ -20,6 +20,7 @@ const App: React.FC = () => {
     const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
     const [userName, setUserName] = useState(() => localStorage.getItem('userName') || 'Guest User');
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+    const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
     const [isDbLoading, setIsDbLoading] = useState(true);
     
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -53,13 +54,8 @@ const App: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        if (theme === 'dark') {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-        localStorage.setItem('theme', theme);
-    }, [theme]);
+        document.documentElement.classList.add('dark');
+    }, []);
 
     useEffect(() => {
         localStorage.setItem('userName', userName);
@@ -134,10 +130,13 @@ const App: React.FC = () => {
                 }));
             });
 
-            if (isNewChat) {
-                const finalMessages = [userMessage, { ...modelPlaceholder, content: fullResponse }];
-                const newTitle = await getTitleForChat(finalMessages);
-                setChats(prev => prev.map(c => c.id === currentChatId ? { ...c, title: newTitle } : c));
+            if (isNewChat && fullResponse.trim()) {
+                // Use the ref to get the most up-to-date message list after streaming
+                const finalChat = chatsRef.current.find(c => c.id === currentChatId);
+                if (finalChat) {
+                    const newTitle = await getTitleForChat(finalChat.messages);
+                    setChats(prev => prev.map(c => c.id === currentChatId ? { ...c, title: newTitle } : c));
+                }
             }
         } catch (error: any) {
              console.error("Error getting AI response:", error);
@@ -262,6 +261,7 @@ const App: React.FC = () => {
                 await deleteAllChats();
                 setChats([]);
                 setActiveChatId(null);
+                setIsSidebarOpen(false);
             } catch (error) {
                 console.error("Failed to delete all chats:", error);
             }
@@ -323,11 +323,10 @@ const App: React.FC = () => {
                 onDeleteChat={handleDeleteChat}
                 onDeleteAllChats={handleDeleteAllChats}
                 isSidebarOpen={isSidebarOpen}
-                theme={theme}
-                setTheme={setTheme}
                 onExportChat={handleExportChat}
                 userName={userName}
                 onProfileClick={() => setIsProfileModalOpen(true)}
+                onAboutClick={() => setIsAboutModalOpen(true)}
             />
              {isSidebarOpen && <div onClick={() => setIsSidebarOpen(false)} className="fixed inset-0 bg-black/50 z-10 md:hidden"></div>}
             <div className="flex-1 flex flex-col relative">
@@ -379,6 +378,10 @@ const App: React.FC = () => {
                 onClose={() => setIsProfileModalOpen(false)}
                 onSave={handleSaveProfile}
                 currentName={userName}
+            />
+            <AboutModal 
+                isOpen={isAboutModalOpen}
+                onClose={() => setIsAboutModalOpen(false)}
             />
         </div>
     );

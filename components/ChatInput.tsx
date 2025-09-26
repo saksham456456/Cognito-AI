@@ -8,7 +8,8 @@ interface ChatInputProps {
   showSuggestions: boolean;
 }
 
-const SuggestionButton = ({ text, onClick }: { text: string; onClick: () => void }) => (
+// FIX: Use React.FC to correctly type the component and allow for the 'key' prop used in the .map() function.
+const SuggestionButton: React.FC<{ text: string; onClick: () => void }> = ({ text, onClick }) => (
     <button
         onClick={onClick}
         className="px-4 py-2 bg-card border border-card-border dark:border-zinc-800 rounded-lg text-card-foreground/80 dark:text-gray-300 hover:bg-primary/20 hover:border-primary/50 dark:hover:bg-yellow-400/10 dark:hover:border-yellow-400/50 transition-colors duration-200"

@@ -44,7 +44,7 @@ const MessageComponent: React.FC<MessageProps> = ({ message, isLastMessage, onCo
   } ${
     isUser
       ? 'bg-primary dark:bg-yellow-500 text-primary-foreground dark:text-black rounded-br-none border border-card-border dark:border-yellow-700'
-      : 'bg-card dark:bg-[#1f1f1f] text-card-foreground dark:text-gray-200 rounded-bl-none border border-card-border dark:border-zinc-800'
+      : 'bg-white text-zinc-900 rounded-bl-none border border-gray-300'
   }`;
 
   const handleCopy = () => {
@@ -72,7 +72,7 @@ const MessageComponent: React.FC<MessageProps> = ({ message, isLastMessage, onCo
   return (
     <div className={containerClasses}>
       {!isUser && (
-        <div className="flex-shrink-0 h-8 w-8 rounded-full bg-card dark:bg-[#1f1f1f] flex items-center justify-center border border-card-border dark:border-zinc-800">
+        <div className="flex-shrink-0 h-8 w-8 rounded-full bg-white flex items-center justify-center border border-gray-300">
           <CognitoLogo className="h-6 w-6" />
         </div>
       )}

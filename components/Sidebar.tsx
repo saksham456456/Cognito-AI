@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import type { Chat } from '../types';
 import { CognitoLogo } from './Logo';
-import { PlusIcon, MessageSquareIcon, SearchIcon, PencilIcon, CheckIcon, XIcon, UserCircleIcon, SunIcon, MoonIcon, DownloadIcon, TrashIcon } from './icons';
+import { PlusIcon, MessageSquareIcon, SearchIcon, PencilIcon, CheckIcon, XIcon, UserCircleIcon, SunIcon, MoonIcon, DownloadIcon, TrashIcon, InfoIcon } from './icons';
 
 interface SidebarProps {
   chats: Chat[];
@@ -14,11 +14,10 @@ interface SidebarProps {
   onDeleteChat: (id: string) => void;
   onDeleteAllChats: () => void;
   isSidebarOpen: boolean;
-  theme: string;
-  setTheme: (theme: string) => void;
   onExportChat: () => void;
   userName: string;
   onProfileClick: () => void;
+  onAboutClick: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -30,11 +29,10 @@ const Sidebar: React.FC<SidebarProps> = ({
   onDeleteChat,
   onDeleteAllChats,
   isSidebarOpen,
-  theme,
-  setTheme,
   onExportChat,
   userName,
   onProfileClick,
+  onAboutClick,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingChatId, setEditingChatId] = useState<string | null>(null);
@@ -74,10 +72,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     onDeleteChat(id);
   }
   
-  const toggleTheme = () => {
-      setTheme(theme === 'light' ? 'dark' : 'light');
-  };
-
   return (
     <aside className={`absolute md:relative z-20 flex-shrink-0 w-80 bg-card dark:bg-[#1f1f1f] border-r border-card-border dark:border-zinc-800 flex flex-col transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
       <div className="p-4 border-b border-card-border dark:border-zinc-800 flex items-center justify-between">
@@ -157,13 +151,17 @@ const Sidebar: React.FC<SidebarProps> = ({
                       <p className="text-xs text-card-foreground/60 dark:text-gray-500">Welcome back</p>
                   </div>
               </button>
-              <div className="flex items-center gap-1">
-                <button onClick={toggleTheme} className="p-2 rounded-md hover:bg-input dark:hover:bg-[#404040] transition-colors">
-                    {theme === 'light' ? <MoonIcon className="w-5 h-5"/> : <SunIcon className="w-5 h-5"/>}
-                </button>
-              </div>
           </div>
           <ul className="space-y-1 mt-2">
+              <li>
+                  <button
+                      onClick={onAboutClick}
+                      className="w-full flex items-center gap-3 p-2 rounded-md text-sm text-card-foreground/80 dark:text-gray-300 hover:bg-input dark:hover:bg-[#292929] transition-colors group"
+                  >
+                      <InfoIcon className="w-5 h-5 text-card-foreground/60 dark:text-gray-400 transition-colors" />
+                      <span>About Cognito AI</span>
+                  </button>
+              </li>
               <li>
                   <button
                       onClick={onExportChat}
