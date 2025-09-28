@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { XIcon } from './icons';
 import { CognitoLogo } from './Logo';
@@ -40,10 +41,10 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                 Cognito AI is a modern, responsive AI assistant designed to provide intelligent answers and a seamless user experience. 
             </p>
             <p>
-                This application was developed by <strong className="text-primary dark:text-yellow-400">Saksham</strong>, a passionate frontend engineer with expertise in creating beautiful and functional user interfaces.
+                This application was developed by <strong className="text-primary dark:text-yellow-400 text-outline-sm">Saksham</strong>, a passionate frontend engineer with expertise in creating beautiful and functional user interfaces.
             </p>
             <p>
-                Powered by Google's Gemini API, Cognito AI showcases the latest in AI-driven conversation and interaction.
+                Powered by Saksham's knowledge, curiosity towards ML and DBMS Tactics, and Interests.
             </p>
         </div>
         <div className="mt-6 flex justify-end">

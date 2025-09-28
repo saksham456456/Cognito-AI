@@ -13,6 +13,20 @@
       body {
         font-family: 'Inter', sans-serif;
       }
+      .text-outline {
+        text-shadow:
+          -1px -1px 0 #000,  
+           1px -1px 0 #000,
+          -1px  1px 0 #000,
+           1px  1px 0 #000;
+      }
+      .text-outline-sm {
+        text-shadow:
+          -0.5px -0.5px 0 #000,  
+           0.5px -0.5px 0 #000,
+          -0.5px  0.5px 0 #000,
+           0.5px  0.5px 0 #000;
+      }
       .fade-in-up {
         animation: fadeInUp 0.5s ease-out forwards;
         opacity: 0;
@@ -76,10 +90,10 @@
             },
             'text-glow': {
               '0%, 100%': { 
-                textShadow: '0 0 10px hsl(45 90% 60% / 0.6), 0 0 20px hsl(45 90% 60% / 0.3)' 
+                textShadow: '0 0 10px hsl(45 90% 60% / 0.6), 0 0 20px hsl(45 90% 60% / 0.3), -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000' 
               },
               '50%': { 
-                textShadow: '0 0 20px hsl(45 90% 60% / 0.8), 0 0 40px hsl(45 90% 60% / 0.5)' 
+                textShadow: '0 0 20px hsl(45 90% 60% / 0.8), 0 0 40px hsl(45 90% 60% / 0.5), -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000' 
               },
             },
             'shimmer-load': {

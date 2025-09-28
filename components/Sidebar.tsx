@@ -81,7 +81,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       <div className="p-4 border-b border-card-border dark:border-zinc-800 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <CognitoLogo className="h-8 w-8" />
-          <h1 className="text-xl font-semibold text-primary dark:text-yellow-400 tracking-wider">COGNITO</h1>
+          <h1 className="text-xl font-semibold text-primary dark:text-yellow-400 tracking-wider text-outline">COGNITO</h1>
         </div>
         <button onClick={onNewChat} className="p-2 rounded-md hover:bg-input dark:hover:bg-[#292929] transition-colors border border-transparent hover:border-card-border dark:hover:border-zinc-700">
           <PlusIcon className="w-6 h-6" />

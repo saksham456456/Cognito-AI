@@ -138,12 +138,16 @@ const App: React.FC = () => {
             });
 
             if (isNewChat && fullResponse.trim()) {
-                // Use the ref to get the most up-to-date message list after streaming
-                const finalChat = chatsRef.current.find(c => c.id === currentChatId);
-                if (finalChat) {
-                    const newTitle = await getTitleForChat(finalChat.messages);
-                    setChats(prev => prev.map(c => c.id === currentChatId ? { ...c, title: newTitle } : c));
-                }
+                const finalModelMessage: Message = { id: modelMessageId, role: 'model', content: fullResponse };
+                const messagesForTitle: Message[] = [userMessage, finalModelMessage];
+
+                getTitleForChat(messagesForTitle)
+                    .then(newTitle => {
+                        setChats(prev => prev.map(c => c.id === currentChatId ? { ...c, title: newTitle } : c));
+                    })
+                    .catch(error => {
+                        console.error("Error generating title for new chat:", error);
+                    });
             }
         } catch (error: any) {
              console.error("Error getting AI response:", error);
@@ -347,7 +351,7 @@ const App: React.FC = () => {
                     <button onClick={() => setIsSidebarOpen(true)} className="p-1 rounded-md border border-transparent hover:border-card-border dark:hover:border-zinc-700 absolute left-4 top-1/2 -translate-y-1/2 md:hidden">
                         <MenuIcon className="h-6 w-6" />
                     </button>
-                    <h1 className={`text-xl font-semibold tracking-wider text-center truncate px-12 md:px-0 ${activeChat ? 'text-primary dark:text-yellow-400' : 'text-card-foreground/70 dark:text-gray-400'}`}>
+                    <h1 className={`text-xl font-semibold tracking-wider text-center truncate px-12 md:px-0 ${activeChat ? 'text-primary dark:text-yellow-400 text-outline' : 'text-card-foreground/70 dark:text-gray-400'}`}>
                         {activeChat ? activeChat.title : 'Your Personal AI Assistant'}
                     </h1>
                 </header>
@@ -362,7 +366,7 @@ const App: React.FC = () => {
                                     <CognitoLogo className="w-24 h-24" />
                                     <div className="text-center">
                                         <h1 className="text-3xl font-bold text-card-foreground dark:text-gray-200">Hello, {userName}!</h1>
-                                        <p className="text-card-foreground/60 dark:text-gray-400">How can I help you today?</p>
+                                        <p className="mt-1 text-lg text-card-foreground/80 dark:text-gray-300">How can I help you today?</p>
                                     </div>
                                 </div>
                             </div>
