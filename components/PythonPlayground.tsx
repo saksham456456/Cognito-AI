@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { CodeBracketIcon } from './icons';
+import PythonLoadingScreen from './PythonLoadingScreen';
+import { MenuIcon } from './icons';
 
 declare global {
     interface Window {
@@ -7,38 +8,53 @@ declare global {
     }
 }
 
-const PythonPlayground: React.FC = () => {
+interface PythonPlaygroundProps {
+    onToggleSidebar: () => void;
+}
+
+const PythonPlayground: React.FC<PythonPlaygroundProps> = ({ onToggleSidebar }) => {
     const [code, setCode] = useState('print("Hello, Python!")');
     const [output, setOutput] = useState('');
     const [error, setError] = useState('');
     const [isPyodideLoading, setIsPyodideLoading] = useState(true);
+    const [showSplashScreen, setShowSplashScreen] = useState(true);
     const [isExecuting, setIsExecuting] = useState(false);
     const pyodideRef = useRef<any>(null);
 
     useEffect(() => {
-        const loadPyodide = async () => {
+        // This timer controls how long the splash screen is visible
+        const splashTimer = setTimeout(() => {
+            setShowSplashScreen(false);
+        }, 5000); // 5 seconds
+
+        // This function loads the actual Python environment in the background
+        const loadPyodideEnvironment = async () => {
             try {
                 if (window.loadPyodide) {
                     const pyodide = await window.loadPyodide({
                         indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.25.1/full/',
                     });
                     pyodideRef.current = pyodide;
-                    setIsPyodideLoading(false);
                 } else {
                     setError("Pyodide script not loaded yet. Please refresh.");
                 }
             } catch (err) {
                 console.error('Pyodide loading error:', err);
                 setError('Failed to load Python environment. Please check your network connection and try again.');
+            } finally {
                 setIsPyodideLoading(false);
             }
         };
-        loadPyodide();
+        
+        loadPyodideEnvironment();
+
+        // Cleanup the timer if the component unmounts
+        return () => clearTimeout(splashTimer);
     }, []);
 
     const runCode = async () => {
         const pyodide = pyodideRef.current;
-        if (!pyodide) return;
+        if (!pyodide || isPyodideLoading) return;
 
         setIsExecuting(true);
         setOutput('');
@@ -72,9 +88,16 @@ const PythonPlayground: React.FC = () => {
         }
     };
 
+    if (showSplashScreen) {
+        return <PythonLoadingScreen />;
+    }
+
     return (
         <div className="flex flex-col h-full bg-background dark:bg-[#141414]">
             <header className="flex items-center justify-center p-4 border-b border-card-border dark:border-zinc-800 relative">
+                <button onClick={onToggleSidebar} className="p-1 rounded-md border border-transparent hover:border-card-border dark:hover:border-zinc-700 absolute left-4 top-1/2 -translate-y-1/2 md:hidden">
+                    <MenuIcon className="h-6 w-6" />
+                </button>
                 <h1 className="text-xl font-semibold tracking-wider text-center text-primary dark:text-yellow-400 text-outline">
                     Python Playground
                 </h1>
@@ -86,10 +109,15 @@ const PythonPlayground: React.FC = () => {
                         <h2 className="font-semibold text-card-foreground/80 dark:text-gray-300">Editor</h2>
                         <button
                             onClick={runCode}
-                            disabled={isPyodideLoading || isExecuting}
+                            disabled={isExecuting || isPyodideLoading}
                             className="px-4 py-1.5 rounded-lg bg-primary dark:bg-yellow-400 text-primary-foreground dark:text-black hover:bg-yellow-400 dark:hover:bg-yellow-300 transition-colors border border-primary-foreground/20 dark:border-transparent text-sm font-bold disabled:opacity-50 disabled:cursor-wait flex items-center gap-2"
                         >
-                            {isExecuting ? (
+                            {isPyodideLoading ? (
+                                <>
+                                 <div className="w-4 h-4 border-2 border-primary-foreground dark:border-black border-t-transparent rounded-full animate-spin"></div>
+                                 <span>Initializing...</span>
+                                </>
+                            ) : isExecuting ? (
                                 <>
                                 <div className="w-4 h-4 border-2 border-primary-foreground dark:border-black border-t-transparent rounded-full animate-spin"></div>
                                 <span>Running...</span>
@@ -114,24 +142,17 @@ const PythonPlayground: React.FC = () => {
                         <h2 className="font-semibold text-card-foreground/80 dark:text-gray-300">Console</h2>
                     </div>
                     <div className="flex-1 p-3 bg-input dark:bg-[#292929] border border-input-border dark:border-zinc-700 rounded-b-lg overflow-y-auto custom-scrollbar">
-                        {isPyodideLoading ? (
-                            <div className="flex items-center gap-2 text-card-foreground/60 dark:text-gray-400">
-                                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-                                <span>Initializing Python environment...</span>
-                            </div>
-                        ) : (
-                            <pre className="text-sm font-mono whitespace-pre-wrap">
-                                {error ? (
-                                    <code className="text-red-500">{error}</code>
-                                ) : output ? (
-                                    <code className="text-card-foreground dark:text-gray-200">{output}</code>
-                                ) : (
-                                    <code className="text-card-foreground/50 dark:text-gray-500">
-                                        Click "Run Code" to see the output here.
-                                    </code>
-                                )}
-                            </pre>
-                        )}
+                        <pre className="text-sm font-mono whitespace-pre-wrap">
+                            {error ? (
+                                <code className="text-red-500">{error}</code>
+                            ) : output ? (
+                                <code className="text-card-foreground dark:text-gray-200">{output}</code>
+                            ) : (
+                                <code className="text-card-foreground/50 dark:text-gray-500">
+                                    Click "Run Code" to see the output here.
+                                </code>
+                            )}
+                        </pre>
                     </div>
                 </div>
             </div>

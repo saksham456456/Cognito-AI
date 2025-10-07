@@ -14,6 +14,7 @@ import LoadingScreen from './components/LoadingScreen';
 import AboutModal from './components/AboutModal';
 import ConfirmationModal from './components/ConfirmationModal';
 import PythonPlayground from './components/PythonPlayground';
+import PythonDisintegrationScreen from './components/PythonDisintegrationScreen';
 
 const App: React.FC = () => {
     const [isAiLoading, setIsAiLoading] = useState(false);
@@ -28,6 +29,7 @@ const App: React.FC = () => {
     const [isDbLoading, setIsDbLoading] = useState(true);
     const [theme, setTheme] = useState<'light' | 'dark'>(() => (localStorage.getItem('theme') as 'light' | 'dark') || 'dark');
     const [currentView, setCurrentView] = useState<'chat' | 'python'>('chat');
+    const [isDisintegrating, setIsDisintegrating] = useState(false);
     
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const saveTimeoutRef = useRef<number | null>(null);
@@ -333,6 +335,20 @@ const App: React.FC = () => {
         setTheme(prev => prev === 'dark' ? 'light' : 'dark');
     };
 
+    const handleViewChange = (view: 'chat' | 'python') => {
+        if (isDisintegrating) return;
+
+        if (currentView === 'python' && view === 'chat') {
+            setIsDisintegrating(true);
+            setTimeout(() => {
+                setCurrentView('chat');
+                setIsDisintegrating(false);
+            }, 4000); // 4-second animation
+        } else {
+            setCurrentView(view);
+        }
+    };
+
     if (isDbLoading) {
         return <LoadingScreen />;
     }
@@ -355,11 +371,13 @@ const App: React.FC = () => {
                 theme={theme}
                 onToggleTheme={handleToggleTheme}
                 currentView={currentView}
-                onViewChange={setCurrentView}
+                onViewChange={handleViewChange}
             />
              {isSidebarOpen && <div onClick={() => setIsSidebarOpen(false)} className="fixed inset-0 bg-black/50 z-10 md:hidden"></div>}
             <div className="flex-1 flex flex-col relative">
-                {currentView === 'chat' ? (
+                 {isDisintegrating ? (
+                    <PythonDisintegrationScreen />
+                 ) : currentView === 'chat' ? (
                     <>
                         <header className="flex items-center justify-center p-4 border-b border-card-border dark:border-zinc-800 relative">
                             <button onClick={() => setIsSidebarOpen(true)} className="p-1 rounded-md border border-transparent hover:border-card-border dark:hover:border-zinc-700 absolute left-4 top-1/2 -translate-y-1/2 md:hidden">
@@ -410,7 +428,7 @@ const App: React.FC = () => {
                         </main>
                     </>
                 ) : (
-                    <PythonPlayground />
+                    <PythonPlayground onToggleSidebar={() => setIsSidebarOpen(true)} />
                 )}
             </div>
 
