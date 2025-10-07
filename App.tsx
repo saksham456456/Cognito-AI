@@ -336,7 +336,7 @@ const App: React.FC = () => {
     }
 
     return (
-        <div className="bg-background dark:bg-[#141414] min-h-screen flex text-card-foreground dark:text-gray-200 overflow-hidden">
+        <div className="bg-background dark:bg-[#141414] h-screen flex text-card-foreground dark:text-gray-200 overflow-hidden">
             <Sidebar 
                 chats={chats}
                 activeChatId={activeChatId}
@@ -363,7 +363,7 @@ const App: React.FC = () => {
                         {activeChat ? activeChat.title : 'Your Personal AI Assistant'}
                     </h1>
                 </header>
-                <main className="flex-1 flex flex-col relative overflow-hidden">
+                <main className="flex-1 flex flex-col relative overflow-hidden min-h-0">
                     <div className="absolute inset-0 flex items-center justify-center opacity-10 dark:opacity-50 pointer-events-none watermark">
                         <CognitoLogo className="h-96 w-96" />
                     </div>

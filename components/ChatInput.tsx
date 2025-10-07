@@ -1,6 +1,5 @@
-
 import React, { useState, useRef, useEffect } from 'react';
-import { SendIcon } from './icons';
+import { SendIcon, EmojiHappyIcon } from './icons';
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
@@ -21,6 +20,9 @@ const SuggestionButton: React.FC<{ text: string; onClick: () => void }> = ({ tex
 const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, showSuggestions }) => {
   const [inputValue, setInputValue] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
+  const emojiPickerRef = useRef<HTMLDivElement>(null);
+  const emojiButtonRef = useRef<HTMLButtonElement>(null);
   
   const suggestions = [
       "Give me ideas",
@@ -40,6 +42,26 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, showSug
       textareaRef.current.style.height = `${scrollHeight}px`;
     }
   }, [inputValue]);
+  
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+        if (
+            isEmojiPickerOpen &&
+            emojiPickerRef.current && !emojiPickerRef.current.contains(event.target as Node) &&
+            emojiButtonRef.current && !emojiButtonRef.current.contains(event.target as Node)
+        ) {
+            setIsEmojiPickerOpen(false);
+        }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isEmojiPickerOpen]);
+
+  const handleEmojiSelect = (emoji: string) => {
+    setInputValue(prev => prev + emoji);
+    textareaRef.current?.focus();
+  };
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,29 +87,57 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, showSug
                 ))}
             </div>
         )}
-        <form onSubmit={handleSubmit} className="flex items-end gap-2 p-2 bg-input dark:bg-[#292929] rounded-xl border border-input-border dark:border-zinc-700 focus-within:border-primary dark:focus-within:border-yellow-400 transition-colors">
-        <textarea
-            ref={textareaRef}
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Ask me anything..."
-            rows={1}
-            className="flex-grow bg-transparent text-card-foreground dark:text-gray-200 placeholder-card-foreground/50 dark:placeholder-gray-500 resize-none focus:outline-none p-2 max-h-48 scrollbar-thin"
-            disabled={isLoading}
-        />
-        <button
-            type="submit"
-            disabled={isLoading || !inputValue.trim()}
-            className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary dark:bg-yellow-400 text-primary-foreground dark:text-black flex items-center justify-center transition-opacity duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-yellow-400 dark:hover:bg-yellow-300 border border-primary-foreground/20 dark:border-transparent"
-        >
-            {isLoading ? (
-                <div className="w-5 h-5 border-2 border-primary-foreground dark:border-black border-t-transparent rounded-full animate-spin"></div>
-            ) : (
-                <SendIcon className="w-6 h-6" />
+        <div className="relative">
+             {isEmojiPickerOpen && (
+                <div ref={emojiPickerRef} className="absolute bottom-full mb-2 w-80 bg-card dark:bg-[#1f1f1f] border border-card-border dark:border-zinc-700 rounded-xl p-3 shadow-lg z-10 fade-in-up" style={{ animationDuration: '200ms'}}>
+                    <div className="grid grid-cols-8 gap-1">
+                        {['😀', '😂', '😍', '🤔', '👍', '🙏', '🚀', '🎉', '💡', '🔥', '❤️', '💯', '😊', '😭', '🤯', '👋'].map(emoji => (
+                            <button
+                                key={emoji}
+                                onClick={() => handleEmojiSelect(emoji)}
+                                className="p-1 rounded-lg text-2xl hover:bg-input dark:hover:bg-[#292929] transition-colors"
+                                aria-label={`Emoji ${emoji}`}
+                            >
+                                {emoji}
+                            </button>
+                        ))}
+                    </div>
+                </div>
             )}
-        </button>
-        </form>
+            <form onSubmit={handleSubmit} className="flex items-end gap-2 p-2 bg-input dark:bg-[#292929] rounded-xl border border-input-border dark:border-zinc-700 focus-within:border-primary dark:focus-within:border-yellow-400 transition-colors">
+                <button
+                    type="button"
+                    ref={emojiButtonRef}
+                    onClick={() => setIsEmojiPickerOpen(prev => !prev)}
+                    className="flex-shrink-0 w-10 h-10 rounded-lg text-card-foreground/60 dark:text-gray-400 hover:bg-primary/20 dark:hover:bg-yellow-400/10 flex items-center justify-center transition-colors disabled:opacity-50"
+                    aria-label="Add emoji"
+                    disabled={isLoading}
+                >
+                    <EmojiHappyIcon className="w-6 h-6" />
+                </button>
+                <textarea
+                    ref={textareaRef}
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Ask me anything..."
+                    rows={1}
+                    className="flex-grow bg-transparent text-card-foreground dark:text-gray-200 placeholder-card-foreground/50 dark:placeholder-gray-500 resize-none focus:outline-none p-2 max-h-48 scrollbar-thin"
+                    disabled={isLoading}
+                />
+                <button
+                    type="submit"
+                    disabled={isLoading || !inputValue.trim()}
+                    className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary dark:bg-yellow-400 text-primary-foreground dark:text-black flex items-center justify-center transition-opacity duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-yellow-400 dark:hover:bg-yellow-300 border border-primary-foreground/20 dark:border-transparent"
+                >
+                    {isLoading ? (
+                        <div className="w-5 h-5 border-2 border-primary-foreground dark:border-black border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                        <SendIcon className="w-6 h-6" />
+                    )}
+                </button>
+            </form>
+        </div>
     </div>
   );
 };

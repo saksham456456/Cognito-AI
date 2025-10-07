@@ -15,9 +15,9 @@ interface MessageProps {
 
 const TypingIndicator = () => (
     <div className="flex items-center gap-1.5">
-      <span className="h-2 w-2 bg-card-foreground/50 dark:bg-gray-500 rounded-full animate-typing-bounce [animation-delay:-0.3s]"></span>
-      <span className="h-2 w-2 bg-card-foreground/50 dark:bg-gray-500 rounded-full animate-typing-bounce [animation-delay:-0.15s]"></span>
-      <span className="h-2 w-2 bg-card-foreground/50 dark:bg-gray-500 rounded-full animate-typing-bounce"></span>
+      <span className="h-2 w-2 bg-card/50 dark:bg-gray-500 rounded-full animate-typing-bounce [animation-delay:-0.3s]"></span>
+      <span className="h-2 w-2 bg-card/50 dark:bg-gray-500 rounded-full animate-typing-bounce [animation-delay:-0.15s]"></span>
+      <span className="h-2 w-2 bg-card/50 dark:bg-gray-500 rounded-full animate-typing-bounce"></span>
     </div>
 );
 
@@ -44,7 +44,7 @@ const MessageComponent: React.FC<MessageProps> = ({ message, isLastMessage, onCo
   } ${
     isUser
       ? 'bg-primary dark:bg-yellow-500 text-primary-foreground dark:text-black rounded-br-none border border-card-border dark:border-yellow-700'
-      : 'bg-zinc-900 text-gray-100 dark:bg-gray-100 dark:text-zinc-900 rounded-bl-none border border-zinc-700 dark:border-gray-300'
+      : 'bg-card-foreground text-card dark:bg-card dark:text-card-foreground rounded-bl-none border border-input-border dark:border-zinc-700'
   }`;
 
   const handleCopy = () => {

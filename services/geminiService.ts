@@ -66,7 +66,7 @@ export async function getTitleForChat(messages: Message[]): Promise<string> {
     if (messages.length < 2) return "New Conversation";
     
     const conversationForTitle = messages.slice(0, 2).map(m => `${m.role === 'user' ? 'User' : 'Cognito'}: ${m.content}`).join('\n');
-    const prompt = `Generate a short, concise title (3-5 words) for this conversation:\n\n${conversationForTitle}`;
+    const prompt = `Summarize this conversation with a short, 3-5 word title. Don't use quotes or periods.\n\n${conversationForTitle}`;
 
     try {
         const response = await ai.models.generateContent({
