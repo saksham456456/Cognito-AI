@@ -50,13 +50,13 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         <div className="mt-6 flex justify-end gap-3">
             <button
                 onClick={onClose}
-                className="px-4 py-2 rounded-lg bg-input hover:bg-input-border dark:bg-[#292929] dark:hover:bg-[#404040] transition-colors border border-card-border dark:border-zinc-700"
+                className="px-4 py-2 rounded-lg bg-input hover:bg-input-border dark:bg-[#292929] dark:hover:bg-[#404040] transition-colors border border-card-border dark:border-zinc-700 text-outline-sm"
             >
                 Cancel
             </button>
             <button
                 onClick={onConfirm}
-                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
+                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors text-outline-sm"
             >
                 {confirmButtonText}
             </button>

@@ -68,13 +68,13 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onSave, cu
         <div className="mt-6 flex justify-end gap-3">
             <button
                 onClick={onClose}
-                className="px-4 py-2 rounded-lg bg-input hover:bg-input-border dark:bg-[#292929] dark:hover:bg-[#404040] transition-colors border border-card-border dark:border-zinc-700"
+                className="px-4 py-2 rounded-lg bg-input hover:bg-input-border dark:bg-[#292929] dark:hover:bg-[#404040] transition-colors border border-card-border dark:border-zinc-700 text-outline-sm"
             >
                 Cancel
             </button>
             <button
                 onClick={handleSave}
-                className="px-4 py-2 rounded-lg bg-primary dark:bg-yellow-400 text-primary-foreground dark:text-black hover:bg-yellow-400 dark:hover:bg-yellow-300 transition-colors border border-primary-foreground/20 dark:border-transparent"
+                className="px-4 py-2 rounded-lg bg-primary dark:bg-yellow-400 text-primary-foreground dark:text-black hover:bg-yellow-400 dark:hover:bg-yellow-300 transition-colors border border-primary-foreground/20 dark:border-transparent text-outline-sm"
             >
                 Save Changes
             </button>

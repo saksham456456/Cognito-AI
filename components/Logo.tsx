@@ -21,8 +21,17 @@ export const CognitoLogo = ({ className }: { className?: string }) => {
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
+        <filter id="outline">
+            <feMorphology in="SourceAlpha" result="expanded" operator="dilate" radius="1.5" />
+            <feFlood flood-color="black" result="color" />
+            <feComposite in="color" in2="expanded" operator="in" result="outline" />
+            <feMerge>
+                <feMergeNode in="outline" />
+                <feMergeNode in="SourceGraphic" />
+            </feMerge>
+        </filter>
       </defs>
-      <g stroke="url(#goldGradient)" fill="none" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" filter="url(#glow)">
+      <g className="logo-graphic" stroke="url(#goldGradient)" fill="none" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
         {/* Outer Arcs */}
         <path d="M 30 25 A 50 50 0 0 1 130 25" />
         <path d="M 30 135 A 50 50 0 0 0 130 135" transform="rotate(180, 80, 80)" />

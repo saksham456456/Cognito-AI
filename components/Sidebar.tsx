@@ -123,7 +123,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 ) : (
                     <div className="flex items-center gap-3 truncate">
                         <MessageSquareIcon className="w-5 h-5 flex-shrink-0" />
-                        <span className="truncate">{chat.title}</span>
+                        <span className="truncate text-outline-sm">{chat.title}</span>
                     </div>
                 )}
 
@@ -165,7 +165,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                       {theme === 'light' 
                           ? <MoonIcon className="w-5 h-5 text-card-foreground/60 dark:text-gray-400" /> 
                           : <SunIcon className="w-5 h-5 text-card-foreground/60 dark:text-gray-400" />}
-                      <span>{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>
+                      <span className="text-outline-sm">{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>
                   </button>
               </li>
               <li>
@@ -174,7 +174,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                       className="w-full flex items-center gap-3 p-2 rounded-md text-sm text-card-foreground/80 dark:text-gray-300 hover:bg-input dark:hover:bg-[#292929] transition-colors group"
                   >
                       <InfoIcon className="w-5 h-5 text-card-foreground/60 dark:text-gray-400 transition-colors" />
-                      <span>About Cognito AI</span>
+                      <span className="text-outline-sm">About Cognito AI</span>
                   </button>
               </li>
               <li>
@@ -184,7 +184,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                       className="w-full flex items-center gap-3 p-2 rounded-md text-sm text-card-foreground/80 dark:text-gray-300 hover:bg-input dark:hover:bg-[#292929] transition-colors group disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                       <DownloadIcon className="w-5 h-5 text-card-foreground/60 dark:text-gray-400 transition-colors" />
-                      <span>Export Chat</span>
+                      <span className="text-outline-sm">Export Chat</span>
                   </button>
               </li>
               <li>
@@ -194,7 +194,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                       className="w-full flex items-center gap-3 p-2 rounded-md text-sm text-red-500 hover:bg-red-500/10 transition-colors group disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                       <TrashIcon className="w-5 h-5" />
-                      <span>Clear Conversations</span>
+                      <span className="text-outline-sm">Clear Conversations</span>
                   </button>
               </li>
           </ul>

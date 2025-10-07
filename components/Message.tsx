@@ -45,7 +45,7 @@ const MessageComponent: React.FC<MessageProps> = ({ message, isLastMessage, onCo
   } ${
     isUser
       ? 'bg-primary dark:bg-yellow-500 text-primary-foreground dark:text-black rounded-br-none border border-card-border dark:border-yellow-700'
-      : 'bg-black text-white dark:bg-white dark:text-black rounded-bl-none border border-transparent'
+      : 'bg-card text-card-foreground dark:bg-[#1f1f1f] dark:text-gray-200 rounded-bl-none border border-card-border dark:border-zinc-800'
   }`;
 
   const handleCopy = () => {
