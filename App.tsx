@@ -13,6 +13,7 @@ import ProfileModal from './components/ProfileModal';
 import LoadingScreen from './components/LoadingScreen';
 import AboutModal from './components/AboutModal';
 import ConfirmationModal from './components/ConfirmationModal';
+import PythonPlayground from './components/PythonPlayground';
 
 const App: React.FC = () => {
     const [isAiLoading, setIsAiLoading] = useState(false);
@@ -26,6 +27,7 @@ const App: React.FC = () => {
     const [isConfirmDeleteAllOpen, setIsConfirmDeleteAllOpen] = useState(false);
     const [isDbLoading, setIsDbLoading] = useState(true);
     const [theme, setTheme] = useState<'light' | 'dark'>(() => (localStorage.getItem('theme') as 'light' | 'dark') || 'dark');
+    const [currentView, setCurrentView] = useState<'chat' | 'python'>('chat');
     
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const saveTimeoutRef = useRef<number | null>(null);
@@ -352,56 +354,64 @@ const App: React.FC = () => {
                 onAboutClick={() => setIsAboutModalOpen(true)}
                 theme={theme}
                 onToggleTheme={handleToggleTheme}
+                currentView={currentView}
+                onViewChange={setCurrentView}
             />
              {isSidebarOpen && <div onClick={() => setIsSidebarOpen(false)} className="fixed inset-0 bg-black/50 z-10 md:hidden"></div>}
             <div className="flex-1 flex flex-col relative">
-                <header className="flex items-center justify-center p-4 border-b border-card-border dark:border-zinc-800 relative">
-                    <button onClick={() => setIsSidebarOpen(true)} className="p-1 rounded-md border border-transparent hover:border-card-border dark:hover:border-zinc-700 absolute left-4 top-1/2 -translate-y-1/2 md:hidden">
-                        <MenuIcon className="h-6 w-6" />
-                    </button>
-                    <h1 className={`text-xl font-semibold tracking-wider text-center truncate px-12 md:px-0 ${activeChat ? 'text-primary dark:text-yellow-400 text-outline' : 'text-card-foreground/70 dark:text-gray-400 text-outline-sm'}`}>
-                        {activeChat ? activeChat.title : 'Your Personal AI Assistant'}
-                    </h1>
-                </header>
-                <main className="flex-1 flex flex-col relative overflow-hidden min-h-0">
-                    <div className="absolute inset-0 flex items-center justify-center opacity-10 dark:opacity-50 pointer-events-none watermark">
-                        <CognitoLogo className="h-96 w-96" />
-                    </div>
-                    <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-                        {!activeChat ? (
-                           <div className="flex h-full items-center justify-center">
-                                <div className="relative text-center flex flex-col items-center gap-4" style={{ top: '-5rem' }}>
-                                    <CognitoLogo className="w-24 h-24" />
-                                    <div className="text-center">
-                                        <h1 className="text-3xl font-bold text-card-foreground dark:text-gray-200 text-outline-sm">Hello, {userName}!</h1>
-                                        <p className="mt-1 text-lg text-card-foreground/80 dark:text-gray-300 text-outline-sm">How can I help you today?</p>
-                                    </div>
-                                </div>
+                {currentView === 'chat' ? (
+                    <>
+                        <header className="flex items-center justify-center p-4 border-b border-card-border dark:border-zinc-800 relative">
+                            <button onClick={() => setIsSidebarOpen(true)} className="p-1 rounded-md border border-transparent hover:border-card-border dark:hover:border-zinc-700 absolute left-4 top-1/2 -translate-y-1/2 md:hidden">
+                                <MenuIcon className="h-6 w-6" />
+                            </button>
+                            <h1 className={`text-xl font-semibold tracking-wider text-center truncate px-12 md:px-0 ${activeChat ? 'text-primary dark:text-yellow-400 text-outline' : 'text-card-foreground/70 dark:text-gray-400 text-outline-sm'}`}>
+                                {activeChat ? activeChat.title : 'Your Personal AI Assistant'}
+                            </h1>
+                        </header>
+                        <main className="flex-1 flex flex-col relative overflow-hidden min-h-0">
+                            <div className="absolute inset-0 flex items-center justify-center opacity-10 dark:opacity-50 pointer-events-none watermark">
+                                <CognitoLogo className="h-96 w-96" />
                             </div>
-                        ) : (
-                            <div className="max-w-3xl mx-auto space-y-6">
-                                {activeChat.messages.map((msg, index) => (
-                                    <div key={msg.id} style={{ animationDelay: `${index * 100}ms` }} className="fade-in-up">
-                                        <MessageComponent 
-                                            message={msg}
-                                            isLastMessage={index === activeChat.messages.length - 1 && msg.role === 'model'}
-                                            onCopy={handleCopyText}
-                                            onSpeak={handleToggleSpeak}
-                                            onRegenerate={handleRegenerateResponse}
-                                            speakingMessageId={speakingMessageId}
-                                        />
+                            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                                {!activeChat ? (
+                                <div className="flex h-full items-center justify-center">
+                                        <div className="relative text-center flex flex-col items-center gap-4" style={{ top: '-5rem' }}>
+                                            <CognitoLogo className="w-24 h-24" />
+                                            <div className="text-center">
+                                                <h1 className="text-3xl font-bold text-card-foreground dark:text-gray-200 text-outline-sm">Hello, {userName}!</h1>
+                                                <p className="mt-1 text-lg text-card-foreground/80 dark:text-gray-300 text-outline-sm">How can I help you today?</p>
+                                            </div>
+                                        </div>
                                     </div>
-                                ))}
-                                <div ref={messagesEndRef} />
+                                ) : (
+                                    <div className="max-w-3xl mx-auto space-y-6">
+                                        {activeChat.messages.map((msg, index) => (
+                                            <div key={msg.id} style={{ animationDelay: `${index * 100}ms` }} className="fade-in-up">
+                                                <MessageComponent 
+                                                    message={msg}
+                                                    isLastMessage={index === activeChat.messages.length - 1 && msg.role === 'model'}
+                                                    onCopy={handleCopyText}
+                                                    onSpeak={handleToggleSpeak}
+                                                    onRegenerate={handleRegenerateResponse}
+                                                    speakingMessageId={speakingMessageId}
+                                                />
+                                            </div>
+                                        ))}
+                                        <div ref={messagesEndRef} />
+                                    </div>
+                                )}
                             </div>
-                        )}
-                    </div>
-                    <ChatInput 
-                        onSendMessage={handleSendMessage} 
-                        isLoading={isAiLoading} 
-                        showSuggestions={!activeChat || activeChat.messages.length === 0}
-                    />
-                </main>
+                            <ChatInput 
+                                onSendMessage={handleSendMessage} 
+                                isLoading={isAiLoading} 
+                                showSuggestions={!activeChat || activeChat.messages.length === 0}
+                            />
+                        </main>
+                    </>
+                ) : (
+                    <PythonPlayground />
+                )}
             </div>
 
             <ProfileModal 
