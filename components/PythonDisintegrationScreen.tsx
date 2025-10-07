@@ -1,99 +1,68 @@
 import React, { useState, useEffect } from 'react';
 import { CognitoLogo } from './Logo';
 
+// Python view se bahar aate waqt dikhne wale messages ka array.
 const disintegrationMessages = [
-    "Terminating Python session...",
-    "Releasing virtual resources...",
-    "Cleaning up workspace...",
-    "Switching back to chat mode...",
-    "Done!",
+    "Python session ko band kiya ja raha hai...",
+    "Virtual resources ko free kiya ja raha hai...",
+    "Memory caches ko saaf kiya ja raha hai...",
+    "Py-Core ko disengage kiya ja raha hai...",
+    "Primary interface par wapas ja rahe hain.",
 ];
 
-const CircularProgress = ({ progress }: { progress: number }) => {
-    const radius = 54;
-    const stroke = 6;
-    const normalizedRadius = radius - stroke * 2;
-    const circumference = normalizedRadius * 2 * Math.PI;
-    const strokeDashoffset = circumference - (progress / 100) * circumference;
-
+// Glitch effect ke sath text dikhane wala component.
+const GlitchText = ({ text }: { text: string }) => {
     return (
-        <svg
-            height={radius * 2}
-            width={radius * 2}
-            viewBox={`0 0 ${radius * 2} ${radius * 2}`}
-            className="-rotate-90"
-        >
-            <defs>
-                <linearGradient id="pythonDisintegrationGradient" x1="100%" y1="100%" x2="0%" y2="0%">
-                    <stop offset="0%" stopColor="#387EB8" /> 
-                    <stop offset="100%" stopColor="#FFD43B" />
-                </linearGradient>
-            </defs>
-            <circle
-                stroke="hsl(0 0% 90% / 0.1)"
-                className="dark:stroke-zinc-800"
-                fill="transparent"
-                strokeWidth={stroke}
-                r={normalizedRadius}
-                cx={radius}
-                cy={radius}
-            />
-            <circle
-                stroke="url(#pythonDisintegrationGradient)"
-                fill="transparent"
-                strokeWidth={stroke}
-                strokeDasharray={circumference + ' ' + circumference}
-                style={{ strokeDashoffset, transition: 'stroke-dashoffset 3.5s cubic-bezier(0.4, 0.2, 0, 1)' }}
-                r={normalizedRadius}
-                cx={radius}
-                cy={radius}
-                strokeLinecap="round"
-            />
-        </svg>
-    );
-};
+        <div className="relative font-heading text-2xl font-bold text-text-light uppercase tracking-wider" style={{ textShadow: '0 0 5px var(--primary-glow)'}}>
+            {/* Text ko teen hisso me
+            n (layers) me render karke alag-alag animation delay se glitch effect banate hain */}
+            <span className="absolute inset-0 animate-glitch opacity-80" style={{ animationDelay: '0.2s', clipPath: 'polygon(0 0, 100% 0, 100% 33%, 0 33%)' }}>{text}</span>
+            <span className="animate-glitch opacity-80" style={{ clipPath: 'polygon(0 33%, 100% 33%, 100% 66%, 0 66%)' }}>{text}</span>
+            <span className="absolute inset-0 animate-glitch opacity-80" style={{ animationDelay: '0.5s', clipPath: 'polygon(0 66%, 100% 66%, 100% 100%, 0 100%)' }}>{text}</span>
+        </div>
+    )
+}
 
+// Main Disintegration Screen component.
 const PythonDisintegrationScreen: React.FC = () => {
+    // Current message ka index track karne ke liye state.
     const [messageIndex, setMessageIndex] = useState(0);
-    const [progress, setProgress] = useState(100);
 
+    // useEffect se har 700ms me agla message dikhate hain.
     useEffect(() => {
-        // Animate down to 0 after a brief delay to allow initial render at 100%
-        const progressTimer = setTimeout(() => setProgress(0), 100);
-
-        // Cycle through messages
         const messageInterval = setInterval(() => {
             setMessageIndex(prevIndex => {
                 if (prevIndex < disintegrationMessages.length - 1) {
                     return prevIndex + 1;
                 }
-                return prevIndex;
+                return prevIndex; // Aakhri message pe ruk jao.
             });
         }, 700);
 
+        // Cleanup: component unmount hone par interval ko clear karte hain.
         return () => {
-            clearTimeout(progressTimer);
             clearInterval(messageInterval);
         };
     }, []);
 
     return (
-        <div className="flex flex-col items-center justify-center h-full w-full bg-background dark:bg-[#141414] text-card-foreground dark:text-gray-300">
+        // Full screen container with CRT effect.
+        <div className="flex flex-col items-center justify-center h-full w-full bg-background crt-effect">
             <div className="flex flex-col items-center gap-8">
-                <div className="relative w-32 h-32 flex items-center justify-center">
-                    <div className="absolute inset-0">
-                        <CircularProgress progress={progress} />
-                    </div>
-                    <CognitoLogo className="w-16 h-16" />
+                 {/* Logo, halka sa faded dikhega */}
+                 <div className="relative w-40 h-40 flex items-center justify-center">
+                    <CognitoLogo className="w-20 h-20 opacity-50" />
                 </div>
 
+                {/* Header text with glitch effect */}
                 <div className="text-center">
-                    <h1 className="text-2xl font-bold text-card-foreground dark:text-gray-100">Exiting Python Playground</h1>
-                    <p className="text-card-foreground/70 dark:text-gray-400">Disintegrating environment from Cognito AI</p>
+                    <GlitchText text="Disengaging Python Core" />
+                    <p className="text-text-medium">Environment ko surakshit roop se band kiya ja raha hai...</p>
                 </div>
                 
+                {/* Current status message */}
                 <div className="w-80 mt-2">
-                    <p className="text-center text-sm text-card-foreground/60 dark:text-gray-500 mt-2 h-5 transition-opacity duration-300">
+                    <p className="font-code text-center text-sm text-text-dark mt-2 h-5 transition-opacity duration-300">
                        {disintegrationMessages[messageIndex]}
                     </p>
                 </div>

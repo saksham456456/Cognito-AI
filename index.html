@@ -5,28 +5,99 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cognito AI</title>
+    <!-- Tailwind CSS ko CDN se load kar rahe hain -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts import kar rahe hain for custom fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Roboto+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-      body {
+      :root {
+        /* Cyber Glow Dark Theme ke liye CSS variables define kar rahe hain */
+        /* In variables se poore app ka look and feel control hota hai */
+        --bg-dark: #0A0A0E; /* Dark background color */
+        --bg-glass: hsla(240, 10%, 10%, 0.5); /* Glassmorphism effect ke liye background */
+        --border-glass: hsla(240, 10%, 20%, 0.8); /* Glassmorphism border */
+        --primary-glow: hsl(48, 100%, 55%); /* Main highlight color (yellow) */
+        --primary-glow-faded: hsla(48, 100%, 55%, 0.1); /* Halka yellow glow */
+        --primary-glow-heavy: hsla(48, 100%, 55%, 0.6); /* Gehra yellow glow */
+        --accent1-glow: hsl(220, 100%, 65%); /* Pehla accent color (blue) */
+        --accent2-glow: hsl(310, 100%, 65%); /* Dusra accent color (pink/purple) */
+        --text-light: hsl(0, 0%, 92%); /* Halka text color */
+        --text-medium: hsl(0, 0%, 60%); /* Medium text color */
+        --text-dark: hsl(0, 0%, 40%); /* Dark text color */
+
+        /* Default font set kar rahe hain */
         font-family: 'Inter', sans-serif;
       }
-      .text-outline {
-        text-shadow:
-          -0.8px -0.8px 0 hsl(0 0% 25% / 0.8),  
-           0.8px -0.8px 0 hsl(0 0% 25% / 0.8),
-          -0.8px  0.8px 0 hsl(0 0% 25% / 0.8),
-           0.8px  0.8px 0 hsl(0 0% 25% / 0.8);
+
+      body {
+        /* Body ka default background aur text color set kar rahe hain */
+        background-color: var(--bg-dark);
+        color: var(--text-light);
+        overflow: hidden; /* Scrollbars ko hide karne ke liye */
       }
-      .text-outline-sm {
-        text-shadow:
-          -0.5px -0.5px 0 hsl(0 0% 25% / 0.7),  
-           0.5px -0.5px 0 hsl(0 0% 25% / 0.7),
-          -0.5px  0.5px 0 hsl(0 0% 25% / 0.7),
-           0.5px  0.5px 0 hsl(0 0% 25% / 0.7);
+      
+      /* Heading ke liye custom font class */
+      .font-heading {
+        font-family: 'Rajdhani', sans-serif;
       }
+      /* Code ke liye custom font class */
+      .font-code {
+        font-family: 'Roboto Mono', monospace;
+      }
+
+      /* Background particle animation ke liye canvas ki styling */
+      #particle-canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 0; /* Isko sabse peeche rakha hai */
+        opacity: 0.5;
+      }
+      /* React app ka root element, canvas ke upar aayega */
+      #root {
+        position: relative;
+        z-index: 1;
+      }
+      
+      /* Text pe primary color ka glow add karne ke liye class */
+      .text-glow-primary {
+        text-shadow: 0 0 4px var(--primary-glow-faded), 0 0 8px var(--primary-glow-faded), 0 0 16px var(--primary-glow-faded);
+      }
+      
+      /* Glassmorphism effect ke liye class */
+      .glassmorphism {
+        background: var(--bg-glass);
+        -webkit-backdrop-filter: blur(12px); /* Background ko blur karta hai */
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--border-glass);
+      }
+      
+      /* Border pe glow effect ke liye class */
+      .glow-border {
+         box-shadow: inset 0 0 0.5px 1px hsla(0, 0%, 100%, 0.075),
+                    0 0 1px 0px var(--primary-glow),
+                    0 0 3px 0px var(--primary-glow-faded);
+      }
+      
+      /* Neon button ka default state */
+      .neon-glow-button {
+        transition: all 0.3s ease;
+        box-shadow: 0 0 2px var(--primary-glow-faded), inset 0 0 2px var(--primary-glow-faded);
+      }
+
+      /* Neon button ka hover aur active state */
+      .neon-glow-button:hover, .neon-glow-button.active {
+        color: var(--primary-glow);
+        background: var(--primary-glow-faded);
+        border-color: var(--primary-glow);
+        box-shadow: 0 0 5px var(--primary-glow), 0 0 10px var(--primary-glow-faded), inset 0 0 5px var(--primary-glow-faded);
+      }
+
+      /* Animation: Element neeche se upar aate hue fade in hoga */
       .fade-in-up {
         animation: fadeInUp 0.5s ease-out forwards;
         opacity: 0;
@@ -38,84 +109,154 @@
           transform: translateY(0);
         }
       }
+
+      /* Custom scrollbar ki styling */
       .custom-scrollbar::-webkit-scrollbar {
         width: 6px;
       }
       .custom-scrollbar::-webkit-scrollbar-track {
-        background: hsl(0 0% 90%);
-      }
-      .dark .custom-scrollbar::-webkit-scrollbar-track {
-        background: hsl(0 0% 12%);
+        background: transparent;
       }
       .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: hsl(45 90% 55%);
+        background: var(--primary-glow-faded);
         border-radius: 3px;
-      }
-      .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: hsl(45 90% 60%);
+        border: 1px solid var(--primary-glow);
       }
       .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-         background: hsl(45 90% 50%);
+         background: var(--primary-glow);
       }
-      .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-         background: hsl(45 90% 50%);
+
+      /* CRT (पुराने monitor jaisa) effect ke liye styling */
+      .crt-effect {
+        position: relative;
+        overflow: hidden;
       }
-      .logo-graphic {
-        filter: url(#glow);
+      /* Scanline effect (horizontal lines) add karne ke liye */
+      .crt-effect::before {
+        content: " ";
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+        z-index: 2;
+        background-size: 100% 2px, 3px 100%;
+        pointer-events: none;
+        animation: scanline 10s linear infinite;
       }
-      :not(.dark) .watermark .logo-graphic {
-        filter: url(#outline) url(#glow);
+      @keyframes scanline {
+        0% { transform: translateY(0); }
+        100% { transform: translateY(100vh); }
+      }
+      /* Screen flicker effect (halka sa blink) add karne ke liye */
+      .crt-effect::after {
+        content: " ";
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        background: rgba(18, 16, 16, 0.1);
+        opacity: 0;
+        z-index: 2;
+        pointer-events: none;
+        animation: flicker 0.15s infinite;
+      }
+      @keyframes flicker {
+        0% { opacity: 0.1; }
+        50% { opacity: 0.2; }
+        100% { opacity: 0.1; }
       }
     </style>
     <script>
+    // Tailwind CSS ko configure kar rahe hain
     tailwind.config = {
-      darkMode: 'class',
+      darkMode: 'class', // App ab default mein dark mode hai
       theme: {
         extend: {
+          // Custom fonts ko Tailwind mein add kar rahe hain
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            heading: ['Rajdhani', 'sans-serif'],
+            mono: ['Roboto Mono', 'monospace'],
+          },
+          // CSS variables ko Tailwind ke colors mein use kar rahe hain
           colors: {
-            // Light Theme (Default)
-            background: 'hsl(0 0% 98%)',
-            card: 'hsl(0 0% 100%)',
-            'card-foreground': 'hsl(0 0% 10%)',
-            'card-border': 'hsl(0 0% 0%)',
-            primary: 'hsl(45, 90%, 55%)',
-            'primary-foreground': 'hsl(45, 90%, 5%)',
-            'input': 'hsl(0 0% 95%)',
-            'input-border': 'hsl(0 0% 0%)',
+            background: 'var(--bg-dark)',
+            card: 'var(--bg-glass)',
+            'card-foreground': 'var(--text-light)',
+            'card-border': 'var(--border-glass)',
+            primary: 'var(--primary-glow)',
+            'primary-foreground': 'var(--bg-dark)',
+            'input': 'hsla(240, 10%, 15%, 0.8)',
+            'input-border': 'hsla(240, 10%, 25%, 0.8)',
+            accent1: 'var(--accent1-glow)',
+            accent2: 'var(--accent2-glow)',
           },
+          // Custom animations define kar rahe hain
           animation: {
-            'typing-bounce': 'typing-bounce 1.4s infinite ease-in-out both',
-            'text-glow': 'text-glow 2.5s ease-in-out infinite',
+            'typing-reveal': 'typing-reveal 1.5s steps(30, end) forwards',
+            'cursor-blink': 'cursor-blink 1s steps(2, start) infinite',
+            'text-glow': 'text-glow 2.5s ease-in-out infinite alternate',
             'shimmer-load': 'shimmer-load 2s infinite linear',
-            'subtle-fade': 'subtle-fade 2s infinite ease-in-out',
+            'subtle-fade': 'subtle-fade 3s infinite ease-in-out',
+            'glitch': 'glitch 1s linear infinite',
+            'neon-flicker': 'neon-flicker 1.5s infinite alternate',
+            'orb-pulse': 'orb-pulse 1.5s ease-in-out infinite',
+            'path-draw': 'path-draw 3s ease-out forwards'
           },
+          // Animations ke liye Keyframes
           keyframes: {
-            'typing-bounce': {
-              '0%, 100%': { transform: 'scale(0.8)', opacity: '0.6' },
-              '50%': { transform: 'scale(1.1)', opacity: '1' },
+             'typing-reveal': { // Text type hota hua dikhane ke liye
+              'from': { width: '0' },
+              'to': { width: '100%' }
             },
-            'text-glow': {
-              '0%, 100%': { 
-                textShadow: '0 0 10px hsl(45 90% 60% / 0.6), 0 0 20px hsl(45 90% 60% / 0.3), -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000' 
+            'cursor-blink': { // Typing cursor blink karne ke liye
+              'to': { visibility: 'hidden' }
+            },
+            'text-glow': { // Text pe glow animation
+              'from': { 
+                textShadow: '0 0 10px hsl(48 100% 60% / 0.7), 0 0 20px hsl(48 100% 60% / 0.4)' 
               },
-              '50%': { 
-                textShadow: '0 0 20px hsl(45 90% 60% / 0.8), 0 0 40px hsl(45 90% 60% / 0.5), -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000' 
+              'to': { 
+                textShadow: '0 0 20px hsl(48 100% 60% / 0.9), 0 0 40px hsl(48 100% 60% / 0.6)' 
               },
             },
-            'shimmer-load': {
+            'shimmer-load': { // Loading state mein shimmer effect
               '0%': { transform: 'translateX(-100%)' },
               '100%': { transform: 'translateX(100%)' },
             },
-            'subtle-fade': {
+            'subtle-fade': { // Halka fade in/out effect
               '0%, 100%': { opacity: '0.7' },
               '50%': { opacity: '1' },
+            },
+            'glitch': { // Glitch effect
+              '2%, 64%': { transform: 'translate(2px, 0) skew(0deg)' },
+              '4%, 60%': { transform: 'translate(-2px, 0) skew(0deg)' },
+              '62%': { transform: 'translate(0, 0) skew(5deg)' },
+            },
+            'neon-flicker': { // Neon light jaisa flicker effect
+              '0%, 100%': { opacity: 1, textShadow: '0 0 10px var(--primary-glow), 0 0 20px var(--primary-glow), 0 0 40px var(--primary-glow)' },
+              '50.2%': { opacity: 0.7, textShadow: '0 0 5px var(--primary-glow), 0 0 10px var(--primary-glow)' },
+            },
+            'orb-pulse': { // Loading indicator ke liye pulse effect
+              '0%, 100%': { transform: 'scale(1)', boxShadow: '0 0 5px var(--primary-glow), 0 0 10px var(--primary-glow)' },
+              '50%': { transform: 'scale(1.1)', boxShadow: '0 0 15px var(--primary-glow), 0 0 25px var(--primary-glow)' },
+            },
+            'path-draw': { // SVG path ko draw hota hua dikhane ke liye
+              'to': { strokeDashoffset: 0 }
             }
           }
         }
       }
     }
   </script>
+<!-- Pyodide (Python in browser) ko load kar rahe hain -->
 <script src="https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js"></script>
+<!-- ES Modules ko support karne ke liye importmap. React aur Gemini SDK ko CDN se import kar rahe hain. -->
 <script type="importmap">
 {
   "imports": {
@@ -129,6 +270,9 @@
 </head>
 <body>
 <noscript>You need to enable JavaScript to run this app.</noscript>
+<!-- Particle animation ke liye canvas element -->
+<canvas id="particle-canvas"></canvas>
+<!-- React app is element mein render hoga -->
 <div id="root"></div>
 </body>
 </html>

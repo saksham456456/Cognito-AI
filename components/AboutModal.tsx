@@ -4,53 +4,62 @@ import React from 'react';
 import { XIcon } from './icons';
 import { CognitoLogo } from './Logo';
 
+// Modal ke props ka interface define kar rahe hain.
 interface AboutModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+  isOpen: boolean; // Modal dikhana hai ya nahi.
+  onClose: () => void; // Modal band karne ka function.
 }
 
 const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
+  // Agar modal open nahi hai, to kuch bhi render mat karo.
   if (!isOpen) return null;
 
   return (
+    // Main container, poori screen ko cover karta hai ek semi-transparent background ke sath.
     <div 
       className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
-      onClick={onClose}
+      onClick={onClose} // Background pe click karne se modal band ho jayega.
       role="dialog"
       aria-modal="true"
       aria-labelledby="about-modal-title"
     >
+      {/* Modal ka content area */}
       <div 
-        className="bg-card dark:bg-[#1f1f1f] rounded-2xl w-full max-w-md p-6 border border-card-border dark:border-zinc-800 relative fade-in-up"
-        onClick={e => e.stopPropagation()}
+        className="glassmorphism rounded-2xl w-full max-w-md p-6 relative fade-in-up"
+        onClick={e => e.stopPropagation()} // Modal ke andar click karne se modal band nahi hoga.
       >
+        {/* Close button */}
         <button 
           onClick={onClose} 
-          className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-input dark:hover:bg-[#292929]"
+          className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-input"
           aria-label="Close"
         >
-          <XIcon className="w-5 h-5 text-card-foreground/70 dark:text-gray-400" />
+          <XIcon className="w-5 h-5 text-text-medium" />
         </button>
+        {/* Modal ka header section */}
         <div className="flex flex-col items-center text-center">
-            <CognitoLogo className="w-20 h-20 text-primary dark:text-yellow-400 mb-4" />
-            <h2 id="about-modal-title" className="text-2xl font-bold text-card-foreground dark:text-gray-100 mb-2">About Cognito AI</h2>
-            <p className="text-sm text-card-foreground/60 dark:text-gray-400 mb-6">Your Personal AI Assistant</p>
+            <CognitoLogo className="w-20 h-20 text-primary mb-4" />
+            <h2 id="about-modal-title" className="font-heading text-2xl font-bold text-text-light mb-2">About Cognito AI</h2>
+            <p className="text-sm text-text-medium mb-6">Aapka Personal AI Assistant</p>
         </div>
-        <div className="space-y-4 text-sm text-card-foreground/80 dark:text-gray-300 text-left">
+        {/* Modal ka body content */}
+        <div className="space-y-4 text-sm text-text-light text-left">
             <p>
-                <a href="https://www.instagram.com/reel/DPT0FM6k0MS/?utm_source=ig_web_copy_link&igsh=MTU2ZTN5anUwdHdicQ==" target="_blank" rel="noopener noreferrer"><strong className="text-primary dark:text-yellow-400 text-outline-sm hover:underline">Cognito AI</strong></a> is a modern, responsive AI assistant designed to provide intelligent answers and a seamless user experience. 
+                {/* External link, _blank se naye tab me khulega */}
+                <a href="https://www.instagram.com/reel/DPT0FM6k0MS/?utm_source=ig_web_copy_link&igsh=MTU2ZTN5anUwdHdicQ==" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">Cognito AI</a> ek modern, responsive AI assistant hai jo intelligent jawab aur ek behtareen user experience dene ke liye banaya gaya hai. 
             </p>
             <p>
-                This application was developed by <a href="https://www.instagram.com/saksham_456456?utm_source=ig_web_button_share_sheet&igsh=MWplM21keGhpbmZnZw==" target="_blank" rel="noopener noreferrer"><strong className="text-primary dark:text-yellow-400 text-outline-sm hover:underline">Saksham</strong></a>, a passionate frontend engineer with expertise in creating beautiful and functional user interfaces.
+                Yeh application <a href="https://www.instagram.com/saksham_456456?utm_source=ig_web_button_share_sheet&igsh=MWplM21keGhpbmZnZw==" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">Saksham</a> ne develop kiya hai, jo ek passionate frontend engineer hai aur sundar, functional user interfaces banane me mahir hai.
             </p>
             <p>
-                Powered by <a href="https://github.com/saksham456456" target="_blank" rel="noopener noreferrer"><strong className="text-primary dark:text-yellow-400 text-outline-sm hover:underline">Saksham's knowledge</strong></a>, curiosity towards ML and DBMS Tactics, and Interests.
+                Yeh <a href="https://github.com/saksham456456" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">Saksham ke knowledge</a>, ML aur DBMS ke prati unki curiosity, aur unke interests se chalta hai.
             </p>
         </div>
+        {/* Modal ka footer section */}
         <div className="mt-6 flex justify-end">
             <button
                 onClick={onClose}
-                className="px-4 py-2 rounded-lg bg-primary dark:bg-yellow-400 text-primary-foreground dark:text-black hover:bg-yellow-400 dark:hover:bg-yellow-300 transition-colors border border-primary-foreground/20 dark:border-transparent text-outline-sm"
+                className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-yellow-400 transition-colors border border-primary-foreground/20"
             >
                 Close
             </button>
