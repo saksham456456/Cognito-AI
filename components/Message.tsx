@@ -1,5 +1,4 @@
 
-
 import React, { useState, useLayoutEffect, useRef } from 'react';
 import type { Message } from '../types';
 import { CognitoLogo } from './Logo';
@@ -45,7 +44,7 @@ const MessageComponent: React.FC<MessageProps> = ({ message, isLastMessage, onCo
   } ${
     isUser
       ? 'bg-primary dark:bg-yellow-500 text-primary-foreground dark:text-black rounded-br-none border border-card-border dark:border-yellow-700'
-      : 'bg-card text-card-foreground dark:bg-[#1f1f1f] dark:text-gray-200 rounded-bl-none border border-card-border dark:border-zinc-800'
+      : 'bg-zinc-900 text-gray-100 dark:bg-gray-100 dark:text-zinc-900 rounded-bl-none border border-zinc-700 dark:border-gray-300'
   }`;
 
   const handleCopy = () => {
