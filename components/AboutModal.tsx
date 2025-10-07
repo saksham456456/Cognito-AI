@@ -38,13 +38,13 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
         </div>
         <div className="space-y-4 text-sm text-card-foreground/80 dark:text-gray-300 text-left">
             <p>
-                Cognito AI is a modern, responsive AI assistant designed to provide intelligent answers and a seamless user experience. 
+                <a href="https://www.instagram.com/reel/DPT0FM6k0MS/?utm_source=ig_web_copy_link&igsh=MTU2ZTN5anUwdHdicQ==" target="_blank" rel="noopener noreferrer"><strong className="text-primary dark:text-yellow-400 text-outline-sm hover:underline">Cognito AI</strong></a> is a modern, responsive AI assistant designed to provide intelligent answers and a seamless user experience. 
             </p>
             <p>
-                This application was developed by <strong className="text-primary dark:text-yellow-400 text-outline-sm">Saksham</strong>, a passionate frontend engineer with expertise in creating beautiful and functional user interfaces.
+                This application was developed by <a href="https://www.instagram.com/saksham_456456?utm_source=ig_web_button_share_sheet&igsh=MWplM21keGhpbmZnZw==" target="_blank" rel="noopener noreferrer"><strong className="text-primary dark:text-yellow-400 text-outline-sm hover:underline">Saksham</strong></a>, a passionate frontend engineer with expertise in creating beautiful and functional user interfaces.
             </p>
             <p>
-                Powered by Saksham's knowledge, curiosity towards ML and DBMS Tactics, and Interests.
+                Powered by <a href="https://github.com/saksham456456" target="_blank" rel="noopener noreferrer"><strong className="text-primary dark:text-yellow-400 text-outline-sm hover:underline">Saksham's knowledge</strong></a>, curiosity towards ML and DBMS Tactics, and Interests.
             </p>
         </div>
         <div className="mt-6 flex justify-end">

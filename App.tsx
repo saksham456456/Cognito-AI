@@ -12,6 +12,7 @@ import { MenuIcon } from './components/icons';
 import ProfileModal from './components/ProfileModal';
 import LoadingScreen from './components/LoadingScreen';
 import AboutModal from './components/AboutModal';
+import ConfirmationModal from './components/ConfirmationModal';
 
 const App: React.FC = () => {
     const [isAiLoading, setIsAiLoading] = useState(false);
@@ -22,6 +23,7 @@ const App: React.FC = () => {
     const [userName, setUserName] = useState(() => localStorage.getItem('userName') || 'Guest User');
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
     const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
+    const [isConfirmDeleteAllOpen, setIsConfirmDeleteAllOpen] = useState(false);
     const [isDbLoading, setIsDbLoading] = useState(true);
     const [theme, setTheme] = useState<'light' | 'dark'>(() => (localStorage.getItem('theme') as 'light' | 'dark') || 'dark');
     
@@ -266,16 +268,22 @@ const App: React.FC = () => {
         }
     };
 
-    const handleDeleteAllChats = async () => {
-        if (window.confirm("Are you sure you want to delete all conversations? This action cannot be undone.")) {
-            try {
-                await deleteAllChats();
-                setChats([]);
-                setActiveChatId(null);
-                setIsSidebarOpen(false);
-            } catch (error) {
-                console.error("Failed to delete all chats:", error);
-            }
+    const handleDeleteAllChats = () => {
+        if (chats.length > 0) {
+            setIsConfirmDeleteAllOpen(true);
+        }
+    };
+
+    const executeDeleteAllChats = async () => {
+        try {
+            await deleteAllChats();
+            setChats([]);
+            setActiveChatId(null);
+            setIsSidebarOpen(false);
+        } catch (error) {
+            console.error("Failed to delete all chats:", error);
+        } finally {
+            setIsConfirmDeleteAllOpen(false);
         }
     };
 
@@ -405,6 +413,14 @@ const App: React.FC = () => {
             <AboutModal 
                 isOpen={isAboutModalOpen}
                 onClose={() => setIsAboutModalOpen(false)}
+            />
+            <ConfirmationModal
+                isOpen={isConfirmDeleteAllOpen}
+                onClose={() => setIsConfirmDeleteAllOpen(false)}
+                onConfirm={executeDeleteAllChats}
+                title="Clear All Conversations?"
+                message="This will permanently delete all your conversations. This action cannot be undone."
+                confirmButtonText="Delete All"
             />
         </div>
     );
