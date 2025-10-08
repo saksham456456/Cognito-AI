@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useRef } from 'react';
 import { getAiResponse, getTitleForChat } from './services/geminiService';
 import { saveChat, loadChats, deleteChat, deleteAllChats } from './services/dbService';
@@ -15,6 +14,7 @@ import AboutModal from './components/AboutModal';
 import ConfirmationModal from './components/ConfirmationModal';
 import PythonPlayground from './components/PythonPlayground';
 import PythonDisintegrationScreen from './components/PythonDisintegrationScreen';
+import BackgroundCanvas from './components/BackgroundCanvas';
 
 const App: React.FC = () => {
     // State variables ko define kar rahe hain using useState hook.
@@ -30,6 +30,8 @@ const App: React.FC = () => {
     const [isDbLoading, setIsDbLoading] = useState(true); // Database se chats load ho rahe hain ya nahi.
     const [currentView, setCurrentView] = useState<'chat' | 'python'>('chat'); // Current view 'chat' hai ya 'python'.
     const [isDisintegrating, setIsDisintegrating] = useState(false); // Python view se bahar aane ka animation chal raha hai ya nahi.
+    const [backgroundAnimation, setBackgroundAnimation] = useState<string>(() => localStorage.getItem('backgroundAnimation') || 'particles'); // Background animation type.
+    const [codeToRunInPython, setCodeToRunInPython] = useState<string | null>(null); // Code to pass from chat to python view
     
     // useRef hooks ka istemal DOM elements ya persistent values ko store karne ke liye.
     const messagesEndRef = useRef<HTMLDivElement>(null); // Chat ke end tak scroll karne ke liye reference.
@@ -40,124 +42,10 @@ const App: React.FC = () => {
     // Active chat ko chats array se find kar rahe hain.
     const activeChat = chats.find(c => c.id === activeChatId);
 
-     // useEffect hook component ke mount hone par chalta hai (dependency array [] khali hai).
-     // Yeh background particle animation setup karta hai.
+     // useEffect hook component ke mount hone par chalta hai.
      useEffect(() => {
         // Dark theme ko default set kar rahe hain
         document.documentElement.classList.add('dark');
-        const canvas = document.getElementById('particle-canvas') as HTMLCanvasElement;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        let animationFrameId: number;
-        let particles: any[] = [];
-        let mouse = { x: null as number | null, y: null as number | null };
-
-        // Canvas ko window ke size ka banate hain.
-        const resizeCanvas = () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        };
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
-
-        // Mouse movement ko track karte hain.
-        window.addEventListener('mousemove', (event) => {
-            mouse.x = event.x;
-            mouse.y = event.y;
-        });
-        window.addEventListener('mouseout', () => {
-            mouse.x = null;
-            mouse.y = null;
-        });
-
-        // Particle class define kar rahe hain. Har particle ka اپنا x, y, size, speed, aur color hoga.
-        class Particle {
-            x: number;
-            y: number;
-            size: number;
-            speedX: number;
-            speedY: number;
-            color: string;
-
-            constructor(x: number, y: number, size: number, speedX: number, speedY: number, color: string) {
-                this.x = x;
-                this.y = y;
-                this.size = size;
-                this.speedX = speedX;
-                this.speedY = speedY;
-                this.color = color;
-            }
-
-            // Particle ko canvas pe draw karta hai.
-            draw() {
-                ctx!.beginPath();
-                ctx!.arc(this.x, this.y, this.size, 0, Math.PI * 2, false);
-                ctx!.fillStyle = this.color;
-                ctx!.fill();
-            }
-
-            // Particle ki position update karta hai aur use draw karta hai.
-            update() {
-                if (this.x > canvas.width || this.x < 0) this.speedX = -this.speedX;
-                if (this.y > canvas.height || this.y < 0) this.speedY = -this.speedY;
-                this.x += this.speedX;
-                this.y += this.speedY;
-                this.draw();
-            }
-        }
-
-        // Shuruaat mein particles banate hain.
-        const initParticles = () => {
-            particles = [];
-            const numberOfParticles = (canvas.height * canvas.width) / 9000;
-            for (let i = 0; i < numberOfParticles; i++) {
-                const size = Math.random() * 1.5 + 0.5;
-                const x = Math.random() * (innerWidth - size * 2 - size * 2) + size * 2;
-                const y = Math.random() * (innerHeight - size * 2 - size * 2) + size * 2;
-                const speedX = Math.random() * 0.4 - 0.2;
-                const speedY = Math.random() * 0.4 - 0.2;
-                const color = 'hsla(48, 100%, 55%, 0.5)';
-                particles.push(new Particle(x, y, size, speedX, speedY, color));
-            }
-        };
-
-        // Nazdeeki particles ke beech mein line draw karta hai.
-        const connectParticles = () => {
-            const maxDistance = 100;
-            for (let a = 0; a < particles.length; a++) {
-                for (let b = a; b < particles.length; b++) {
-                    const distance = ((particles[a].x - particles[b].x) * (particles[a].x - particles[b].x)) +
-                                     ((particles[a].y - particles[b].y) * (particles[a].y - particles[b].y));
-                    if (distance < maxDistance * maxDistance) {
-                        const opacity = 1 - (distance / (maxDistance * maxDistance));
-                        ctx!.strokeStyle = `hsla(220, 100%, 65%, ${opacity})`;
-                        ctx!.lineWidth = 0.5;
-                        ctx!.beginPath();
-                        ctx!.moveTo(particles[a].x, particles[a].y);
-                        ctx!.lineTo(particles[b].x, particles[b].y);
-                        ctx!.stroke();
-                    }
-                }
-            }
-        };
-
-        // Animation loop jo har frame pe chalta hai.
-        const animate = () => {
-            ctx!.clearRect(0, 0, innerWidth, innerHeight);
-            particles.forEach(p => p.update());
-            connectParticles();
-            animationFrameId = requestAnimationFrame(animate);
-        };
-        
-        initParticles();
-        animate();
-
-        // Cleanup function: component unmount hone par event listeners aur animation frame ko remove karta hai.
-        return () => {
-            window.removeEventListener('resize', resizeCanvas);
-            cancelAnimationFrame(animationFrameId);
-        };
     }, []);
 
     // Yeh useEffect app start hone par IndexedDB se chats load karta hai.
@@ -188,6 +76,11 @@ const App: React.FC = () => {
     useEffect(() => {
         localStorage.setItem('userName', userName);
     }, [userName]);
+
+    // Background animation choice ko localStorage mein save karte hain.
+    useEffect(() => {
+        localStorage.setItem('backgroundAnimation', backgroundAnimation);
+    }, [backgroundAnimation]);
 
     // Yeh useEffect active chat ke messages ya title change hone par use DB mein save karta hai.
     // Debouncing (setTimeout) use kiya gaya hai taki har chote change pe save na ho.
@@ -290,7 +183,7 @@ const App: React.FC = () => {
                         ...chat,
                         messages: chat.messages.map(msg =>
                             msg.id === modelMessageId
-                                ? { ...msg, content: `Error: ${error.message}` || "Ek error aayi. Apna connection ya API key check karein." }
+                                ? { ...msg, content: `Error: ${error.message}` || "An error occurred. Please check your connection or API key." }
                                 : msg
                         )
                     };
@@ -350,7 +243,7 @@ const App: React.FC = () => {
                         ...chat,
                         messages: chat.messages.map(msg =>
                             msg.id === modelMessageId
-                                ? { ...msg, content: `Error: ${error.message}` || "Regenerate nahi ho paya. Phir se try karein." }
+                                ? { ...msg, content: `Error: ${error.message}` || "Failed to regenerate. Please try again." }
                                 : msg
                         )
                     };
@@ -441,6 +334,7 @@ const App: React.FC = () => {
             setSpeakingMessageId(null);
         } else {
             speechSynthesis.cancel(); // Koi aur message bol raha ho to use band karo.
+            // FIX: Corrected typo from SpeechSynthesisUtterterance to SpeechSynthesisUtterance.
             const utterance = new SpeechSynthesisUtterance(message.content);
             utterance.onend = () => setSpeakingMessageId(null);
             utterance.onerror = () => setSpeakingMessageId(null);
@@ -488,6 +382,14 @@ const App: React.FC = () => {
             setCurrentView(view);
         }
     };
+    
+    // Code ko chat se python view me bhejne ke liye.
+    const handleRunCodeInPython = (code: string) => {
+        setCodeToRunInPython(code);
+        handleViewChange('python');
+        // Thodi der baad prop ko reset kar dete hain taki dobara trigger na ho.
+        setTimeout(() => setCodeToRunInPython(null), 100);
+    };
 
     // Jab tak DB se data load ho raha hai, LoadingScreen dikhate hain.
     if (isDbLoading) {
@@ -497,6 +399,7 @@ const App: React.FC = () => {
     // Main component ka JSX structure.
     return (
         <div className="bg-transparent h-screen flex text-card-foreground overflow-hidden">
+            <BackgroundCanvas animationType={backgroundAnimation} />
             <Sidebar 
                 chats={chats}
                 activeChatId={activeChatId}
@@ -512,6 +415,8 @@ const App: React.FC = () => {
                 onAboutClick={() => setIsAboutModalOpen(true)}
                 currentView={currentView}
                 onViewChange={handleViewChange}
+                backgroundAnimation={backgroundAnimation}
+                onBackgroundAnimationChange={setBackgroundAnimation}
             />
              {/* Mobile pe sidebar khula ho to background ko overlay karte hain */}
              {isSidebarOpen && <div onClick={() => setIsSidebarOpen(false)} className="fixed inset-0 bg-black/50 z-10 md:hidden"></div>}
@@ -544,7 +449,7 @@ const App: React.FC = () => {
                                             <CognitoLogo className="w-28 h-28" />
                                             <div className="text-center">
                                                 <h1 className="font-heading text-4xl font-bold text-gray-200">Welcome, {userName}</h1>
-                                                <p className="mt-1 text-lg text-gray-400">Main digital duniya mein aapki kaise madad kar sakta hoon?</p>
+                                                <p className="mt-1 text-lg text-gray-400">How can I help you navigate the digital cosmos today?</p>
                                             </div>
                                         </div>
                                     </div>
@@ -559,6 +464,7 @@ const App: React.FC = () => {
                                                     onCopy={handleCopyText}
                                                     onSpeak={handleToggleSpeak}
                                                     onRegenerate={handleRegenerateResponse}
+                                                    onRunCode={handleRunCodeInPython}
                                                     speakingMessageId={speakingMessageId}
                                                 />
                                             </div>
@@ -575,7 +481,10 @@ const App: React.FC = () => {
                         </main>
                     </>
                 ) : (
-                    <PythonPlayground onToggleSidebar={() => setIsSidebarOpen(true)} />
+                    <PythonPlayground 
+                        onToggleSidebar={() => setIsSidebarOpen(true)}
+                        initialCode={codeToRunInPython}
+                    />
                 )}
             </div>
 
@@ -594,9 +503,9 @@ const App: React.FC = () => {
                 isOpen={isConfirmDeleteAllOpen}
                 onClose={() => setIsConfirmDeleteAllOpen(false)}
                 onConfirm={executeDeleteAllChats}
-                title="Saare Logs Mita Dein?"
-                message="Isse saare conversation logs hamesha ke liye mit jayenge. Yeh action undo nahi kiya ja sakta."
-                confirmButtonText="Sab Mitayein"
+                title="Purge All Logs?"
+                message="This will permanently delete all conversation logs. This action cannot be undone."
+                confirmButtonText="Purge All"
             />
         </div>
     );

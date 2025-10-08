@@ -1,16 +1,17 @@
+
 import React, { useState, useEffect } from 'react';
 import { CognitoLogo } from './Logo';
 
 // Loading ke time dikhne wale messages ka array.
 const loadingMessages = [
-    "Pyodide runtime ko shuru kiya ja raha hai...",
-    "Surakshit CDN link sthapit kiya ja raha hai...",
-    "Python core ko decompress kiya ja raha hai...",
-    "Standard libraries ko calibrate kiya ja raha hai...",
-    "Virtual file system ko mount kiya ja raha hai...",
-    "Dependencies ko compile kiya ja raha hai...",
-    "Environment ko finalize kiya ja raha hai...",
-    "Integration poora hua. Standby.",
+    "Initializing Pyodide runtime...",
+    "Establishing secure CDN link...",
+    "Decompressing Python core...",
+    "Calibrating standard libraries...",
+    "Mounting virtual file system...",
+    "Compiling dependencies...",
+    "Finalizing environment...",
+    "Integration complete. Standby.",
 ];
 
 // Circular progress bar component.
@@ -116,7 +117,7 @@ const PythonLoadingScreen: React.FC = () => {
                 {/* Header text */}
                 <div className="text-center">
                     <h1 className="font-heading text-2xl font-bold text-text-light uppercase tracking-wider" style={{ textShadow: '0 0 5px var(--primary-glow)'}}>Engaging Python Core</h1>
-                    <p className="text-text-medium">Kripya pratiksha karein jab tak environment shuru ho raha hai...</p>
+                    <p className="text-text-medium">Please wait while the environment initializes...</p>
                 </div>
                 
                 {/* Current loading message */}

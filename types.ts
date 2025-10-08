@@ -1,3 +1,4 @@
+
 // Message ka role kya hai, yeh define karta hai - ya to 'user' ka ya 'model' (AI) ka.
 export type MessageRole = 'user' | 'model';
 

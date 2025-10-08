@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -47,16 +48,6 @@
         font-family: 'Roboto Mono', monospace;
       }
 
-      /* Background particle animation ke liye canvas ki styling */
-      #particle-canvas {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 0; /* Isko sabse peeche rakha hai */
-        opacity: 0.5;
-      }
       /* React app ka root element, canvas ke upar aayega */
       #root {
         position: relative;
@@ -170,6 +161,34 @@
         50% { opacity: 0.2; }
         100% { opacity: 0.1; }
       }
+      
+      /* --- NEW STYLES FOR CODE BLOCKS --- */
+      .code-block {
+        background: rgba(0,0,0,0.4);
+        border: 1px solid var(--border-glass);
+        border-radius: 0.5rem; /* rounded-lg */
+        overflow: hidden;
+        margin-top: 0.75rem; /* my-3 */
+        margin-bottom: 0.75rem;
+      }
+      .code-block pre {
+        padding: 1rem; /* p-4 */
+        font-family: 'Roboto Mono', monospace;
+        font-size: 0.875rem; /* text-sm */
+        white-space: pre-wrap;
+        word-break: break-all;
+        background-color: transparent;
+      }
+      .code-block code {
+          line-height: 1.5;
+      }
+      .syntax-keyword { color: var(--primary-glow); font-weight: 500; }
+      .syntax-string { color: #9CDCFE; } /* A light blue */
+      .syntax-comment { color: #6A9955; font-style: italic; } /* A muted green */
+      .syntax-number { color: #B5CEA8; } /* A light green/off-white */
+      .syntax-function { color: #DCDCAA; } /* A yellowish color */
+      .syntax-operator { color: var(--text-medium); }
+      .syntax-class { color: #4EC9B0; } /* Teal color */
     </style>
     <script>
     // Tailwind CSS ko configure kar rahe hain
@@ -270,8 +289,6 @@
 </head>
 <body>
 <noscript>You need to enable JavaScript to run this app.</noscript>
-<!-- Particle animation ke liye canvas element -->
-<canvas id="particle-canvas"></canvas>
 <!-- React app is element mein render hoga -->
 <div id="root"></div>
 </body>

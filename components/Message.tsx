@@ -1,9 +1,9 @@
 
-
 import React, { useState, useEffect, useRef } from 'react';
 import type { Message } from '../types';
 import { CognitoLogo } from './Logo';
 import { ClipboardIcon, CheckIcon, Volume2Icon, RefreshIcon } from './icons';
+import CodeBlock from './CodeBlock';
 
 // Message component ke props ka interface define kar rahe hain.
 interface MessageProps {
@@ -12,6 +12,7 @@ interface MessageProps {
   onCopy: (text: string) => void; // Copy button ka function.
   onSpeak: (message: Message) => void; // Text-to-speech button ka function.
   onRegenerate: () => void; // Regenerate button ka function.
+  onRunCode: (code: string) => void; // "Run in Py-Core" button ka function.
   speakingMessageId: string | null; // Currently bolne wale message ka ID.
 }
 
@@ -27,14 +28,11 @@ const PulsingOrbIndicator = () => (
 // Naya implementation ek recursive timeout approach use karta hai useEffect ke andar
 // ek smooth typing animation banane ke liye jo streaming text updates ko sahi se handle karta hai
 // bina har naye chunk pe animation ko shuru se restart kiye.
-const StreamedContent: React.FC<{ text: string }> = ({ text }) => {
+const StreamedContent: React.FC<{ text: string, onRunCode: (code: string) => void, onCopy: (text: string) => void }> = ({ text, onRunCode, onCopy }) => {
     const [displayedText, setDisplayedText] = useState(''); // Screen pe dikhne wala text.
     const prevTextRef = useRef(''); // Pichla text, yeh check karne ke liye ki text regenerate hua hai ya continue.
 
     useEffect(() => {
-        // Yeh effect detect karta hai ki aane wala text pichle text ka continuation hai
-        // ya ek bilkul naya text (jaise regenerate karne par).
-        // Agar yeh continuation nahi hai, to displayed text ko reset kar deta hai taaki naye se shuru ho.
         if (prevTextRef.current && !text.startsWith(prevTextRef.current)) {
             setDisplayedText('');
         }
@@ -42,31 +40,45 @@ const StreamedContent: React.FC<{ text: string }> = ({ text }) => {
     }, [text]);
 
     useEffect(() => {
-        // Yeh effect animation loop ka kaam karta hai.
         if (displayedText.length === text.length) {
-            return; // Animation poora ho gaya hai current text ke liye.
+            return;
         }
-
-        // Agla character dikhane ke liye schedule karte hain.
         const timeoutId = setTimeout(() => {
             setDisplayedText(text.slice(0, displayedText.length + 1));
-        }, 15); // Yahan se typing speed adjust kar sakte hain.
-
-        // Cleanup: component unmount hone par ya dependencies change hone par timeout clear karte hain.
+        }, 15);
         return () => clearTimeout(timeoutId);
     }, [text, displayedText]);
 
+    // Regular expression to find Python code blocks
+    const codeBlockRegex = /(```python\n)([\s\S]*?)(```)/g;
+    const parts = displayedText.split(codeBlockRegex);
+
+    // Agar text stream ho raha hai to cursor dikhao
+    const showCursor = displayedText.length < text.length;
+
     return (
-        <p className="whitespace-pre-wrap">
-            {displayedText}
-            {/* Blinking cursor sirf tab dikhao jab animation chal raha ho. */}
-            {displayedText.length < text.length && <span className="inline-block w-2 h-4 bg-primary ml-1 animate-cursor-blink" />}
-        </p>
+        <div className="whitespace-pre-wrap">
+            {parts.map((part, index) => {
+                if ((index - 2) % 4 === 0) { // This is the captured code content
+                    const rawCode = part;
+                    // Check if this is the last part and if we are still typing inside it.
+                    const isStreamingThisBlock = showCursor && index === parts.length - 2;
+                    return <CodeBlock key={index} code={rawCode} onCopy={onCopy} onRun={onRunCode} isStreaming={isStreamingThisBlock} />;
+                } else if ((index - 1) % 4 !== 0 && (index - 3) % 4 !== 0) {
+                     // This is regular text
+                    return <span key={index}>{part}</span>;
+                }
+                return null; // This is ```python or ```, so we don't render it.
+            })}
+             {/* Blinking cursor sirf tab dikhao jab animation chal raha ho and it's not inside a code block. */}
+            {showCursor && parts.length === 1 && <span className="inline-block w-2 h-4 bg-primary ml-1 animate-cursor-blink" />}
+        </div>
     );
 };
 
+
 // Main message component.
-const MessageComponent: React.FC<MessageProps> = ({ message, isLastMessage, onCopy, onSpeak, onRegenerate, speakingMessageId }) => {
+const MessageComponent: React.FC<MessageProps> = ({ message, isLastMessage, onCopy, onSpeak, onRegenerate, onRunCode, speakingMessageId }) => {
   const [isCopied, setIsCopied] = useState(false); // Text copy hua ya nahi, iska state.
   const isUser = message.role === 'user'; // Check kar rahe hain ki message user ka hai ya model ka.
   const isTyping = message.role === 'model' && !message.content; // Check kar rahe hain ki AI abhi type kar raha hai ya nahi.
@@ -86,6 +98,13 @@ const MessageComponent: React.FC<MessageProps> = ({ message, isLastMessage, onCo
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 2000); // 2 second ke baad 'copied' state ko reset kar dete hain.
   };
+  
+  // Wrapper copy function to handle both full message and code blocks
+  const copyHandler = (textToCopy: string) => {
+      onCopy(textToCopy);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+  }
 
   // Message ke neeche dikhne wale action buttons (Copy, Speak, Regenerate).
   const MessageActions = () => (
@@ -118,7 +137,7 @@ const MessageComponent: React.FC<MessageProps> = ({ message, isLastMessage, onCo
       <div className="flex flex-col items-start gap-2 relative">
         {/* Message bubble */}
         <div className={bubbleClasses}>
-          {isTyping ? <PulsingOrbIndicator /> : <StreamedContent text={message.content} />}
+          {isTyping ? <PulsingOrbIndicator /> : <StreamedContent text={message.content} onRunCode={onRunCode} onCopy={copyHandler} />}
         </div>
         {/* Model ke message par hover karne par actions dikhate hain. */}
         {!isUser && !isTyping && message.content && <MessageActions />}

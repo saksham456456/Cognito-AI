@@ -60,7 +60,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onSave, cu
         <div className="flex flex-col items-center">
             <UserCircleIcon className="w-20 h-20 text-primary mb-4" />
             <h2 id="profile-modal-title" className="font-heading text-2xl font-bold text-text-light mb-2">Operator Profile</h2>
-            <p className="text-sm text-text-medium mb-6">Apna callsign update karein.</p>
+            <p className="text-sm text-text-medium mb-6">Update your callsign.</p>
         </div>
         {/* Modal ka form area */}
         <div className="space-y-4">
@@ -73,7 +73,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onSave, cu
                     onChange={(e) => setName(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSave()} // Enter dabane par bhi save hoga.
                     className="mt-1 w-full bg-input border border-input-border rounded-lg px-3 py-2 text-text-light focus:outline-none focus:border-primary transition-colors"
-                    placeholder="Apna callsign daalein"
+                    placeholder="Enter your callsign"
                 />
             </div>
         </div>

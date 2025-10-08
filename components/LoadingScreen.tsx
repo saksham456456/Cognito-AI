@@ -13,7 +13,7 @@ const LoadingScreen = () => {
         const timer = setTimeout(() => setPathsVisible(true), 100);
         return () => clearTimeout(timer); // Cleanup
     }, []);
-
+    
     // Yeh function SVG path ke liye dynamic style generate karta hai.
     // 'stroke-dasharray' aur 'stroke-dashoffset' se line drawing effect banta hai.
     const pathStyle = (length: number, delay: string) => ({
@@ -61,6 +61,10 @@ const LoadingScreen = () => {
       </div>
        {/* Loading message, subtle fade animation ke sath */}
        <p className="text-text-medium mt-8 animate-subtle-fade">Initializing Cybernetic Core...</p>
+       {/* FIX: Replaced the buggy "decryption" animation with a simple, clean fade-in effect for stability. */}
+       <p className="font-code text-sm text-text-medium mt-4 h-5 opacity-0 fade-in-up" style={{ animationDelay: '1500ms' }}>
+           A Creation By <span className="text-primary font-bold text-glow-primary">SAKSHAM</span>
+       </p>
     </div>
   );
 };

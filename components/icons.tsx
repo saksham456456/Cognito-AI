@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 export const SendIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -130,5 +131,11 @@ export const PythonLogoIcon = (props: React.SVGProps<SVGSVGElement>) => (
             <path d="M128 256c70.692 0 128-57.308 128-128" fill="#387EB8"/>
             <path d="M134.272 127.39h33.81v33.81h-67.62v-13.09h47.245v-6.762h-45.16v-13.09h51.725v-13.95h33.81s16.535-.345 16.535 15.197c0 13.628-12.8 13.25-12.8 13.25h-20.983v5.235h32.09c16.19 0 21.328-10.355 21.328-20.27 0-13.95-9.172-20.983-22.897-20.983H151.8v-21.698h-13.448v34.155h-3.792zM104.48 128.61c0 15.543 9.172 20.983 22.896 20.983h32.09c16.19 0 21.328-10.355 21.328-20.27 0-13.95-9.172-20.983-22.897-20.983h-16.534c-13.725 0-20.983 5.58-20.983 13.607 0 9.172 5.234 13.25 13.09 13.25h20.982v5.234h-32.09c-16.19 0-21.328 10.355-21.328 20.27z" fill="#FFC331"/>
         </g>
+    </svg>
+);
+
+export const LayersIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6.115 5.115A9 9 0 0112 3m0 0a9 9 0 015.885 2.115M12 3v9m0 0a9 9 0 00-5.885 2.115M12 12a9 9 0 005.885 2.115m-5.885 0A9 9 0 013 12m9 9a9 9 0 01-5.885-2.115M12 21a9 9 0 015.885-2.115M12 21v-9" />
     </svg>
 );

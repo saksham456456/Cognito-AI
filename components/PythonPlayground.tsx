@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import PythonLoadingScreen from './PythonLoadingScreen';
 import { MenuIcon } from './icons';
@@ -11,12 +12,13 @@ declare global {
 
 interface PythonPlaygroundProps {
     onToggleSidebar: () => void; // Sidebar ko kholne/band karne ke liye function.
+    initialCode: string | null; // Chat se code pass karne ke liye.
 }
 
-const PythonPlayground: React.FC<PythonPlaygroundProps> = ({ onToggleSidebar }) => {
+const PythonPlayground: React.FC<PythonPlaygroundProps> = ({ onToggleSidebar, initialCode }) => {
     // State variables
-    const [code, setCode] = useState(`# input() function is sandboxed environment me kaam nahi karta.
-# Logic test karne ke liye variables ko direct values assign karte hain.
+    const [code, setCode] = useState(`# The input() function does not work in this sandboxed environment.
+# Assign values to variables directly to test logic.
 a = 10
 b = "*"
 c = 5
@@ -32,7 +34,7 @@ elif b=="*" or b=="x":
 elif b=="/":
     print(a/c)
 else:
-    print("Invalid operator pradan kiya gaya hai!")`);
+    print("Invalid operator provided!")`);
     const [output, setOutput] = useState(''); // Code ka output store karne ke liye.
     const [error, setError] = useState(''); // Code ka error store karne ke liye.
     const [isPyodideLoading, setIsPyodideLoading] = useState(true); // Pyodide load ho raha hai ya nahi.
@@ -58,11 +60,11 @@ else:
                     await pyodide.loadPackage('numpy'); // numpy ko pehle se load kar lete hain.
                     pyodideRef.current = pyodide; // Pyodide instance ko ref me save karte hain.
                 } else {
-                    setError("Pyodide script abhi tak load nahi hua. Kripya refresh karein.");
+                    setError("Pyodide script has not loaded yet. Please refresh.");
                 }
             } catch (err) {
                 console.error('Pyodide loading error:', err);
-                setError('Python environment load nahi ho paya. Apna network connection check karke phir se try karein.');
+                setError('Failed to load Python environment. Please check your network connection and try again.');
             } finally {
                 setIsPyodideLoading(false); // Loading complete.
             }
@@ -73,6 +75,13 @@ else:
         // Cleanup: component unmount hone par timer clear karte hain.
         return () => clearTimeout(splashTimer);
     }, []);
+
+    // Jab bhi initialCode prop badalta hai, editor ke code ko update karte hain.
+    useEffect(() => {
+        if (initialCode !== null) {
+            setCode(initialCode);
+        }
+    }, [initialCode]);
 
     // Python code ko run karne wala function.
     const runCode = async () => {
@@ -178,7 +187,7 @@ else:
                                 <code className="text-gray-200">{output}</code>
                             ) : (
                                 <code className="text-gray-500 animate-pulse">
-                                    [Execution ka intezar hai...]
+                                    [Awaiting execution...]
                                 </code>
                             )}
                         </pre>

@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import type { Chat } from '../types';
 import { CognitoLogo } from './Logo';
-import { PlusIcon, MessageSquareIcon, SearchIcon, PencilIcon, CheckIcon, XIcon, UserCircleIcon, SunIcon, MoonIcon, DownloadIcon, TrashIcon, InfoIcon, CodeBracketIcon } from './icons';
+import { PlusIcon, MessageSquareIcon, SearchIcon, PencilIcon, CheckIcon, XIcon, UserCircleIcon, SunIcon, MoonIcon, DownloadIcon, TrashIcon, InfoIcon, CodeBracketIcon, LayersIcon } from './icons';
 
 // Sidebar ke props ka interface.
 interface SidebarProps {
@@ -21,6 +21,8 @@ interface SidebarProps {
   onAboutClick: () => void;
   currentView: 'chat' | 'python';
   onViewChange: (view: 'chat' | 'python') => void;
+  backgroundAnimation: string;
+  onBackgroundAnimationChange: (animation: string) => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -38,6 +40,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   onAboutClick,
   currentView,
   onViewChange,
+  backgroundAnimation,
+  onBackgroundAnimationChange
 }) => {
   // State variables
   const [searchTerm, setSearchTerm] = useState(''); // Search input ki value.
@@ -217,6 +221,23 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
           {/* Action buttons */}
           <ul className="space-y-1 mt-2">
+               <li>
+                  <div className="w-full flex items-center gap-3 p-2 rounded-md text-sm text-text-medium">
+                      <LayersIcon className="w-5 h-5" />
+                      <label htmlFor="bg-animation-select" className="flex-1">Background</label>
+                      <select
+                          id="bg-animation-select"
+                          value={backgroundAnimation}
+                          onChange={(e) => onBackgroundAnimationChange(e.target.value)}
+                          className="bg-input border border-input-border rounded-md px-2 py-1 text-xs text-text-light focus:outline-none focus:border-primary transition-colors"
+                      >
+                          <option value="particles">Plexus</option>
+                          <option value="matrix">Matrix</option>
+                          <option value="hexagons">Hex Grid</option>
+                          <option value="circuits">Circuits</option>
+                      </select>
+                  </div>
+              </li>
               <li>
                   <button
                       onClick={onAboutClick}

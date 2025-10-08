@@ -40,19 +40,19 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
         <div className="flex flex-col items-center text-center">
             <CognitoLogo className="w-20 h-20 text-primary mb-4" />
             <h2 id="about-modal-title" className="font-heading text-2xl font-bold text-text-light mb-2">About Cognito AI</h2>
-            <p className="text-sm text-text-medium mb-6">Aapka Personal AI Assistant</p>
+            <p className="text-sm text-text-medium mb-6">Your Personal AI Assistant</p>
         </div>
         {/* Modal ka body content */}
         <div className="space-y-4 text-sm text-text-light text-left">
             <p>
                 {/* External link, _blank se naye tab me khulega */}
-                <a href="https://www.instagram.com/reel/DPT0FM6k0MS/?utm_source=ig_web_copy_link&igsh=MTU2ZTN5anUwdHdicQ==" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">Cognito AI</a> ek modern, responsive AI assistant hai jo intelligent jawab aur ek behtareen user experience dene ke liye banaya gaya hai. 
+                <a href="https://www.instagram.com/reel/DPT0FM6k0MS/?utm_source=ig_web_copy_link&igsh=MTU2ZTN5anUwdHdicQ==" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">Cognito AI</a> is a modern, responsive AI assistant crafted to provide intelligent answers and a premium user experience.
             </p>
             <p>
-                Yeh application <a href="https://www.instagram.com/saksham_456456?utm_source=ig_web_button_share_sheet&igsh=MWplM21keGhpbmZnZw==" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">Saksham</a> ne develop kiya hai, jo ek passionate frontend engineer hai aur sundar, functional user interfaces banane me mahir hai.
+                This application was developed by <a href="https://www.instagram.com/saksham_456456?utm_source=ig_web_button_share_sheet&igsh=MWplM21keGhpbmZnZw==" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">Saksham</a>, a passionate frontend engineer with a knack for creating beautiful, functional user interfaces.
             </p>
             <p>
-                Yeh <a href="https://github.com/saksham456456" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">Saksham ke knowledge</a>, ML aur DBMS ke prati unki curiosity, aur unke interests se chalta hai.
+                It is fueled by <a href="https://github.com/saksham456456" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">Saksham's knowledge</a>, curiosity in ML & DBMS, and his interests.
             </p>
         </div>
         {/* Modal ka footer section */}

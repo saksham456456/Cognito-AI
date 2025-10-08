@@ -1,23 +1,25 @@
+
 import React, { useState, useEffect } from 'react';
 import { CognitoLogo } from './Logo';
 
 // Python view se bahar aate waqt dikhne wale messages ka array.
 const disintegrationMessages = [
-    "Python session ko band kiya ja raha hai...",
-    "Virtual resources ko free kiya ja raha hai...",
-    "Memory caches ko saaf kiya ja raha hai...",
-    "Py-Core ko disengage kiya ja raha hai...",
-    "Primary interface par wapas ja rahe hain.",
+    "Terminating Python session...",
+    "Freeing virtual resources...",
+    "Flushing memory caches...",
+    "Disengaging Py-Core...",
+    "Returning to primary interface.",
 ];
 
 // Glitch effect ke sath text dikhane wala component.
 const GlitchText = ({ text }: { text: string }) => {
     return (
         <div className="relative font-heading text-2xl font-bold text-text-light uppercase tracking-wider" style={{ textShadow: '0 0 5px var(--primary-glow)'}}>
-            {/* Text ko teen hisso me
-            n (layers) me render karke alag-alag animation delay se glitch effect banate hain */}
+            {/* Invisible span to give the container correct dimensions */}
+            <span aria-hidden="true" className="opacity-0">{text}</span>
+            {/* All three layers are now absolutely positioned to stack correctly */}
             <span className="absolute inset-0 animate-glitch opacity-80" style={{ animationDelay: '0.2s', clipPath: 'polygon(0 0, 100% 0, 100% 33%, 0 33%)' }}>{text}</span>
-            <span className="animate-glitch opacity-80" style={{ clipPath: 'polygon(0 33%, 100% 33%, 100% 66%, 0 66%)' }}>{text}</span>
+            <span className="absolute inset-0 animate-glitch opacity-80" style={{ clipPath: 'polygon(0 33%, 100% 33%, 100% 66%, 0 66%)' }}>{text}</span>
             <span className="absolute inset-0 animate-glitch opacity-80" style={{ animationDelay: '0.5s', clipPath: 'polygon(0 66%, 100% 66%, 100% 100%, 0 100%)' }}>{text}</span>
         </div>
     )
@@ -57,7 +59,7 @@ const PythonDisintegrationScreen: React.FC = () => {
                 {/* Header text with glitch effect */}
                 <div className="text-center">
                     <GlitchText text="Disengaging Python Core" />
-                    <p className="text-text-medium">Environment ko surakshit roop se band kiya ja raha hai...</p>
+                    <p className="text-text-medium">Securely shutting down the environment...</p>
                 </div>
                 
                 {/* Current status message */}
