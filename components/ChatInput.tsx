@@ -3,16 +3,16 @@ import { SendIcon, EmojiHappyIcon, CodeBracketIcon } from './icons';
 import { CognitoLogo } from './Logo';
 import type { AiMode } from '../types';
 
-// ChatInput component ke props ka interface define kar rahe hain.
+// Defining the interface for the ChatInput component's props.
 interface ChatInputProps {
-  onSendMessage: (message: string) => void; // Message bhejne ke liye function.
-  isLoading: boolean; // AI response generate kar raha hai ya nahi.
-  showSuggestions: boolean; // Shuruaati suggestions dikhane hain ya nahi.
+  onSendMessage: (message: string) => void; // Function to send a message.
+  isLoading: boolean; // Is the AI currently generating a response?
+  showSuggestions: boolean; // Should initial suggestions be shown?
   aiMode: AiMode;
   onAiModeChange: (mode: AiMode) => void;
 }
 
-// Suggestion button ke liye ek chhota sa component.
+// A small component for the suggestion button.
 const SuggestionButton: React.FC<{ text: string; onClick: () => void }> = ({ text, onClick }) => (
     <button
         onClick={onClick}
@@ -24,41 +24,41 @@ const SuggestionButton: React.FC<{ text: string; onClick: () => void }> = ({ tex
 
 const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, showSuggestions, aiMode, onAiModeChange }) => {
   // State variables
-  const [inputValue, setInputValue] = useState(''); // Textarea ka current value.
-  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false); // Emoji picker khula hai ya nahi.
-  const [isModePickerOpen, setIsModePickerOpen] = useState(false); // Mode picker khula hai ya nahi.
-  const [isFocused, setIsFocused] = useState(false); // Input focus state for glow effect.
+  const [inputValue, setInputValue] = useState(''); // The current value of the textarea.
+  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false); // Is the emoji picker open?
+  const [isModePickerOpen, setIsModePickerOpen] = useState(false); // Is the mode picker open?
+  const [isFocused, setIsFocused] = useState(false); // Input focus state for the glow effect.
 
-  // DOM elements ke liye Refs
-  const textareaRef = useRef<HTMLTextAreaElement>(null); // Textarea ko access karne ke liye.
-  const emojiPickerRef = useRef<HTMLDivElement>(null); // Emoji picker ke bahar click detect karne ke liye.
-  const emojiButtonRef = useRef<HTMLButtonElement>(null); // Emoji button ke bahar click detect karne ke liye.
+  // Refs for DOM elements
+  const textareaRef = useRef<HTMLTextAreaElement>(null); // To access the textarea.
+  const emojiPickerRef = useRef<HTMLDivElement>(null); // To detect clicks outside the emoji picker.
+  const emojiButtonRef = useRef<HTMLButtonElement>(null); // To detect clicks on the emoji button.
   const modePickerRef = useRef<HTMLDivElement>(null);
   const modeButtonRef = useRef<HTMLButtonElement>(null);
   
-  // Shuruaati chat suggestions ka array.
+  // Array of initial chat suggestions.
   const suggestions = [
       "Give me ideas for a sci-fi story",
       "Explain quantum computing simply",
       "Write a futuristic poem"
   ]
 
-  // Suggestion pe click hone par, us suggestion ko message olarak bhej dete hain.
+  // When a suggestion is clicked, send it as a message.
   const handleSuggestionClick = (suggestion: string) => {
       setInputValue(suggestion);
-      onSendMessage(suggestion); // Main component ko message bhejte hain.
+      onSendMessage(suggestion); // Sends the message to the main component.
   }
 
-  // Jab bhi inputValue change hota hai, textarea ki height ko dynamically adjust karte hain.
+  // Whenever inputValue changes, dynamically adjust the textarea's height.
   useEffect(() => {
     if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto'; // Pehle height reset karo.
+      textareaRef.current.style.height = 'auto'; // First, reset the height.
       const scrollHeight = textareaRef.current.scrollHeight;
-      textareaRef.current.style.height = `${scrollHeight}px`; // Nayi height set karo.
+      textareaRef.current.style.height = `${scrollHeight}px`; // Set the new height.
     }
   }, [inputValue]);
   
-  // Yeh effect emoji/mode picker ke bahar click ko handle karta hai, use band karne ke liye.
+  // This effect handles clicks outside the emoji/mode picker to close it.
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
         const target = event.target as Node;
@@ -70,26 +70,26 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, showSug
         }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    // Cleanup function: component unmount hone par event listener ko remove kar deta hai.
+    // Cleanup function: removes the event listener when the component unmounts.
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isEmojiPickerOpen, isModePickerOpen]);
 
-  // Emoji select hone par use input value me add kar deta hai.
+  // Adds the selected emoji to the input value.
   const handleEmojiSelect = (emoji: string) => {
     setInputValue(prev => prev + emoji);
-    textareaRef.current?.focus(); // Focus wapas textarea pe le aate hain.
+    textareaRef.current?.focus(); // Brings focus back to the textarea.
   };
 
-  // Form submit hone par message bhejta hai.
+  // Sends the message when the form is submitted.
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault(); // Default form submission ko rokte hain.
+    e.preventDefault(); // Prevents default form submission.
     if (inputValue.trim() && !isLoading) {
       onSendMessage(inputValue.trim());
-      setInputValue(''); // Input field ko khali kar dete hain.
+      setInputValue(''); // Clears the input field.
     }
   };
 
-  // Enter key dabane par message bhejta hai (Shift+Enter se new line aayega).
+  // Sends the message when the Enter key is pressed (Shift+Enter creates a new line).
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -128,7 +128,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, showSug
 
   return (
     <div className="w-full max-w-3xl mx-auto px-4 pb-4 flex-shrink-0">
-        {/* Agar showSuggestions true hai to suggestions dikhao */}
+        {/* If showSuggestions is true, show the suggestions */}
         {showSuggestions && (
             <div className="flex justify-center items-center gap-3 mb-4 animate-fade-in-up">
                 {suggestions.map((text) => (
@@ -154,7 +154,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, showSug
                     </div>
                 </div>
             )}
-            {/* Main form jisme textarea aur send button hai */}
+            {/* Main form containing the textarea and send button */}
             <form onSubmit={handleSubmit} className={`flex items-end gap-2 p-2 bg-input rounded-xl border border-input-border transition-all duration-300 ${isFocused ? 'glow-border-active' : ''}`}>
                 <button
                     type="button"
@@ -195,7 +195,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, showSug
                     disabled={isLoading || !inputValue.trim()}
                     className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary text-primary-foreground flex items-center justify-center transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-yellow-400 hover:scale-110 active:scale-100"
                 >
-                    {/* Loading state me spinner dikhao, nahi to send icon */}
+                    {/* Show a spinner in the loading state, otherwise show the send icon */}
                     {isLoading ? (
                         <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
                     ) : (

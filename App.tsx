@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { startChat, getTitleForChat } from './services/geminiService';
 import { saveChat, loadChats, deleteChat, deleteAllChats } from './services/dbService';
-import type { Message, Chat, AiMode } from './types';
+import type { Message, Chat, AiMode, AppView } from './types';
 import MessageComponent from './components/Message';
 import ChatInput from './components/ChatInput';
 import { CognitoLogo } from './components/Logo';
@@ -12,39 +12,48 @@ import LoadingScreen from './components/LoadingScreen';
 import AboutModal from './components/AboutModal';
 import ConfirmationModal from './components/ConfirmationModal';
 import BackgroundCanvas from './components/BackgroundCanvas';
+import CoreLoadingScreen from './components/CoreLoadingScreen';
+import CodingPlayground from './components/CodingPlayground';
+import CoreDisintegrationScreen from './components/CoreDisintegrationScreen';
+
 
 const App: React.FC = () => {
-    // State variables ko define kar rahe hain using useState hook.
-    const [isAiLoading, setIsAiLoading] = useState(false); // AI response generate kar raha hai ya nahi.
-    const [chats, setChats] = useState<Chat[]>([]); // Saare chats ka array.
-    const [activeChatId, setActiveChatId] = useState<string | null>(null); // Currently open chat ka ID.
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Mobile pe sidebar open hai ya nahi.
-    const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null); // Kaunsa message text-to-speech se bola ja raha hai.
-    const [userName, setUserName] = useState(() => localStorage.getItem('userName') || 'Operator'); // User ka naam, localStorage se load karte hain.
-    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false); // Profile modal open hai ya nahi.
-    const [isAboutModalOpen, setIsAboutModalOpen] = useState(false); // About modal open hai ya nahi.
-    const [isConfirmDeleteAllOpen, setIsConfirmDeleteAllOpen] = useState(false); // "Delete all" confirmation modal open hai ya nahi.
-    const [isDbLoading, setIsDbLoading] = useState(true); // Database se chats load ho rahe hain ya nahi.
+    // Defining state variables using the useState hook.
+    const [isAiLoading, setIsAiLoading] = useState(false); // Is the AI generating a response?
+    const [chats, setChats] = useState<Chat[]>([]); // Array of all chats.
+    const [activeChatId, setActiveChatId] = useState<string | null>(null); // The ID of the currently open chat.
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Is the sidebar open on mobile?
+    const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null); // Which message is being spoken by text-to-speech.
+    const [userName, setUserName] = useState(() => localStorage.getItem('userName') || 'Operator'); // The user's name, loaded from localStorage.
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false); // Is the profile modal open?
+    const [isAboutModalOpen, setIsAboutModalOpen] = useState(false); // Is the about modal open?
+    const [isConfirmDeleteAllOpen, setIsConfirmDeleteAllOpen] = useState(false); // Is the "Delete all" confirmation modal open?
+    const [isDbLoading, setIsDbLoading] = useState(true); // Are chats being loaded from the database?
     const [backgroundAnimation, setBackgroundAnimation] = useState<string>(() => localStorage.getItem('backgroundAnimation') || 'particles'); // Background animation type.
     const [aiMode, setAiMode] = useState<AiMode>('cognito'); // Current AI mode.
     
-    // useRef hooks ka istemal DOM elements ya persistent values ko store karne ke liye.
-    const messagesEndRef = useRef<HTMLDivElement>(null); // Chat ke end tak scroll karne ke liye reference.
-    const saveTimeoutRef = useRef<number | null>(null); // Chat ko save karne ke liye debounce timer.
-    const chatsRef = useRef(chats); // chats state ka current value hold karne ke liye, taki stale closures se bacha ja sake.
+    // App view management states
+    const [currentView, setCurrentView] = useState<AppView>('chat');
+    const [isTransitioning, setIsTransitioning] = useState(false); // For entering the core
+    const [isExiting, setIsExiting] = useState(false); // For exiting the core
+    
+    // Using useRef hooks to store DOM elements or persistent values.
+    const messagesEndRef = useRef<HTMLDivElement>(null); // Reference to scroll to the end of the chat.
+    const saveTimeoutRef = useRef<number | null>(null); // Debounce timer for saving the chat.
+    const chatsRef = useRef(chats); // Holds the current value of the chats state to avoid stale closures.
     const stopGenerationRef = useRef(false); // Flag to stop the AI response stream.
     chatsRef.current = chats;
 
-    // Active chat ko chats array se find kar rahe hain.
+    // Finding the active chat from the chats array.
     const activeChat = chats.find(c => c.id === activeChatId);
 
-     // useEffect hook component ke mount hone par chalta hai.
+     // This useEffect hook runs when the component mounts.
      useEffect(() => {
-        // Dark theme ko default set kar rahe hain
+        // Setting the dark theme by default.
         document.documentElement.classList.add('dark');
     }, []);
 
-    // Yeh useEffect app start hone par IndexedDB se chats load karta hai.
+    // This useEffect loads chats from IndexedDB when the app starts.
     useEffect(() => {
         const init = async () => {
             try {
@@ -52,34 +61,34 @@ const App: React.FC = () => {
                 const loadedChats = await loadChats();
                 setChats(loadedChats);
                 if (loadedChats.length > 0) {
-                    setActiveChatId(loadedChats[0].id); // Pehle chat ko active set karte hain.
+                    setActiveChatId(loadedChats[0].id); // Set the first chat as active.
                 }
                 const elapsedTime = Date.now() - startTime;
-                const minLoadingTime = 2500; // Minimum 2.5 seconds ka loading screen dikhate hain.
+                const minLoadingTime = 2500; // Show the loading screen for a minimum of 2.5 seconds.
                 if (elapsedTime < minLoadingTime) {
                     await new Promise(resolve => setTimeout(resolve, minLoadingTime - elapsedTime));
                 }
             } catch (error) {
-                console.error("Database se chats load karne mein fail ho gaya:", error);
+                console.error("Failed to load chats from the database:", error);
             } finally {
-                setIsDbLoading(false); // Loading state ko false set karte hain.
+                setIsDbLoading(false); // Set the loading state to false.
             }
         };
         init();
     }, []);
 
-    // Jab bhi userName change hota hai, use localStorage mein save karte hain.
+    // Whenever userName changes, save it to localStorage.
     useEffect(() => {
         localStorage.setItem('userName', userName);
     }, [userName]);
 
-    // Background animation choice ko localStorage mein save karte hain.
+    // Save the background animation choice to localStorage.
     useEffect(() => {
         localStorage.setItem('backgroundAnimation', backgroundAnimation);
     }, [backgroundAnimation]);
 
-    // Yeh useEffect active chat ke messages ya title change hone par use DB mein save karta hai.
-    // Debouncing (setTimeout) use kiya gaya hai taki har chote change pe save na ho.
+    // This useEffect saves the active chat to the DB whenever its messages or title change.
+    // Debouncing (setTimeout) is used to avoid saving on every small change.
     useEffect(() => {
         if (!activeChat || isDbLoading) return;
 
@@ -90,9 +99,9 @@ const App: React.FC = () => {
         saveTimeoutRef.current = window.setTimeout(() => {
             const chatToSave = chatsRef.current.find(c => c.id === activeChat.id);
             if (chatToSave) {
-                saveChat(chatToSave).catch(error => console.error("Chat save karne mein fail ho gaya:", error));
+                saveChat(chatToSave).catch(error => console.error("Failed to save chat:", error));
             }
-        }, 500); // 500ms ke delay ke baad save hoga.
+        }, 500); // Saves after a 500ms delay.
 
         return () => {
             if (saveTimeoutRef.current) {
@@ -101,7 +110,7 @@ const App: React.FC = () => {
         };
     }, [activeChat?.messages, activeChat?.title, isDbLoading]);
     
-    // Jab bhi naya message aata hai, view ko neeche scroll karte hain.
+    // Scroll the view down whenever a new message arrives.
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [activeChat?.messages]);
@@ -111,32 +120,62 @@ const App: React.FC = () => {
         setIsAiLoading(false);
     }
 
-    // User jab message bhejta hai to yeh function handle karta hai.
+    // Handles the view transition between 'chat' and 'coding' modes
+    const handleAiModeChange = (newMode: AiMode) => {
+        const newView: AppView = newMode === 'code-assistant' ? 'coding' : 'chat';
+
+        if (newView !== currentView) {
+            if (newView === 'coding') {
+                // If there's no active chat, create one before entering.
+                if (!activeChatId) {
+                    handleNewChat(false); // Create a new chat but don't switch view yet.
+                }
+                setIsTransitioning(true);
+                setTimeout(() => {
+                    setCurrentView('coding');
+                    setAiMode('code-assistant');
+                    setIsTransitioning(false);
+                }, 3000); // 3-second loading screen
+            } else { // Exiting coding mode
+                setIsExiting(true);
+                setTimeout(() => {
+                    setCurrentView('chat');
+                    setAiMode('cognito');
+                    setIsExiting(false);
+                }, 1500); // 1.5-second disintegration effect
+            }
+        } else {
+             setAiMode(newMode);
+        }
+    };
+
+
+    // This function handles when the user sends a message.
     const handleSendMessage = async (content: string) => {
         let currentChatId = activeChatId;
         let history: Message[] = [];
         let isNewChat = false;
         
-        // Agar koi active chat nahi hai, to ek naya chat banate hain.
+        // If there's no active chat, create a new one.
         if (!currentChatId) {
             isNewChat = true;
             const newChatId = Date.now().toString();
             const newChat: Chat = { id: newChatId, title: "New Conversation", messages: [] };
-            await saveChat(newChat); // Naye chat ko DB mein save karte hain.
+            await saveChat(newChat); // Save the new chat to the DB.
             setChats(prev => [newChat, ...prev]);
             setActiveChatId(newChatId);
             currentChatId = newChatId;
         } else {
-            // Purane chat ka history lete hain.
+            // Get the history of the old chat.
             history = chats.find(c => c.id === currentChatId)?.messages || [];
         }
 
         const userMessage: Message = { id: Date.now().toString(), role: 'user', content };
         const modelMessageId = (Date.now() + 1).toString();
-        // AI ke response ke liye ek placeholder message add karte hain.
+        // Add a placeholder message for the AI's response.
         const modelPlaceholder: Message = { id: modelMessageId, role: 'model', content: '' };
         
-        // UI ko turant update karte hain user message aur AI placeholder ke sath.
+        // Immediately update the UI with the user message and AI placeholder.
         setChats(prev => prev.map(c => 
             c.id === currentChatId 
                 ? { ...c, messages: [...c.messages, userMessage, modelPlaceholder] } 
@@ -148,7 +187,9 @@ const App: React.FC = () => {
         
         let fullResponse = '';
         try {
-            const chatSession = startChat(history, aiMode);
+            // Determine which AI mode to use for the API call.
+            const modeForAPI = currentView === 'coding' ? 'code-assistant' : 'cognito';
+            const chatSession = startChat(history, modeForAPI);
             const responseStream = await chatSession.sendMessageStream({ message: content });
             
             for await (const chunk of responseStream) {
@@ -156,7 +197,7 @@ const App: React.FC = () => {
                 
                 if (chunk && chunk.text) {
                     fullResponse += chunk.text;
-                    // Har chunk ke aane par UI ko update karte hain.
+                    // Update the UI as each chunk arrives.
                     setChats(prev => prev.map(chat => {
                         if (chat.id === currentChatId) {
                             const newMessages = chat.messages.map(msg => 
@@ -170,7 +211,7 @@ const App: React.FC = () => {
             }
 
 
-            // Agar naya chat tha aur response aa gaya, to uske liye title generate karte hain.
+            // If it was a new chat and a response was received, generate a title for it.
             if (isNewChat && fullResponse.trim()) {
                 const finalModelMessage: Message = { id: modelMessageId, role: 'model', content: fullResponse };
                 const messagesForTitle: Message[] = [userMessage, finalModelMessage];
@@ -180,12 +221,12 @@ const App: React.FC = () => {
                         setChats(prev => prev.map(c => c.id === currentChatId ? { ...c, title: newTitle } : c));
                     })
                     .catch(error => {
-                        console.error("Naye chat ke liye title generate karne mein error:", error);
+                        console.error("Error generating title for new chat:", error);
                     });
             }
         } catch (error: any) {
-             console.error("AI response lene mein error:", error);
-            // Error ko UI pe dikhate hain.
+             console.error("Error getting AI response:", error);
+            // Show the error on the UI.
             setChats(prev => prev.map(chat => {
                 if (chat.id === currentChatId) {
                     return {
@@ -205,11 +246,11 @@ const App: React.FC = () => {
         }
     };
     
-    // Last response ko regenerate karne ke liye function.
+    // Function to regenerate the last response.
     const handleRegenerateResponse = async () => {
         if (!activeChat || isAiLoading) return;
         const messages = [...activeChat.messages];
-        // Last model message aur usse pehle wale user message ko dhundte hain.
+        // Find the last model message and the user message before it.
         const lastModelMessageIndex = messages.map(m => m.role).lastIndexOf('model');
         if (lastModelMessageIndex < 0) return;
 
@@ -222,7 +263,7 @@ const App: React.FC = () => {
         const modelMessageId = (Date.now() + 1).toString();
         const modelPlaceholder: Message = { id: modelMessageId, role: 'model', content: '' };
         
-        // UI se purana model response hatake naya placeholder add karte hain.
+        // Remove the old model response from the UI and add a new placeholder.
         setChats(prev => prev.map(c => 
             c.id === activeChat.id 
                 ? { ...c, messages: [...history, messages[lastUserMessageIndex], modelPlaceholder] } 
@@ -233,7 +274,8 @@ const App: React.FC = () => {
         stopGenerationRef.current = false; // Reset the stop flag.
         let fullResponse = '';
         try {
-            const chatSession = startChat(history, aiMode);
+            const modeForAPI = currentView === 'coding' ? 'code-assistant' : 'cognito';
+            const chatSession = startChat(history, modeForAPI);
             const responseStream = await chatSession.sendMessageStream({ message: lastUserMessageContent });
 
             for await (const chunk of responseStream) {
@@ -252,7 +294,7 @@ const App: React.FC = () => {
                 }
             }
         } catch (error: any) {
-             console.error("AI response regenerate karne mein error:", error);
+             console.error("Error regenerating AI response:", error);
              setChats(prev => prev.map(chat => {
                  if (chat.id === activeChat.id) {
                      return {
@@ -272,31 +314,37 @@ const App: React.FC = () => {
         }
     };
 
-    // Naya chat shuru karne ke liye.
-    const handleNewChat = () => {
+    // To start a new chat.
+    const handleNewChat = (changeView = true) => {
+        if (changeView && currentView === 'coding') {
+            handleAiModeChange('cognito');
+        }
         setActiveChatId(null);
-        setIsSidebarOpen(false);
+        if (changeView) setIsSidebarOpen(false);
     };
 
-    // List se kisi chat ko select karne ke liye.
+    // To select a chat from the list.
     const handleSelectChat = (id: string) => {
+        if (currentView === 'coding') {
+            handleAiModeChange('cognito');
+        }
         setActiveChatId(id);
         setIsSidebarOpen(false);
     };
     
-    // Chat ka title badalne ke liye.
+    // To change the title of a chat.
     const handleRenameChat = (id: string, newTitle: string) => {
         setChats(prev => {
             const newChats = prev.map(c => (c.id === id ? { ...c, title: newTitle } : c));
             const chatToSave = newChats.find(c => c.id === id);
             if (chatToSave) {
-                saveChat(chatToSave).catch(err => console.error("Renamed chat save karne mein fail", err));
+                saveChat(chatToSave).catch(err => console.error("Failed to save renamed chat", err));
             }
             return newChats;
         });
     };
 
-    // Ek chat ko delete karne ke liye.
+    // To delete a chat.
     const handleDeleteChat = async (id: string) => {
         try {
             await deleteChat(id);
@@ -304,7 +352,7 @@ const App: React.FC = () => {
             const remainingChats = chats.filter(c => c.id !== id);
             setChats(remainingChats);
 
-            // Agar active chat hi delete ho gaya to naya active chat set karte hain.
+            // If the active chat was deleted, set a new active chat.
             if (activeChatId === id) {
                 if (remainingChats.length > 0) {
                     const newActiveIndex = Math.max(0, chatToDeleteIndex - 1);
@@ -314,18 +362,18 @@ const App: React.FC = () => {
                 }
             }
         } catch (error) {
-            console.error("Chat delete karne mein fail:", error);
+            console.error("Failed to delete chat:", error);
         }
     };
 
-    // Saare chats delete karne ke liye confirmation modal kholta hai.
+    // Opens the confirmation modal to delete all chats.
     const handleDeleteAllChats = () => {
         if (chats.length > 0) {
             setIsConfirmDeleteAllOpen(true);
         }
     };
 
-    // Confirmation ke baad saare chats ko delete karta hai.
+    // Deletes all chats after confirmation.
     const executeDeleteAllChats = async () => {
         try {
             await deleteAllChats();
@@ -333,25 +381,24 @@ const App: React.FC = () => {
             setActiveChatId(null);
             setIsSidebarOpen(false);
         } catch (error) {
-            console.error("Saare chats delete karne mein fail:", error);
+            console.error("Failed to delete all chats:", error);
         } finally {
             setIsConfirmDeleteAllOpen(false);
         }
     };
 
-    // Text ko clipboard pe copy karne ke liye.
+    // To copy text to the clipboard.
     const handleCopyText = (text: string) => {
         navigator.clipboard.writeText(text);
     };
 
-    // Text-to-speech ko toggle karne ke liye.
+    // To toggle text-to-speech.
     const handleToggleSpeak = (message: Message) => {
         if (speakingMessageId === message.id) {
-            speechSynthesis.cancel(); // Agar pehle se bol raha hai to band karo.
+            speechSynthesis.cancel(); // If it's already speaking, stop it.
             setSpeakingMessageId(null);
         } else {
-            speechSynthesis.cancel(); // Koi aur message bol raha ho to use band karo.
-            // FIX: Corrected typo from SpeechSynthesisUtterterance to SpeechSynthesisUtterance.
+            speechSynthesis.cancel(); // If another message is speaking, stop it.
             const utterance = new SpeechSynthesisUtterance(message.content);
             utterance.onend = () => setSpeakingMessageId(null);
             utterance.onerror = () => setSpeakingMessageId(null);
@@ -360,7 +407,7 @@ const App: React.FC = () => {
         }
     };
 
-    // Active chat ko text file mein export karne ke liye.
+    // To export the active chat to a text file.
     const handleExportChat = () => {
         if (!activeChat) return;
         const fileContent = activeChat.messages
@@ -378,18 +425,103 @@ const App: React.FC = () => {
         URL.revokeObjectURL(url);
     };
 
-    // Profile modal mein naam save karne ke liye.
+    // To save the name in the profile modal.
     const handleSaveProfile = (newName: string) => {
         setUserName(newName);
         setIsProfileModalOpen(false);
     };
+    
+    const renderChatView = () => (
+        <div className="flex-1 flex flex-col relative">
+            <header className="flex-shrink-0 flex items-center justify-center p-4 border-b border-card-border glassmorphism relative">
+                {/* Menu button for mobile */}
+                <button onClick={() => setIsSidebarOpen(true)} className="p-1 rounded-md border border-transparent hover:border-card-border absolute left-4 top-1/2 -translate-y-1/2 md:hidden">
+                    <MenuIcon className="h-6 w-6" />
+                </button>
+                <h1 className={`font-heading text-xl font-bold tracking-widest text-center truncate px-12 md:px-0 uppercase animate-neon-flicker`}>
+                    {activeChat ? activeChat.title : 'Cognito AI Assistant'}
+                </h1>
+            </header>
+            <main className="flex-1 flex flex-col relative overflow-hidden min-h-0">
+                 {/* Faint logo in the background (watermark) */}
+                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none watermark">
+                    <CognitoLogo className="h-96 w-96" />
+                </div>
+                <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                    {/* If no chat is active, show the welcome screen */}
+                    {!activeChat ? (
+                    <div className="flex h-full items-center justify-center">
+                            <div className="relative text-center flex flex-col items-center gap-4" style={{ top: '-5rem' }}>
+                                <CognitoLogo className="w-28 h-28" />
+                                <div className="text-center">
+                                    <h1 className="font-heading text-4xl font-bold text-gray-200">Welcome, {userName}</h1>
+                                    <p className="mt-1 text-lg text-gray-400">How can I help you navigate the digital cosmos today?</p>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        // Render all messages of the active chat
+                        <div className="max-w-3xl mx-auto space-y-8">
+                            {activeChat.messages.map((msg, index) => (
+                                <div key={msg.id} style={{ animationDelay: `${index * 100}ms` }} className="fade-in-up">
+                                    <MessageComponent 
+                                        message={msg}
+                                        isLastMessage={index === activeChat.messages.length - 1}
+                                        isAiLoading={isAiLoading}
+                                        onCopy={handleCopyText}
+                                        onSpeak={handleToggleSpeak}
+                                        onRegenerate={handleRegenerateResponse}
+                                        onStopGeneration={handleStopGeneration}
+                                        speakingMessageId={speakingMessageId}
+                                    />
+                                </div>
+                            ))}
+                            <div ref={messagesEndRef} />
+                        </div>
+                    )}
+                </div>
+                <ChatInput 
+                    onSendMessage={handleSendMessage} 
+                    isLoading={isAiLoading} 
+                    showSuggestions={!activeChat || activeChat.messages.length === 0}
+                    aiMode={aiMode}
+                    onAiModeChange={handleAiModeChange}
+                />
+            </main>
+        </div>
+    );
 
-    // Jab tak DB se data load ho raha hai, LoadingScreen dikhate hain.
+    const renderCurrentView = () => {
+        const codingView = (
+            <CodingPlayground 
+                onToggleSidebar={() => setIsSidebarOpen(p => !p)} 
+                onExit={() => handleAiModeChange('cognito')}
+                chat={activeChat ?? null}
+                onSendMessage={handleSendMessage}
+                isLoading={isAiLoading}
+                onCopyCode={handleCopyText}
+            />
+        );
+        
+        if (isTransitioning) return <CoreLoadingScreen show={true} />;
+        if (isExiting) return <CoreDisintegrationScreen show={true}>{codingView}</CoreDisintegrationScreen>;
+
+        switch (currentView) {
+            case 'coding':
+                return codingView;
+            case 'chat':
+            default:
+                return renderChatView();
+        }
+    };
+
+
+    // Show LoadingScreen while data is being loaded from the DB.
     if (isDbLoading) {
         return <LoadingScreen />;
     }
 
-    // Main component ka JSX structure.
+    // The main JSX structure of the component.
     return (
         <div className="bg-transparent h-screen flex text-card-foreground overflow-hidden">
             <BackgroundCanvas animationType={backgroundAnimation} />
@@ -409,68 +541,12 @@ const App: React.FC = () => {
                 backgroundAnimation={backgroundAnimation}
                 onBackgroundAnimationChange={setBackgroundAnimation}
             />
-             {/* Mobile pe sidebar khula ho to background ko overlay karte hain */}
+             {/* If the sidebar is open on mobile, overlay the background */}
              {isSidebarOpen && <div onClick={() => setIsSidebarOpen(false)} className="fixed inset-0 bg-black/50 z-10 md:hidden"></div>}
             
-            <div className="flex-1 flex flex-col relative">
-                <header className="flex-shrink-0 flex items-center justify-center p-4 border-b border-card-border glassmorphism relative">
-                    {/* Mobile ke liye menu button */}
-                    <button onClick={() => setIsSidebarOpen(true)} className="p-1 rounded-md border border-transparent hover:border-card-border absolute left-4 top-1/2 -translate-y-1/2 md:hidden">
-                        <MenuIcon className="h-6 w-6" />
-                    </button>
-                    <h1 className={`font-heading text-xl font-bold tracking-widest text-center truncate px-12 md:px-0 uppercase animate-neon-flicker`}>
-                        {activeChat ? activeChat.title : 'Cognito AI Assistant'}
-                    </h1>
-                </header>
-                <main className="flex-1 flex flex-col relative overflow-hidden min-h-0">
-                     {/* Background mein halka sa logo (watermark) */}
-                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none watermark">
-                        <CognitoLogo className="h-96 w-96" />
-                    </div>
-                    <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-                        {/* Agar koi chat active nahi hai to welcome screen dikhate hain */}
-                        {!activeChat ? (
-                        <div className="flex h-full items-center justify-center">
-                                <div className="relative text-center flex flex-col items-center gap-4" style={{ top: '-5rem' }}>
-                                    <CognitoLogo className="w-28 h-28" />
-                                    <div className="text-center">
-                                        <h1 className="font-heading text-4xl font-bold text-gray-200">Welcome, {userName}</h1>
-                                        <p className="mt-1 text-lg text-gray-400">How can I help you navigate the digital cosmos today?</p>
-                                    </div>
-                                </div>
-                            </div>
-                        ) : (
-                            // Active chat ke saare messages ko render karte hain
-                            <div className="max-w-3xl mx-auto space-y-8">
-                                {activeChat.messages.map((msg, index) => (
-                                    <div key={msg.id} style={{ animationDelay: `${index * 100}ms` }} className="fade-in-up">
-                                        <MessageComponent 
-                                            message={msg}
-                                            isLastMessage={index === activeChat.messages.length - 1}
-                                            isAiLoading={isAiLoading}
-                                            onCopy={handleCopyText}
-                                            onSpeak={handleToggleSpeak}
-                                            onRegenerate={handleRegenerateResponse}
-                                            onStopGeneration={handleStopGeneration}
-                                            speakingMessageId={speakingMessageId}
-                                        />
-                                    </div>
-                                ))}
-                                <div ref={messagesEndRef} />
-                            </div>
-                        )}
-                    </div>
-                    <ChatInput 
-                        onSendMessage={handleSendMessage} 
-                        isLoading={isAiLoading} 
-                        showSuggestions={!activeChat || activeChat.messages.length === 0}
-                        aiMode={aiMode}
-                        onAiModeChange={setAiMode}
-                    />
-                </main>
-            </div>
+            {renderCurrentView()}
 
-            {/* Modals ko render kar rahe hain */}
+            {/* Rendering the modals */}
             <ProfileModal 
                 isOpen={isProfileModalOpen}
                 onClose={() => setIsProfileModalOpen(false)}

@@ -4,26 +4,26 @@ import { CognitoLogo } from './Logo';
 import { ClipboardIcon, CheckIcon, Volume2Icon, RefreshIcon, StopIcon } from './icons';
 import MarkdownRenderer from './MarkdownRenderer';
 
-// Message component ke props ka interface define kar rahe hain.
+// Defining the interface for the Message component's props.
 interface MessageProps {
-  message: Message; // Message object (id, role, content).
-  isLastMessage: boolean; // Kya yeh chat ka aakhri message hai?
-  isAiLoading: boolean; // AI response generate kar raha hai ya nahi?
-  onCopy: (text: string) => void; // Copy button ka function.
-  onSpeak: (message: Message) => void; // Text-to-speech button ka function.
-  onRegenerate: () => void; // Regenerate button ka function.
-  onStopGeneration: () => void; // "Stop Generating" button ka function
-  speakingMessageId: string | null; // Currently bolne wale message ka ID.
+  message: Message; // The message object (id, role, content).
+  isLastMessage: boolean; // Is this the last message in the chat?
+  isAiLoading: boolean; // Is the AI currently generating a response?
+  onCopy: (text: string) => void; // Function for the copy button.
+  onSpeak: (message: Message) => void; // Function for the text-to-speech button.
+  onRegenerate: () => void; // Function for the regenerate button.
+  onStopGeneration: () => void; // Function for the "Stop Generating" button.
+  speakingMessageId: string | null; // The ID of the message currently being spoken.
 }
 
-// AI "typing..." indicator ke liye chhota sa component.
+// A small component for the AI "typing..." indicator.
 const PulsingOrbIndicator = () => (
     <div className="flex items-center justify-center p-2">
       <div className="h-4 w-4 bg-primary rounded-full animate-orb-pulse"></div>
     </div>
 );
 
-// Main message component.
+// The main message component.
 const MessageComponent: React.FC<MessageProps> = ({ 
     message, 
     isLastMessage,
@@ -34,12 +34,12 @@ const MessageComponent: React.FC<MessageProps> = ({
     onStopGeneration,
     speakingMessageId 
 }) => {
-  const [isCopied, setIsCopied] = useState(false); // Text copy hua ya nahi, iska state.
-  const isUser = message.role === 'user'; // Check kar rahe hain ki message user ka hai ya model ka.
-  const isTyping = message.role === 'model' && !message.content && isAiLoading; // Check kar rahe hain ki AI abhi type kar raha hai ya nahi.
-  const isSpeaking = speakingMessageId === message.id; // Check kar rahe hain ki yeh message bola ja raha hai ya nahi.
+  const [isCopied, setIsCopied] = useState(false); // State for whether the text has been copied.
+  const isUser = message.role === 'user'; // Checking if the message is from the user or the model.
+  const isTyping = message.role === 'model' && !message.content && isAiLoading; // Checking if the AI is currently typing.
+  const isSpeaking = speakingMessageId === message.id; // Checking if this message is being spoken.
 
-  // Conditional styling ke liye classes.
+  // Classes for conditional styling.
   const containerClasses = `flex items-start gap-3 w-full group ${isUser ? 'justify-end' : 'justify-start'}`;
   const bubbleClasses = `px-4 py-3 rounded-2xl relative transition-shadow duration-300 max-w-3xl ${
     isUser
@@ -47,20 +47,20 @@ const MessageComponent: React.FC<MessageProps> = ({
       : 'bg-primary/10 text-text-light rounded-bl-none border border-primary/50 glow-border'
   }`;
 
-  // Copy button ka handler.
+  // Handler for the copy button.
   const handleCopy = () => {
     onCopy(message.content);
     setIsCopied(true);
-    setTimeout(() => setIsCopied(false), 2000); // 2 second ke baad 'copied' state ko reset kar dete hain.
+    setTimeout(() => setIsCopied(false), 2000); // Reset the 'copied' state after 2 seconds.
   };
   
-  // Wrapper copy function to handle both full message and code blocks
+  // Wrapper copy function to handle both full message and code blocks.
   const copyHandler = (textToCopy: string) => {
       onCopy(textToCopy);
-      // We don't manage a global copied state here, it's handled in the code block itself
+      // We don't manage a global copied state here; it's handled in the code block itself.
   }
 
-  // Message ke neeche dikhne wale action buttons (Copy, Speak, Regenerate).
+  // Action buttons (Copy, Speak, Regenerate) that appear below the message.
   const MessageActions = () => (
     <div className="absolute -bottom-8 left-0 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
       {/* Copy button */}
@@ -71,7 +71,7 @@ const MessageComponent: React.FC<MessageProps> = ({
       <button onClick={() => onSpeak(message)} title="Speak" className="p-1.5 rounded-full bg-input hover:bg-input-border transition-colors border border-card-border">
         <Volume2Icon className={`w-4 h-4 ${isSpeaking ? 'text-primary' : 'text-text-medium'}`} />
       </button>
-      {/* Regenerate button (sirf aakhri model message ke liye dikhega) */}
+      {/* Regenerate button (only shown for the last model message) */}
       {isLastMessage && !isAiLoading && (
         <button onClick={onRegenerate} title="Regenerate" className="p-1.5 rounded-full bg-input hover:bg-input-border transition-colors border border-card-border">
           <RefreshIcon className="w-4 h-4 text-text-medium" />
@@ -80,7 +80,7 @@ const MessageComponent: React.FC<MessageProps> = ({
     </div>
   );
   
-  // Stop Generation button
+  // Stop Generation button.
   const StopButton = () => (
       <button 
           onClick={onStopGeneration} 
@@ -94,7 +94,7 @@ const MessageComponent: React.FC<MessageProps> = ({
 
   return (
     <div className={containerClasses}>
-      {/* Model ke message ke sath logo dikhate hain. */}
+      {/* Show the logo with the model's message. */}
       {!isUser && (
         <div className="flex-shrink-0 h-8 w-8 rounded-full bg-input flex items-center justify-center border border-input-border">
           <CognitoLogo className="h-6 w-6" />
@@ -112,7 +112,7 @@ const MessageComponent: React.FC<MessageProps> = ({
              />
           )}
         </div>
-        {/* Actions dikhate hain */}
+        {/* Show actions */}
         {!isUser && !isTyping && message.content && <MessageActions />}
         {isLastMessage && isAiLoading && <StopButton />}
       </div>

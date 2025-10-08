@@ -1,18 +1,17 @@
-
 import type { Chat } from '../types';
 
-// IndexedDB ke liye constants define kar rahe hain.
-const DB_NAME = 'CognitoAI-DB'; // Database ka naam.
-const DB_VERSION = 1; // Database ka version.
-const CHATS_STORE_NAME = 'chats'; // "Table" ya object store ka naam.
+// Defining constants for IndexedDB.
+const DB_NAME = 'CognitoAI-DB'; // Name of the database.
+const DB_VERSION = 1; // Version of the database.
+const CHATS_STORE_NAME = 'chats'; // Name of the "table" or object store.
 
-// Database connection ko cache karne ke liye variable.
+// Variable to cache the database connection.
 let db: IDBDatabase | null = null;
 
-// Database connection ko kholne ya banane ke liye function.
+// Function to open or create the database connection.
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    // Agar connection pehle se hai, to wahi use karo.
+    // If a connection already exists, use it.
     if (db) {
       return resolve(db);
     }
@@ -27,54 +26,54 @@ function openDB(): Promise<IDBDatabase> {
     request.onsuccess = () => {
       db = request.result;
       
-      // Agar browser connection band kar de, to humara cached 'db' variable null ho jaye.
+      // If the browser closes the connection, our cached 'db' variable should be nulled.
       db.onclose = () => {
-        console.warn("Database connection browser ne band kar diya.");
+        console.warn("Database connection closed by browser.");
         db = null;
       };
 
       resolve(db);
     };
 
-    // Jab DB pehli baar banta hai ya version badalta hai, tab yeh chalta hai.
+    // This runs when the DB is first created or the version changes.
     request.onupgradeneeded = (event) => {
       const dbInstance = (event.target as IDBOpenDBRequest).result;
-      // Agar 'chats' object store nahi hai to use banate hain.
+      // If the 'chats' object store doesn't exist, create it.
       if (!dbInstance.objectStoreNames.contains(CHATS_STORE_NAME)) {
-        // 'id' ko key (primary key) ke roop me use kar rahe hain.
+        // Using 'id' as the key (primary key).
         dbInstance.createObjectStore(CHATS_STORE_NAME, { keyPath: 'id' });
       }
     };
   });
 }
 
-// Ek chat ko DB me save ya update karne ke liye function.
+// Function to save or update a chat in the DB.
 export async function saveChat(chat: Chat): Promise<void> {
   const db = await openDB();
   return new Promise((resolve, reject) => {
-    // 'readwrite' transaction shuru karte hain.
+    // Start a 'readwrite' transaction.
     const transaction = db.transaction(CHATS_STORE_NAME, 'readwrite');
     const store = transaction.objectStore(CHATS_STORE_NAME);
-    // 'put' method naya record add karta hai ya purane ko (same key wala) update kar deta hai.
+    // The 'put' method adds a new record or updates an old one (with the same key).
     const request = store.put(chat);
     request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error);
   });
 }
 
-// Saare chats ko DB se load karne ke liye function.
+// Function to load all chats from the DB.
 export async function loadChats(): Promise<Chat[]> {
   const db = await openDB();
   return new Promise((resolve, reject) => {
-    // 'readonly' transaction, kyunki hum sirf data padh rahe hain.
+    // 'readonly' transaction, because we're only reading data.
     const transaction = db.transaction(CHATS_STORE_NAME, 'readonly');
     const store = transaction.objectStore(CHATS_STORE_NAME);
-    const request = store.getAll(); // Saare records nikalte hain.
+    const request = store.getAll(); // Get all records.
     request.onsuccess = () => {
-        // FIX: IndexedDB se mile result ka shallow copy banate hain sort karne se pehle.
-        // Original result array ko direct modify karne se kuch browsers me "Illegal invocation" error aa sakta hai.
+        // Create a shallow copy of the result from IndexedDB before sorting.
+        // Directly modifying the original result array can cause an "Illegal invocation" error in some browsers.
         const chats = [...request.result];
-        // Chats ko ID ke hisab se descending order me sort karte hain (naya wala sabse upar).
+        // Sort chats in descending order by ID (newest first).
         chats.sort((a, b) => parseInt(b.id) - parseInt(a.id));
         resolve(chats);
     };
@@ -82,7 +81,7 @@ export async function loadChats(): Promise<Chat[]> {
   });
 }
 
-// Ek chat ko uski ID se delete karne ke liye function.
+// Function to delete a chat by its ID.
 export async function deleteChat(id: string): Promise<void> {
     const db = await openDB();
     return new Promise((resolve, reject) => {
@@ -94,13 +93,13 @@ export async function deleteChat(id: string): Promise<void> {
     });
 }
 
-// Saare chats ko object store se delete karne ke liye function.
+// Function to delete all chats from the object store.
 export async function deleteAllChats(): Promise<void> {
     const db = await openDB();
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(CHATS_STORE_NAME, 'readwrite');
         const store = transaction.objectStore(CHATS_STORE_NAME);
-        const request = store.clear(); // Poora store khali kar deta hai.
+        const request = store.clear(); // Clears the entire store.
         request.onsuccess = () => resolve();
         request.onerror = () => reject(request.error);
     });

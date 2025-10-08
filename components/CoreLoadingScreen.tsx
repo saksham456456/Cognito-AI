@@ -1,7 +1,7 @@
 import React from 'react';
 import { CodeBracketIcon } from './icons';
 
-// Loading ke time dikhne wale messages ka array.
+// Array of messages to display during loading.
 const loadingMessages = [
     "Compiling language kernels...",
     "Initializing syntax analyzers...",

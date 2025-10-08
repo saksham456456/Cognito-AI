@@ -1,26 +1,23 @@
-
-
 import React, { useEffect, useState } from 'react';
 import { CognitoLogo } from './Logo';
 
 const LoadingScreen = () => {
     // State to control the visibility of SVG paths for the drawing animation.
-    // Path (neural network lines) ko animation ke liye control karne wala state.
     const [pathsVisible, setPathsVisible] = useState(false);
 
-    // Component ke mount hone ke 100ms baad, path ko visible kar dete hain taaki animation shuru ho.
+    // 100ms after the component mounts, make the paths visible to start the animation.
     useEffect(() => {
         const timer = setTimeout(() => setPathsVisible(true), 100);
         return () => clearTimeout(timer); // Cleanup
     }, []);
     
-    // Yeh function SVG path ke liye dynamic style generate karta hai.
-    // 'stroke-dasharray' aur 'stroke-dashoffset' se line drawing effect banta hai.
+    // This function generates dynamic styles for the SVG path.
+    // The line drawing effect is created with 'stroke-dasharray' and 'stroke-dashoffset'.
     const pathStyle = (length: number, delay: string) => ({
-        strokeDasharray: length, // Path ki total length.
-        strokeDashoffset: pathsVisible ? 0 : length, // `pathsVisible` hone par offset 0 ho jata hai, jisse line dikhne lagti hai.
-        transition: `stroke-dashoffset 2s cubic-bezier(0.4, 0, 0.2, 1)`, // Animation ka duration aur timing function.
-        transitionDelay: delay // Animation shuru hone me delay.
+        strokeDasharray: length, // The total length of the path.
+        strokeDashoffset: pathsVisible ? 0 : length, // When `pathsVisible` is true, the offset becomes 0, making the line appear.
+        transition: `stroke-dashoffset 2s cubic-bezier(0.4, 0, 0.2, 1)`, // Animation duration and timing function.
+        transitionDelay: delay // Delay before the animation starts.
     });
 
   return (
@@ -40,7 +37,7 @@ const LoadingScreen = () => {
                     </filter>
                 </defs>
                 <g stroke="hsl(48, 100%, 55%)" fill="none" strokeWidth="1" filter="url(#glow)">
-                    {/* Alag-alag neural network paths, har ek ka apna style (length, delay) hai */}
+                    {/* Different neural network paths, each with its own style (length, delay) */}
                     <path d="M 20,100 C 50,20 150,20 180,100" style={pathStyle(275, '0s')} />
                     <path d="M 20,100 C 50,180 150,180 180,100" style={pathStyle(275, '0s')} />
                     <path d="M 100,20 C 20,50 20,150 100,180" style={pathStyle(275, '0.2s')} />
@@ -49,19 +46,19 @@ const LoadingScreen = () => {
                     <path d="M 160,40 C 100,80 100,120 160,160" style={pathStyle(170, '0.4s')} />
                 </g>
             </svg>
-            {/* Logo ko path animation ke thodi der baad fade in karte hain */}
+            {/* Fade in the logo slightly after the path animation */}
             <div className={`transition-opacity duration-1000 delay-1000 ${pathsVisible ? 'opacity-100' : 'opacity-0'}`}>
                 <CognitoLogo className="h-24 w-24" />
             </div>
          </div>
-         {/* App ka naam, text-glow animation ke sath */}
+         {/* App name with text-glow animation */}
         <h1 className="font-heading text-4xl font-bold tracking-[0.3em] text-primary animate-text-glow">
             COGNITO
         </h1>
       </div>
-       {/* Loading message, subtle fade animation ke sath */}
+       {/* Loading message with subtle fade animation */}
        <p className="text-text-medium mt-8 animate-subtle-fade">Initializing Cybernetic Core...</p>
-       {/* FIX: Replaced the buggy "decryption" animation with a simple, clean fade-in effect for stability. */}
+       {/* Creator credit with a simple fade-in effect. */}
        <p className="font-code text-sm text-text-medium mt-4 h-5 opacity-0 fade-in-up" style={{ animationDelay: '1500ms' }}>
            A Creation By <span className="text-primary font-bold text-glow-primary">SAKSHAM</span>
        </p>

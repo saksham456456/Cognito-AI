@@ -3,7 +3,7 @@ import type { Chat } from '../types';
 import { CognitoLogo } from './Logo';
 import { PlusIcon, MessageSquareIcon, SearchIcon, PencilIcon, CheckIcon, XIcon, UserCircleIcon, SunIcon, MoonIcon, DownloadIcon, TrashIcon, InfoIcon, CodeBracketIcon, LayersIcon } from './icons';
 
-// Sidebar ke props ka interface.
+// Interface for the Sidebar's props.
 interface SidebarProps {
   chats: Chat[];
   activeChatId: string | null;
@@ -38,26 +38,26 @@ const Sidebar: React.FC<SidebarProps> = ({
   onBackgroundAnimationChange
 }) => {
   // State variables
-  const [searchTerm, setSearchTerm] = useState(''); // Search input ki value.
-  const [editingChatId, setEditingChatId] = useState<string | null>(null); // Kaunsa chat rename ho raha hai.
-  const [editingTitle, setEditingTitle] = useState(''); // Rename karte waqt naya title.
+  const [searchTerm, setSearchTerm] = useState(''); // Value of the search input.
+  const [editingChatId, setEditingChatId] = useState<string | null>(null); // Which chat is being renamed.
+  const [editingTitle, setEditingTitle] = useState(''); // The new title during renaming.
 
-  // useMemo ka istemal taki chats filter tabhi ho jab 'chats' ya 'searchTerm' badle.
-  // Yeh performance improve karta hai.
+  // useMemo is used so that chats are only filtered when 'chats' or 'searchTerm' changes.
+  // This improves performance.
   const filteredChats = useMemo(() =>
     chats.filter(chat =>
       chat.title.toLowerCase().includes(searchTerm.toLowerCase())
     ), [chats, searchTerm]);
 
-  // Rename shuru karne ke liye function.
+  // Function to start renaming.
   const handleRenameStart = (e: React.MouseEvent, chat: Chat) => {
     e.preventDefault();
-    e.stopPropagation(); // Parent element ke click event ko trigger hone se rokta hai.
+    e.stopPropagation(); // Prevents the parent element's click event from triggering.
     setEditingChatId(chat.id);
     setEditingTitle(chat.title);
   };
 
-  // Rename cancel karne ke liye.
+  // To cancel renaming.
   const handleRenameCancel = (e?: React.MouseEvent) => {
     e?.preventDefault();
     e?.stopPropagation();
@@ -65,17 +65,17 @@ const Sidebar: React.FC<SidebarProps> = ({
     setEditingTitle('');
   };
 
-  // Naya title save karne ke liye.
+  // To save the new title.
   const handleRenameSave = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (editingChatId && editingTitle.trim()) {
       onRenameChat(editingChatId, editingTitle.trim());
     }
-    handleRenameCancel(); // Editing state ko reset karte hain.
+    handleRenameCancel(); // Resets the editing state.
   };
 
-  // Chat delete karne ke liye.
+  // To delete a chat.
   const handleDelete = (e: React.MouseEvent, id: string) => {
     e.preventDefault();
     e.stopPropagation();
@@ -83,9 +83,9 @@ const Sidebar: React.FC<SidebarProps> = ({
   }
 
   return (
-    // Sidebar ka main container. Mobile pe left se slide in/out hota hai.
+    // The main container for the sidebar. Slides in/out from the left on mobile.
     <aside className={`absolute md:relative z-20 flex-shrink-0 w-80 glassmorphism flex flex-col transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
-      {/* Sidebar ka header */}
+      {/* Sidebar header */}
       <div className="p-4 border-b border-card-border flex items-center justify-between">
         <div className="flex items-center gap-3">
           <CognitoLogo className="h-8 w-8" />
@@ -127,7 +127,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                       {/* Active indicator */}
                       {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 h-3/5 w-1 bg-primary rounded-r-full" style={{boxShadow: '0 0 8px var(--primary-glow)'}}></div>}
 
-                      {/* Conditional rendering: agar chat edit ho raha hai to input dikhao, nahi to title */}
+                      {/* Conditional rendering: show input if chat is being edited, otherwise show title */}
                       {editingChatId === chat.id ? (
                           <input
                               type="text"
@@ -154,7 +154,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                   <button onClick={handleRenameCancel} className="p-1 rounded hover:bg-primary/30"><XIcon className="w-4 h-4 text-red-500"/></button>
                               </>
                           ) : (
-                              // Ye controls sirf hover pe dikhenge
+                              // These controls will only appear on hover
                               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                   <button onClick={(e) => handleRenameStart(e, chat)} className="p-1 rounded hover:bg-primary/30"><PencilIcon className="w-4 h-4 text-text-medium"/></button>
                                   <button onClick={(e) => handleDelete(e, chat.id)} className="p-1 rounded hover:bg-primary/30"><TrashIcon className="w-4 h-4 text-text-medium hover:text-red-500"/></button>
@@ -168,7 +168,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           })}
           </ul>
       </nav>
-      {/* Sidebar ka footer */}
+      {/* Sidebar footer */}
       <div className="p-2 border-t border-card-border">
           {/* User profile section */}
           <div className="mt-2 p-2 rounded-lg bg-input/50 flex items-center justify-between border border-card-border">

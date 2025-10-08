@@ -1,19 +1,22 @@
-// Message ka role kya hai, yeh define karta hai - ya to 'user' ka ya 'model' (AI) ka.
+// Defines the role of a message - either from the 'user' or the 'model' (AI).
 export type MessageRole = 'user' | 'model';
 
-// Ek single message ka structure kaisa hoga, yeh interface batata hai.
+// This interface describes the structure of a single message.
 export interface Message {
-  id: string; // Har message ka ek unique ID.
-  role: MessageRole; // Message kisne bheja - user ya model.
-  content: string; // Message ka actual text content.
+  id: string; // A unique ID for each message.
+  role: MessageRole; // Who sent the message - user or model.
+  content: string; // The actual text content of the message.
 }
 
-// Ek poori conversation (chat) ka structure kaisa hoga.
+// The structure of an entire conversation (chat).
 export interface Chat {
-    id: string; // Har chat ka ek unique ID.
-    title: string; // Chat ka title, jaise "Quantum Computing Explained".
-    messages: Message[]; // Is chat ke saare messages ka array.
+    id: string; // A unique ID for each chat.
+    title: string; // The title of the chat, e.g., "Quantum Computing Explained".
+    messages: Message[]; // An array of all messages in this chat.
 }
 
-// AI ke alag-alag modes ko define karta hai.
+// Defines the different modes of the AI.
 export type AiMode = 'cognito' | 'code-assistant';
+
+// Defines the main views of the app.
+export type AppView = 'chat' | 'coding';

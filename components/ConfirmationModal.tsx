@@ -1,16 +1,14 @@
-
-
 import React from 'react';
 import { XIcon, TrashIcon } from './icons';
 
-// Confirmation Modal ke props ka interface define kar rahe hain.
+// Defining the interface for the Confirmation Modal's props.
 interface ConfirmationModalProps {
-  isOpen: boolean; // Modal dikhana hai ya nahi.
-  onClose: () => void; // Modal band karne ka function.
-  onConfirm: () => void; // "Confirm" button pe click hone par chalne wala function.
-  title: string; // Modal ka title.
-  message: string; // Modal ka message body.
-  confirmButtonText?: string; // Confirm button ka text (optional, default 'Confirm').
+  isOpen: boolean; // Whether to show the modal or not.
+  onClose: () => void; // Function to close the modal.
+  onConfirm: () => void; // Function to run when the "Confirm" button is clicked.
+  title: string; // The modal's title.
+  message: string; // The modal's message body.
+  confirmButtonText?: string; // Text for the confirm button (optional, defaults to 'Confirm').
 }
 
 const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ 
@@ -21,22 +19,22 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   message, 
   confirmButtonText = 'Confirm' 
 }) => {
-  // Agar modal open nahi hai, to kuch bhi render mat karo.
+  // If the modal is not open, don't render anything.
   if (!isOpen) return null;
 
   return (
-    // Main container, poori screen ko cover karta hai.
+    // Main container, covers the entire screen.
     <div 
       className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
-      onClick={onClose} // Background pe click karne se modal band hoga.
+      onClick={onClose} // Clicking on the background will close the modal.
       role="dialog"
       aria-modal="true"
       aria-labelledby="confirm-modal-title"
     >
-      {/* Modal ka content area */}
+      {/* The modal's content area */}
       <div 
         className="glassmorphism rounded-2xl w-full max-w-sm p-6 relative fade-in-up"
-        onClick={e => e.stopPropagation()} // Modal ke andar click karne se modal band nahi hoga.
+        onClick={e => e.stopPropagation()} // Clicking inside the modal won't close it.
       >
         {/* Close button */}
         <button 
@@ -46,16 +44,16 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         >
           <XIcon className="w-5 h-5 text-text-medium" />
         </button>
-        {/* Modal ka header section (Icon, Title, Message) */}
+        {/* Modal's header section (Icon, Title, Message) */}
         <div className="flex flex-col items-center text-center">
-            {/* Action-specific icon (yahan pe delete ke liye TrashIcon) */}
+            {/* Action-specific icon (here, TrashIcon for delete) */}
             <div className="p-3 bg-red-500/10 rounded-full mb-4 border border-red-500/30">
                 <TrashIcon className="w-8 h-8 text-red-500" />
             </div>
             <h2 id="confirm-modal-title" className="font-heading text-xl font-bold text-text-light mb-2">{title}</h2>
             <p className="text-sm text-text-medium mb-6">{message}</p>
         </div>
-        {/* Modal ke action buttons (Cancel aur Confirm) */}
+        {/* Modal's action buttons (Cancel and Confirm) */}
         <div className="mt-6 flex justify-end gap-3">
             <button
                 onClick={onClose}
