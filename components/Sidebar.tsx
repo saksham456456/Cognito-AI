@@ -1,5 +1,3 @@
-
-
 import React, { useState, useMemo } from 'react';
 import type { Chat } from '../types';
 import { CognitoLogo } from './Logo';
@@ -19,8 +17,6 @@ interface SidebarProps {
   userName: string;
   onProfileClick: () => void;
   onAboutClick: () => void;
-  currentView: 'chat' | 'python';
-  onViewChange: (view: 'chat' | 'python') => void;
   backgroundAnimation: string;
   onBackgroundAnimationChange: (animation: string) => void;
 }
@@ -38,8 +34,6 @@ const Sidebar: React.FC<SidebarProps> = ({
   userName,
   onProfileClick,
   onAboutClick,
-  currentView,
-  onViewChange,
   backgroundAnimation,
   onBackgroundAnimationChange
 }) => {
@@ -87,24 +81,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     e.stopPropagation();
     onDeleteChat(id);
   }
-  
-  // 'Chat' aur 'Python' ke beech switch karne wala button component.
-  const ModeButton: React.FC<{
-      onClick: () => void;
-      isActive: boolean;
-      children: React.ReactNode;
-  }> = ({ onClick, isActive, children }) => (
-      <button
-          onClick={onClick}
-          className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-colors duration-300 ${
-              isActive
-                  ? 'bg-primary/20 text-primary' // Active state ki styling
-                  : 'text-text-medium hover:bg-input hover:text-text-light' // Inactive state ki styling
-          }`}
-      >
-          {children}
-      </button>
-  );
 
   return (
     // Sidebar ka main container. Mobile pe left se slide in/out hota hai.
@@ -117,96 +93,81 @@ const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </div>
 
-      {/* View switcher (Chat / Py-Core) */}
-      <div className="p-2 border-b border-card-border">
-        <div className="flex items-center gap-2 p-1 bg-input rounded-xl">
-            <ModeButton onClick={() => onViewChange('chat')} isActive={currentView === 'chat'}>
-                <MessageSquareIcon className="w-5 h-5"/>
-                Chat Interface
-            </ModeButton>
-            <ModeButton onClick={() => onViewChange('python')} isActive={currentView === 'python'}>
-                <CodeBracketIcon className="w-5 h-5"/>
-                Py-Core
-            </ModeButton>
-        </div>
+      <div className="p-4 flex flex-col gap-4 border-b border-card-border">
+          {/* New Chat button */}
+          <button onClick={onNewChat} className="w-full flex items-center justify-center gap-2 p-2 rounded-lg transition-colors border border-input-border hover:border-primary text-text-medium hover:text-primary font-semibold neon-glow-button">
+              <PlusIcon className="w-5 h-5" />
+              New Session
+          </button>
+          {/* Search bar */}
+          <div className="relative">
+              <SearchIcon className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-text-dark"/>
+              <input
+                  type="text"
+                  placeholder="Search logs..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full bg-input border border-input-border rounded-lg pl-10 pr-4 py-2 text-text-light focus:outline-none focus:border-primary transition-colors"
+              />
+          </div>
       </div>
+      {/* Chat list */}
+      <nav className="flex-1 overflow-y-auto custom-scrollbar p-4">
+          <ul className="space-y-2">
+          {filteredChats.map(chat => {
+              const isActive = activeChatId === chat.id;
+              return (
+                  <li key={chat.id}>
+                  <div
+                      onClick={() => onSelectChat(chat.id)}
+                      className={`group relative flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
+                      isActive ? 'bg-primary/20 text-primary' : 'hover:bg-input'
+                      }`}
+                  >
+                      {/* Active indicator */}
+                      {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 h-3/5 w-1 bg-primary rounded-r-full" style={{boxShadow: '0 0 8px var(--primary-glow)'}}></div>}
 
-      {/* Chat se related controls (sirf chat view me dikhega) */}
-      {currentView === 'chat' && (
-        <>
-            <div className="p-4 flex flex-col gap-4">
-                {/* New Chat button */}
-                <button onClick={onNewChat} className="w-full flex items-center justify-center gap-2 p-2 rounded-lg transition-colors border border-input-border hover:border-primary text-text-medium hover:text-primary font-semibold neon-glow-button">
-                    <PlusIcon className="w-5 h-5" />
-                    New Session
-                </button>
-                {/* Search bar */}
-                <div className="relative">
-                    <SearchIcon className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-text-dark"/>
-                    <input
-                        type="text"
-                        placeholder="Search logs..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full bg-input border border-input-border rounded-lg pl-10 pr-4 py-2 text-text-light focus:outline-none focus:border-primary transition-colors"
-                    />
-                </div>
-            </div>
-            {/* Chat list */}
-            <nav className="flex-1 overflow-y-auto custom-scrollbar px-4">
-                <ul className="space-y-2">
-                {filteredChats.map(chat => (
-                    <li key={chat.id}>
-                    <div
-                        onClick={() => onSelectChat(chat.id)}
-                        className={`group flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
-                        activeChatId === chat.id ? 'bg-primary/20 text-primary' : 'hover:bg-input'
-                        }`}
-                    >
-                        {/* Conditional rendering: agar chat edit ho raha hai to input dikhao, nahi to title */}
-                        {editingChatId === chat.id ? (
-                            <input
-                                type="text"
-                                value={editingTitle}
-                                onChange={(e) => setEditingTitle(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleRenameSave(e as any)}
-                                onBlur={() => handleRenameCancel()}
-                                className="flex-grow bg-transparent focus:outline-none text-primary"
-                                autoFocus
-                                onClick={(e) => e.stopPropagation()}
-                            />
-                        ) : (
-                            <div className="flex items-center gap-3 truncate">
-                                <MessageSquareIcon className="w-5 h-5 flex-shrink-0" />
-                                <span className="truncate">{chat.title}</span>
-                            </div>
-                        )}
+                      {/* Conditional rendering: agar chat edit ho raha hai to input dikhao, nahi to title */}
+                      {editingChatId === chat.id ? (
+                          <input
+                              type="text"
+                              value={editingTitle}
+                              onChange={(e) => setEditingTitle(e.target.value)}
+                              onKeyDown={(e) => e.key === 'Enter' && handleRenameSave(e as any)}
+                              onBlur={() => handleRenameCancel()}
+                              className="flex-grow bg-transparent focus:outline-none text-primary ml-2"
+                              autoFocus
+                              onClick={(e) => e.stopPropagation()}
+                          />
+                      ) : (
+                          <div className="flex items-center gap-3 truncate ml-2">
+                              <MessageSquareIcon className="w-5 h-5 flex-shrink-0" />
+                              <span className="truncate">{chat.title}</span>
+                          </div>
+                      )}
 
-                        {/* Edit/Delete controls */}
-                        <div className="flex items-center gap-1 flex-shrink-0">
-                            {editingChatId === chat.id ? (
-                                <>
-                                    <button onClick={handleRenameSave} className="p-1 rounded hover:bg-primary/30"><CheckIcon className="w-4 h-4 text-green-500"/></button>
-                                    <button onClick={handleRenameCancel} className="p-1 rounded hover:bg-primary/30"><XIcon className="w-4 h-4 text-red-500"/></button>
-                                </>
-                            ) : (
-                                // Ye controls sirf hover pe dikhenge
-                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick={(e) => handleRenameStart(e, chat)} className="p-1 rounded hover:bg-primary/30"><PencilIcon className="w-4 h-4 text-text-medium"/></button>
-                                    <button onClick={(e) => handleDelete(e, chat.id)} className="p-1 rounded hover:bg-primary/30"><TrashIcon className="w-4 h-4 text-text-medium hover:text-red-500"/></button>
-                                </div>
-                            )}
-                        </div>
+                      {/* Edit/Delete controls */}
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                          {editingChatId === chat.id ? (
+                              <>
+                                  <button onClick={handleRenameSave} className="p-1 rounded hover:bg-primary/30"><CheckIcon className="w-4 h-4 text-green-500"/></button>
+                                  <button onClick={handleRenameCancel} className="p-1 rounded hover:bg-primary/30"><XIcon className="w-4 h-4 text-red-500"/></button>
+                              </>
+                          ) : (
+                              // Ye controls sirf hover pe dikhenge
+                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <button onClick={(e) => handleRenameStart(e, chat)} className="p-1 rounded hover:bg-primary/30"><PencilIcon className="w-4 h-4 text-text-medium"/></button>
+                                  <button onClick={(e) => handleDelete(e, chat.id)} className="p-1 rounded hover:bg-primary/30"><TrashIcon className="w-4 h-4 text-text-medium hover:text-red-500"/></button>
+                              </div>
+                          )}
+                      </div>
 
-                    </div>
-                    </li>
-                ))}
-                </ul>
-            </nav>
-        </>
-      )}
-      {/* Yeh div bachi hui jagah le lega, taki footer neeche rahe */}
-      <div className="flex-1" />
+                  </div>
+                  </li>
+              )
+          })}
+          </ul>
+      </nav>
       {/* Sidebar ka footer */}
       <div className="p-2 border-t border-card-border">
           {/* User profile section */}
@@ -250,7 +211,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               <li>
                   <button
                       onClick={onExportChat}
-                      disabled={!activeChatId || currentView !== 'chat'} // Agar koi chat active nahi ya view python hai to disable
+                      disabled={!activeChatId}
                       className="w-full flex items-center gap-3 p-2 rounded-md text-sm text-text-medium hover:bg-input hover:text-text-light transition-colors group disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                       <DownloadIcon className="w-5 h-5" />
@@ -260,7 +221,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               <li>
                   <button
                       onClick={onDeleteAllChats}
-                      disabled={chats.length === 0 || currentView !== 'chat'} // Agar koi chat nahi ya view python hai to disable
+                      disabled={chats.length === 0}
                       className="w-full flex items-center gap-3 p-2 rounded-md text-sm text-red-500 hover:bg-red-500/10 transition-colors group disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                       <TrashIcon className="w-5 h-5" />

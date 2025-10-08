@@ -1,72 +1,50 @@
-
-import React, { useState, useEffect } from 'react';
-import { CognitoLogo } from './Logo';
-
-// Python view se bahar aate waqt dikhne wale messages ka array.
-const disintegrationMessages = [
-    "Terminating Python session...",
-    "Freeing virtual resources...",
-    "Flushing memory caches...",
-    "Disengaging Py-Core...",
-    "Returning to primary interface.",
-];
-
-// Glitch effect ke sath text dikhane wala component.
-const GlitchText = ({ text }: { text: string }) => {
-    return (
-        <div className="relative font-heading text-2xl font-bold text-text-light uppercase tracking-wider" style={{ textShadow: '0 0 5px var(--primary-glow)'}}>
-            {/* Invisible span to give the container correct dimensions */}
-            <span aria-hidden="true" className="opacity-0">{text}</span>
-            {/* All three layers are now absolutely positioned to stack correctly */}
-            <span className="absolute inset-0 animate-glitch opacity-80" style={{ animationDelay: '0.2s', clipPath: 'polygon(0 0, 100% 0, 100% 33%, 0 33%)' }}>{text}</span>
-            <span className="absolute inset-0 animate-glitch opacity-80" style={{ clipPath: 'polygon(0 33%, 100% 33%, 100% 66%, 0 66%)' }}>{text}</span>
-            <span className="absolute inset-0 animate-glitch opacity-80" style={{ animationDelay: '0.5s', clipPath: 'polygon(0 66%, 100% 66%, 100% 100%, 0 100%)' }}>{text}</span>
-        </div>
-    )
-}
+import React from 'react';
 
 // Main Disintegration Screen component.
 const PythonDisintegrationScreen: React.FC = () => {
-    // Current message ka index track karne ke liye state.
-    const [messageIndex, setMessageIndex] = useState(0);
-
-    // useEffect se har 700ms me agla message dikhate hain.
-    useEffect(() => {
-        const messageInterval = setInterval(() => {
-            setMessageIndex(prevIndex => {
-                if (prevIndex < disintegrationMessages.length - 1) {
-                    return prevIndex + 1;
-                }
-                return prevIndex; // Aakhri message pe ruk jao.
-            });
-        }, 700);
-
-        // Cleanup: component unmount hone par interval ko clear karte hain.
-        return () => {
-            clearInterval(messageInterval);
-        };
-    }, []);
-
     return (
         // Full screen container with CRT effect.
-        <div className="flex flex-col items-center justify-center h-full w-full bg-background crt-effect">
-            <div className="flex flex-col items-center gap-8">
-                 {/* Logo, halka sa faded dikhega */}
-                 <div className="relative w-40 h-40 flex items-center justify-center">
-                    <CognitoLogo className="w-20 h-20 opacity-50" />
-                </div>
-
-                {/* Header text with glitch effect */}
-                <div className="text-center">
-                    <GlitchText text="Disengaging Python Core" />
-                    <p className="text-text-medium">Securely shutting down the environment...</p>
-                </div>
-                
-                {/* Current status message */}
-                <div className="w-80 mt-2">
-                    <p className="font-code text-center text-sm text-text-dark mt-2 h-5 transition-opacity duration-300">
-                       {disintegrationMessages[messageIndex]}
-                    </p>
+        <div className="flex flex-col items-center justify-center h-full w-full bg-background crt-effect relative overflow-hidden">
+            {/* 1. Static noise overlay */}
+            <div 
+                className="absolute inset-0 z-20 opacity-0 animate-static-flicker"
+                style={{ 
+                    backgroundImage: 'url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAMAAAAp4XiDAAAAUVBMVEWFhYWDg4N3d3dtbW17e3t1dXVuZmaEhIQSEhAdHR2tra1La2tGZmZsbGxEWlpWVVVjwMHLz8+Dg4OHh4fT09PS0tJwcHCJe3t7e3uAb3BxeXpxeXlxcXGTk5N6e3t7e3uAAAAAXIm6AAAAHUlEQVRIx+3MyQ0AIBAD0e77v1Y2hYh2I2P69gAAAABJRU5ErkJggg==)',
+                    animationDelay: '1.8s',
+                    animationDuration: '2.2s'
+                }}
+            />
+            
+            {/* 2. Scanline wipe overlay */}
+            <div 
+                className="absolute inset-0 z-10 bg-background animate-scanline-wipe" 
+                style={{
+                    animationDelay: '1s',
+                    backgroundImage: 'linear-gradient(rgba(0,0,0,0) 50%, rgba(0,0,0,0.5) 50%)',
+                    backgroundSize: '100% 4px'
+                }}
+            />
+            
+            {/* 3. Main content that glitches and fades */}
+            <div 
+                className="flex flex-col items-center gap-4 z-0 animate-intense-glitch opacity-100"
+                style={{
+                    animationDuration: '0.8s',
+                    animationFillMode: 'forwards',
+                    animationDelay: '0.2s',
+                }}
+            >
+                <div 
+                    className="opacity-100"
+                    style={{
+                        animation: 'fade-out 1.5s forwards',
+                        animationDelay: '1.2s'
+                    }}
+                >
+                    <h1 className="font-heading text-2xl font-bold text-red-500 uppercase tracking-wider" style={{ textShadow: '0 0 8px #f00' }}>
+                        CONNECTION SEVERED
+                    </h1>
+                    <p className="text-center font-code text-text-medium mt-1">Disengaging Python Core...</p>
                 </div>
             </div>
         </div>

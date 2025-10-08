@@ -139,3 +139,9 @@ export const LayersIcon = (props: React.SVGProps<SVGSVGElement>) => (
         <path strokeLinecap="round" strokeLinejoin="round" d="M6.115 5.115A9 9 0 0112 3m0 0a9 9 0 015.885 2.115M12 3v9m0 0a9 9 0 00-5.885 2.115M12 12a9 9 0 005.885 2.115m-5.885 0A9 9 0 013 12m9 9a9 9 0 01-5.885-2.115M12 21a9 9 0 015.885-2.115M12 21v-9" />
     </svg>
 );
+
+export const StopIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 7.5A2.25 2.25 0 017.5 5.25h9a2.25 2.25 0 012.25 2.25v9a2.25 2.25 0 01-2.25 2.25h-9a2.25 2.25 0 01-2.25-2.25v-9z" />
+    </svg>
+);

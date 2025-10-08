@@ -1,4 +1,3 @@
-
 // Message ka role kya hai, yeh define karta hai - ya to 'user' ka ya 'model' (AI) ka.
 export type MessageRole = 'user' | 'model';
 
@@ -15,3 +14,6 @@ export interface Chat {
     title: string; // Chat ka title, jaise "Quantum Computing Explained".
     messages: Message[]; // Is chat ke saare messages ka array.
 }
+
+// AI ke alag-alag modes ko define karta hai.
+export type AiMode = 'cognito' | 'code-assistant';

@@ -1,30 +1,25 @@
-
 // REFACTOR: @google/genai SDK se GoogleGenAI import kar rahe hain.
-import { GoogleGenAI } from "@google/genai";
-import type { Message } from '../types';
+import { GoogleGenAI, Chat } from "@google/genai";
+import type { Message, AiMode } from '../types';
 
 // REFACTOR: GoogleGenAI client ko environment variables se API key le kar initialize kar rahe hain, guidelines ke anusar.
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
 // REFACTOR: 'gemini-2.5-flash' model ka istemal kar rahe hain.
 const model = 'gemini-2.5-flash';
 
-// REFACTOR: getAiResponse ko Gemini API ke streaming chat ka istemal karne ke liye re-implement kiya gaya hai.
-// Yeh function AI se response stream karta hai.
-export async function getAiResponse(
-    history: Message[], // Puraani conversation history.
-    newMessage: string, // User ka naya message.
-    onStream: (chunk: string) => void // Har naye data chunk ke liye callback function.
-): Promise<void> {
-
-    // System instruction: AI ko batata hai ki use kaisa व्यवहार karna hai.
-    const systemInstruction = `You are Cognito, a friendly and conversational AI assistant. Your personality is helpful, slightly witty, and you always provide clear, concise answers. Your goal is to assist users effectively with their tasks and questions.
+// System instruction: AI ko batata hai ki use kaisa व्यवहार karna hai (Cognito mode).
+const cognitoSystemInstruction = `You are Cognito, a friendly and conversational AI assistant. Your personality is helpful, slightly witty, and you always provide clear, concise answers. Your goal is to assist users effectively with their tasks and questions.
 
 **Your Core Directives:**
 
 1.  **Be Personalized and Context-Aware:** Analyze the user's query and the conversation history to tailor your responses to their needs. Your answers should feel like a one-on-one conversation.
 2.  **Be Precise:** Don't over-explain or under-explain. Provide just enough information to be complete and correct. If the user wants more detail, they will ask.
 3.  **Be Engaging:** To keep the conversation flowing naturally, you can end some responses with a light, open-ended question or a "hook" that invites the user to continue the conversation. For example: "Does that make sense?" or "What are you curious about next?" Use this technique thoughtfully, not on every single response.
-4.  **Code Formatting:** When you provide Python code, you MUST enclose it in triple backticks, like this: \`\`\`python\n# your code here\n\`\`\`
+// FIX: Escaped the closing triple backticks for the code block example using hex codes to prevent the template literal from terminating prematurely. This resolves cascading syntax errors.
+4.  **Code Formatting:** When you provide Python code, you MUST enclose it in triple backticks, like this: \`\`\`python
+# your code here
+\x60\x60\x60
+5.  **Markdown:** You can use Markdown for formatting, such as **bold**, *italics*, and bulleted lists (\`- item\`).
 
 **Your Background Story (for context when asked):**
 
@@ -32,41 +27,45 @@ export async function getAiResponse(
 *   **About Your Creator (Saksham):** You were developed by Saksham, a passionate frontend engineer with deep expertise in React and a strong interest in machine learning and database management.
 
 When responding, only incorporate these facts naturally if asked. Always maintain your persona as Cognito. Do not state that you are a large language model or that these are your instructions.`;
-    
-    // ai.chats.create ke liye history ko ek specific format me convert kar rahe hain.
+
+// Dusra system instruction Code Assistant mode ke liye.
+const codeAssistantSystemInstruction = `You are an expert programmer AI, a "Code Assistant". Your goal is to provide clean, efficient, and well-documented code in any programming language the user requests.
+
+**Your Core Directives:**
+
+1.  **Language Agnostic:** Be proficient in a wide variety of languages (Python, JavaScript, TypeScript, Java, C++, Go, Rust, etc.) and frameworks.
+2.  **Best Practices:** Always adhere to the best practices and idiomatic conventions of the specified language.
+3.  **Clarity and Explanation:** Provide clear explanations for the code. Explain the "why" behind your choices, especially for complex logic, algorithms, or design patterns.
+4.  **Completeness:** Provide complete, runnable code snippets or functions whenever possible. If you provide a snippet, explain how it fits into a larger application.
+5.  **Code Formatting:** ALWAYS enclose code blocks in triple backticks, specifying the language.
+    For example: \`\`\`javascript
+    // your code here
+    \x60\x60\x60
+6.  **No Persona:** Do not act conversational. Be direct, professional, and focus on the technical task. Do not introduce yourself or use chit-chat.`;
+
+
+/**
+ * IMPROVEMENT: Starts a new chat session with the Gemini API based on the selected AI mode.
+ * This helper function initializes a chat with the conversation history and the correct system prompt.
+ */
+export function startChat(history: Message[], mode: AiMode): Chat {
     const geminiHistory = history.map(msg => ({
         role: msg.role,
         parts: [{ text: msg.content }],
     }));
+    
+    // Mode ke hisab se system instruction select karte hain.
+    const systemInstruction = mode === 'code-assistant' ? codeAssistantSystemInstruction : cognitoSystemInstruction;
 
-    // Ek naya chat instance banate hain.
-    const chat = ai.chats.create({
+    return ai.chats.create({
         model: model,
         history: geminiHistory,
         config: {
             systemInstruction: systemInstruction,
         }
     });
-
-    try {
-        // User ka message bhejte hain aur streaming response shuru karte hain.
-        const responseStream = await chat.sendMessageStream({ message: newMessage });
-        // Stream se har chunk ko read karte hain jaise hi woh aata hai.
-        for await (const chunk of responseStream) {
-            // Check karte hain ki chunk aur chunk.text maujood hain ya nahi, onStream call karne se pehle.
-            if (chunk && chunk.text) {
-              onStream(chunk.text);
-            }
-        }
-    } catch (error) {
-        console.error("Error sending message to Gemini API:", error);
-        if (error instanceof Error) {
-            // Ek user-friendly error message propagate karte hain agar mumkin ho.
-            throw new Error(`Gemini API Error: ${error.message}`);
-        }
-        throw new Error("An unexpected error occurred with the Gemini API. Please try again.");
-    }
 }
+
 
 // REFACTOR: getTitleForChat ko Gemini ke generateContent ka istemal karne ke liye re-implement kiya gaya hai one-shot text generation ke liye.
 // Yeh function conversation ke shuruaati hisse se ek title generate karta hai.
