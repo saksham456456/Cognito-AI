@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import type { Message, Chat } from '../types';
-import { MenuIcon, CodeBracketIcon, PythonLogoIcon, SendIcon } from './icons';
+import { MenuIcon, CodeBracketIcon, PythonLogoIcon, SendIcon, ClipboardIcon, CheckIcon } from './icons';
 import { CognitoLogo } from './Logo';
 import MarkdownRenderer from './MarkdownRenderer';
-import { PowerIcon } from './icons'; // Assuming you'll create this icon
 
 // To tell TypeScript that the 'loadPyodide' function will exist on the 'window' object.
 declare global {
@@ -13,6 +12,16 @@ declare global {
 }
 
 type Language = 'python' | 'html' | 'css' | 'javascript';
+
+// NEW: A dedicated typing indicator for the assistant.
+const PulsingDotsIndicator = () => (
+    <div className="flex items-center gap-1.5">
+        <div className="h-1.5 w-1.5 bg-current rounded-full animate-pulse" style={{ animationDelay: '0ms' }}></div>
+        <div className="h-1.5 w-1.5 bg-current rounded-full animate-pulse" style={{ animationDelay: '200ms' }}></div>
+        <div className="h-1.5 w-1.5 bg-current rounded-full animate-pulse" style={{ animationDelay: '400ms' }}></div>
+    </div>
+);
+
 
 const languageInfo: Record<Language, { name: string, boilerplate: string, icon: React.ReactNode }> = {
     python: { name: 'Python', icon: <PythonLogoIcon className="w-5 h-5" />, boilerplate: `# Simple Python script\n\ndef greet(name):\n  print(f"Hello, {name}!")\n\ngreet("World")\n` },
@@ -25,12 +34,19 @@ interface CodingPlaygroundProps {
     onToggleSidebar: () => void;
     onExit: () => void;
     chat: Chat | null;
-    onSendMessage: (message: string) => void;
+    onSendMessage: (message: string, context?: { code: string; output: string; lang: string }) => void;
     isLoading: boolean;
     onCopyCode: (code: string) => void;
 }
 
-const CodingPlayground: React.FC<CodingPlaygroundProps> = ({ onToggleSidebar, onExit, chat, onSendMessage, isLoading, onCopyCode }) => {
+const CodingPlayground: React.FC<CodingPlaygroundProps> = ({ 
+    onToggleSidebar, 
+    onExit, 
+    chat, 
+    onSendMessage, 
+    isLoading, 
+    onCopyCode,
+}) => {
     const [activeLang, setActiveLang] = useState<Language>('python');
     const [codes, setCodes] = useState<Record<Language, string>>({
         python: languageInfo.python.boilerplate,
@@ -42,13 +58,14 @@ const CodingPlayground: React.FC<CodingPlaygroundProps> = ({ onToggleSidebar, on
     const [error, setError] = useState('');
     const [isPyodideLoading, setIsPyodideLoading] = useState(true);
     const [isExecuting, setIsExecuting] = useState(false);
+    const [isCopied, setIsCopied] = useState(false);
     
     // AI Assistant input state is now local to this component
     const [assistantInput, setAssistantInput] = useState('');
 
     const pyodideRef = useRef<any>(null);
     const iframeRef = useRef<HTMLIFrameElement>(null);
-    const assistantMessagesEndRef = useRef<HTMLDivElement>(null);
+    const assistantChatContainerRef = useRef<HTMLDivElement>(null);
 
     // Load Pyodide
     useEffect(() => {
@@ -66,13 +83,23 @@ const CodingPlayground: React.FC<CodingPlaygroundProps> = ({ onToggleSidebar, on
         loadPyodideEnvironment();
     }, []);
 
-    // Scroll assistant chat to bottom on new message
-    useEffect(() => {
-        assistantMessagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    // This effect now runs after the DOM is updated but before the browser paints,
+    // ensuring the chat is scrolled to the bottom without any flickering.
+    useLayoutEffect(() => {
+        const chatContainer = assistantChatContainerRef.current;
+        if (chatContainer) {
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
     }, [chat?.messages]);
     
     const handleCodeChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setCodes(prev => ({ ...prev, [activeLang]: e.target.value }));
+    };
+    
+    const handleCopy = () => {
+        onCopyCode(codes[activeLang]);
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
     };
 
     const runCode = async () => {
@@ -128,12 +155,13 @@ const CodingPlayground: React.FC<CodingPlaygroundProps> = ({ onToggleSidebar, on
     
     const handleAssistantSend = async () => {
         if (!assistantInput.trim() || isLoading) return;
-        onSendMessage(assistantInput);
+        const consoleContent = error ? `[ERROR] ${error}` : output;
+        onSendMessage(assistantInput, { code: codes[activeLang], output: consoleContent, lang: activeLang });
         setAssistantInput('');
     };
 
     return (
-        <div className="flex flex-col h-full bg-background crt-effect">
+        <div className="flex flex-col h-full bg-background crt-effect relative overflow-hidden">
              <header className="flex-shrink-0 flex items-center justify-between p-4 border-b border-card-border/50 bg-background/80 relative">
                 <button onClick={onToggleSidebar} className="p-1 rounded-md border border-transparent hover:border-card-border absolute left-4 top-1/2 -translate-y-1/2 md:hidden">
                     <MenuIcon className="h-6 w-6" />
@@ -167,9 +195,15 @@ const CodingPlayground: React.FC<CodingPlaygroundProps> = ({ onToggleSidebar, on
                                     </button>
                                 ))}
                            </div>
-                            <button onClick={runCode} disabled={isExecuting || (activeLang === 'python' && isPyodideLoading)} className="px-4 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-yellow-400 transition-colors border border-primary-foreground/20 text-sm font-bold disabled:opacity-50 disabled:cursor-wait flex items-center gap-2">
-                               {isPyodideLoading && activeLang === 'python' ? 'INIT...' : isExecuting ? 'EXEC...' : 'RUN >'}
-                            </button>
+                            <div className="flex items-center gap-2">
+                               <button onClick={handleCopy} className="px-3 py-1.5 rounded-md bg-input/50 text-text-medium hover:text-primary transition-colors border border-input-border text-xs font-bold flex items-center gap-2">
+                                    {isCopied ? <CheckIcon className="w-4 h-4 text-green-500"/> : <ClipboardIcon className="w-4 h-4"/>}
+                                    <span>{isCopied ? 'Copied!' : 'Copy Code'}</span>
+                               </button>
+                               <button onClick={runCode} disabled={isExecuting || (activeLang === 'python' && isPyodideLoading)} className="px-4 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-yellow-400 transition-colors border border-primary-foreground/20 text-sm font-bold disabled:opacity-50 disabled:cursor-wait flex items-center gap-2">
+                                   {isPyodideLoading && activeLang === 'python' ? 'INIT...' : isExecuting ? 'EXEC...' : 'RUN >'}
+                                </button>
+                            </div>
                         </div>
                         <textarea value={codes[activeLang]} onChange={handleCodeChange} className="flex-1 p-3 bg-black/50 border border-primary/20 rounded-b-lg text-green-400 focus:outline-none focus:border-primary/50 transition-colors resize-none font-code text-sm custom-scrollbar" spellCheck="false" />
                     </div>
@@ -198,7 +232,7 @@ const CodingPlayground: React.FC<CodingPlaygroundProps> = ({ onToggleSidebar, on
                         <CognitoLogo className="w-5 h-5"/>
                         <h2 className="font-code font-semibold text-primary/80 text-sm">/assistant.ai</h2>
                     </div>
-                    <div className="flex-1 p-3 overflow-y-auto custom-scrollbar space-y-4 min-h-0">
+                    <div ref={assistantChatContainerRef} className="flex-1 p-3 overflow-y-auto custom-scrollbar space-y-4 min-h-0">
                         {chat?.messages.map((msg, index) => {
                              const isLastMessage = index === chat.messages.length - 1;
                              return (
@@ -208,16 +242,15 @@ const CodingPlayground: React.FC<CodingPlaygroundProps> = ({ onToggleSidebar, on
                                         {msg.content ? (
                                             <MarkdownRenderer content={msg.content} onCopyCode={onCopyCode} />
                                         ) : (
-                                            isLastMessage && isLoading && <span className="animate-pulse">...</span>
+                                            isLastMessage && isLoading && <PulsingDotsIndicator />
                                         )}
                                      </div>
                                  </div>
                              )
                         })}
-                        <div ref={assistantMessagesEndRef} />
                     </div>
                     <div className="p-2 border-t border-primary/20">
-                         <div className="flex items-center gap-2 p-1 bg-input rounded-lg border border-input-border focus-within:glow-border-active">
+                         <div className="flex items-center gap-2 p-1 bg-input rounded-lg border border-input-border focus-within:glow-border-active focus-within:border-primary transition-all duration-300">
                              <input type="text" value={assistantInput} onChange={e => setAssistantInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAssistantSend()} placeholder="Ask a question..." className="flex-grow bg-transparent p-1 focus:outline-none text-sm"/>
                              <button onClick={handleAssistantSend} disabled={isLoading} className="w-8 h-8 rounded-md bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0 disabled:opacity-50">
                                 {isLoading ? <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div> : <SendIcon className="w-4 h-4" />}

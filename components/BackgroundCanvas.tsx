@@ -218,11 +218,33 @@ class MatrixAnimation extends Animation {
 }
 
 
-// --- 3. Hexagons Animation ---
+// --- 3. Hexagons Animation (Data Flow Concept) ---
+class HexPulse {
+    x: number; y: number; life: number; maxRadius: number; speed: number; currentRadius: number;
+
+    constructor(x: number, y: number) {
+        this.x = x; this.y = y;
+        this.life = 1;
+        this.maxRadius = Math.random() * 300 + 200; // Pulse travels 200-500px
+        this.speed = Math.random() * 1.5 + 1; // Speed of radius expansion
+        this.currentRadius = 0;
+    }
+
+    update() {
+        this.currentRadius += this.speed;
+        if (this.currentRadius > this.maxRadius) {
+            this.life -= 0.05; // Start fading out after reaching max radius
+        }
+    }
+
+    isDead(): boolean {
+        return this.life <= 0;
+    }
+}
 class HexagonsAnimation extends Animation {
     private hexSize = 30;
     private hexes: {x: number, y: number}[] = [];
-    private mouse = { x: 0, y: 0, radius: 250 };
+    private pulses: HexPulse[] = [];
     private offscreenCanvas: HTMLCanvasElement;
     private offscreenCtx: CanvasRenderingContext2D;
 
@@ -235,8 +257,8 @@ class HexagonsAnimation extends Animation {
     init() {
         this.offscreenCanvas.width = this.canvas.width;
         this.offscreenCanvas.height = this.canvas.height;
-
         this.hexes = [];
+        this.pulses = [];
         const hexHeight = Math.sqrt(3) * this.hexSize;
         const hexWidth = 2 * this.hexSize;
         const cols = Math.ceil(this.canvas.width / (hexWidth * 0.75)) + 1;
@@ -250,18 +272,12 @@ class HexagonsAnimation extends Animation {
             }
         }
         this.drawBaseGrid();
-        window.addEventListener('mousemove', this.handleMouseMove);
     }
     
-    handleMouseMove = (event: MouseEvent) => {
-        this.mouse.x = event.clientX;
-        this.mouse.y = event.clientY;
-    }
-
     drawBaseGrid() {
         this.offscreenCtx.clearRect(0, 0, this.offscreenCanvas.width, this.offscreenCanvas.height);
         this.offscreenCtx.lineWidth = 0.5;
-        this.offscreenCtx.strokeStyle = `hsla(220, 100%, 65%, 0.2)`;
+        this.offscreenCtx.strokeStyle = `hsla(220, 100%, 65%, 0.1)`;
         const angle = (2 * Math.PI) / 6;
 
         this.hexes.forEach(hex => {
@@ -277,36 +293,48 @@ class HexagonsAnimation extends Animation {
         });
     }
 
+    drawHex(ctx: CanvasRenderingContext2D, hex: {x: number, y: number}, color: string, lineWidth: number) {
+        const angle = (2 * Math.PI) / 6;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = lineWidth;
+        ctx.beginPath();
+        for (let i = 0; i < 6; i++) {
+            const x_ = hex.x + this.hexSize * Math.cos(angle * i);
+            const y_ = hex.y + this.hexSize * Math.sin(angle * i);
+            if (i === 0) ctx.moveTo(x_, y_);
+            else ctx.lineTo(x_, y_);
+        }
+        ctx.closePath();
+        ctx.stroke();
+    }
+
     animate() {
+        if (Math.random() > 0.98 && this.pulses.length < 5) {
+            const startHex = this.hexes[Math.floor(Math.random() * this.hexes.length)];
+            if(startHex) this.pulses.push(new HexPulse(startHex.x, startHex.y));
+        }
+
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.drawImage(this.offscreenCanvas, 0, 0);
 
+        this.pulses.forEach(p => p.update());
+        this.pulses = this.pulses.filter(p => !p.isDead());
+
         this.hexes.forEach(hex => {
-            const dx = hex.x - this.mouse.x;
-            const dy = hex.y - this.mouse.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            
-            if (distance < this.mouse.radius) {
-                const opacity = 1 - distance / this.mouse.radius;
-                const angle = (2 * Math.PI) / 6;
-                this.ctx.beginPath();
-                for (let i = 0; i < 6; i++) {
-                    const x_ = hex.x + this.hexSize * Math.cos(angle * i);
-                    const y_ = hex.y + this.hexSize * Math.sin(angle * i);
-                    if (i === 0) this.ctx.moveTo(x_, y_);
-                    else this.ctx.lineTo(x_, y_);
+            this.pulses.forEach(pulse => {
+                const dx = hex.x - pulse.x;
+                const dy = hex.y - pulse.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const pulseWaveWidth = 80;
+
+                if (distance > pulse.currentRadius - pulseWaveWidth && distance < pulse.currentRadius) {
+                    const falloff = 1 - (pulse.currentRadius - distance) / pulseWaveWidth;
+                    const opacity = falloff * pulse.life;
+                    const color = `hsla(48, 100%, 55%, ${opacity})`;
+                    this.drawHex(this.ctx, hex, color, 1.5);
                 }
-                this.ctx.closePath();
-                this.ctx.strokeStyle = `hsla(48, 100%, 55%, ${opacity * 0.8})`;
-                this.ctx.lineWidth = 1;
-                this.ctx.stroke();
-            }
+            });
         });
-    }
-    
-    stop() {
-        super.stop();
-        window.removeEventListener('mousemove', this.handleMouseMove);
     }
 }
 

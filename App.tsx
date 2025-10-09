@@ -31,6 +31,7 @@ const App: React.FC = () => {
     const [isDbLoading, setIsDbLoading] = useState(true); // Are chats being loaded from the database?
     const [backgroundAnimation, setBackgroundAnimation] = useState<string>(() => localStorage.getItem('backgroundAnimation') || 'particles'); // Background animation type.
     const [aiMode, setAiMode] = useState<AiMode>('cognito'); // Current AI mode.
+    const [inputRect, setInputRect] = useState<DOMRect | null>(null); // Position of the input bar.
     
     // App view management states
     const [currentView, setCurrentView] = useState<AppView>('chat');
@@ -120,7 +121,7 @@ const App: React.FC = () => {
         setIsAiLoading(false);
     }
 
-    // Handles the view transition between 'chat' and 'coding' modes
+    // REVAMPED: Handles the view transition between 'chat' and 'coding' modes.
     const handleAiModeChange = (newMode: AiMode) => {
         const newView: AppView = newMode === 'code-assistant' ? 'coding' : 'chat';
 
@@ -142,7 +143,7 @@ const App: React.FC = () => {
                     setCurrentView('chat');
                     setAiMode('cognito');
                     setIsExiting(false);
-                }, 1500); // 1.5-second disintegration effect
+                }, 2000); // 2-second exit animation to match CSS
             }
         } else {
              setAiMode(newMode);
@@ -150,8 +151,8 @@ const App: React.FC = () => {
     };
 
 
-    // This function handles when the user sends a message.
-    const handleSendMessage = async (content: string) => {
+    // REVAMPED: This function handles when the user sends a message.
+    const handleSendMessage = async (content: string, context?: { code: string; output: string; lang: string }) => {
         let currentChatId = activeChatId;
         let history: Message[] = [];
         let isNewChat = false;
@@ -170,7 +171,17 @@ const App: React.FC = () => {
             history = chats.find(c => c.id === currentChatId)?.messages || [];
         }
 
-        const userMessage: Message = { id: Date.now().toString(), role: 'user', content };
+        // NEW: The user-facing message ONLY contains their direct input.
+        const userMessage: Message = { id: Date.now().toString(), role: 'user', content: content };
+        
+        // The message for the API includes the hidden context.
+        let messageForApi = content;
+        if (currentView === 'coding' && context && (context.code || context.output.trim())) {
+            const codeBlock = context.code ? `\n\n**My Code (${context.lang}):**\n\`\`\`${context.lang}\n${context.code}\n\`\`\`` : '';
+            const outputBlock = context.output.trim() ? `\n\n**Console Output:**\n\`\`\`\n${context.output.trim()}\n\`\`\`` : '';
+            messageForApi = `${content}${codeBlock}${outputBlock}`;
+        }
+        
         const modelMessageId = (Date.now() + 1).toString();
         // Add a placeholder message for the AI's response.
         const modelPlaceholder: Message = { id: modelMessageId, role: 'model', content: '' };
@@ -190,7 +201,7 @@ const App: React.FC = () => {
             // Determine which AI mode to use for the API call.
             const modeForAPI = currentView === 'coding' ? 'code-assistant' : 'cognito';
             const chatSession = startChat(history, modeForAPI);
-            const responseStream = await chatSession.sendMessageStream({ message: content });
+            const responseStream = await chatSession.sendMessageStream({ message: messageForApi });
             
             for await (const chunk of responseStream) {
                 if (stopGenerationRef.current) break;
@@ -216,7 +227,12 @@ const App: React.FC = () => {
                 const finalModelMessage: Message = { id: modelMessageId, role: 'model', content: fullResponse };
                 const messagesForTitle: Message[] = [userMessage, finalModelMessage];
 
-                getTitleForChat(messagesForTitle)
+                // For a new coding session, give it a default "Coding Session" title.
+                const titlePromise = currentView === 'coding' 
+                    ? Promise.resolve('Coding Session')
+                    : getTitleForChat(messagesForTitle);
+
+                titlePromise
                     .then(newTitle => {
                         setChats(prev => prev.map(c => c.id === currentChatId ? { ...c, title: newTitle } : c));
                     })
@@ -316,11 +332,19 @@ const App: React.FC = () => {
 
     // To start a new chat.
     const handleNewChat = (changeView = true) => {
-        if (changeView && currentView === 'coding') {
-            handleAiModeChange('cognito');
+        // BUG FIX: If in coding mode, create a new session but stay in coding mode.
+        if (currentView === 'coding') {
+            const newChatId = Date.now().toString();
+            const newChat: Chat = { id: newChatId, title: "New Coding Session", messages: [] };
+            saveChat(newChat).then(() => {
+                setChats(prev => [newChat, ...prev]);
+                setActiveChatId(newChatId);
+                if (changeView) setIsSidebarOpen(false);
+            });
+        } else {
+            setActiveChatId(null);
+            if (changeView) setIsSidebarOpen(false);
         }
-        setActiveChatId(null);
-        if (changeView) setIsSidebarOpen(false);
     };
 
     // To select a chat from the list.
@@ -473,6 +497,7 @@ const App: React.FC = () => {
                                         onRegenerate={handleRegenerateResponse}
                                         onStopGeneration={handleStopGeneration}
                                         speakingMessageId={speakingMessageId}
+                                        inputRect={inputRect}
                                     />
                                 </div>
                             ))}
@@ -481,38 +506,37 @@ const App: React.FC = () => {
                     )}
                 </div>
                 <ChatInput 
-                    onSendMessage={handleSendMessage} 
+                    onSendMessage={(message) => handleSendMessage(message)}
                     isLoading={isAiLoading} 
                     showSuggestions={!activeChat || activeChat.messages.length === 0}
                     aiMode={aiMode}
                     onAiModeChange={handleAiModeChange}
+                    onRectChange={setInputRect}
                 />
             </main>
         </div>
     );
 
     const renderCurrentView = () => {
-        const codingView = (
-            <CodingPlayground 
-                onToggleSidebar={() => setIsSidebarOpen(p => !p)} 
-                onExit={() => handleAiModeChange('cognito')}
-                chat={activeChat ?? null}
-                onSendMessage={handleSendMessage}
-                isLoading={isAiLoading}
-                onCopyCode={handleCopyText}
-            />
-        );
+        if (currentView === 'coding') {
+             return (
+                <CoreDisintegrationScreen show={isExiting}>
+                    <CodingPlayground 
+                        onToggleSidebar={() => setIsSidebarOpen(p => !p)} 
+                        onExit={() => handleAiModeChange('cognito')}
+                        chat={activeChat ?? null}
+                        onSendMessage={handleSendMessage}
+                        isLoading={isAiLoading}
+                        onCopyCode={handleCopyText}
+                    />
+                </CoreDisintegrationScreen>
+            );
+        }
         
         if (isTransitioning) return <CoreLoadingScreen show={true} />;
-        if (isExiting) return <CoreDisintegrationScreen show={true}>{codingView}</CoreDisintegrationScreen>;
 
-        switch (currentView) {
-            case 'coding':
-                return codingView;
-            case 'chat':
-            default:
-                return renderChatView();
-        }
+        // Fallback to chat view
+        return renderChatView();
     };
 
 

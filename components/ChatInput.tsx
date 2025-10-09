@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { SendIcon, EmojiHappyIcon, CodeBracketIcon } from './icons';
 import { CognitoLogo } from './Logo';
 import type { AiMode } from '../types';
@@ -10,6 +10,7 @@ interface ChatInputProps {
   showSuggestions: boolean; // Should initial suggestions be shown?
   aiMode: AiMode;
   onAiModeChange: (mode: AiMode) => void;
+  onRectChange: (rect: DOMRect | null) => void; // Reports the input's position.
 }
 
 // A small component for the suggestion button.
@@ -22,12 +23,13 @@ const SuggestionButton: React.FC<{ text: string; onClick: () => void }> = ({ tex
     </button>
 )
 
-const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, showSuggestions, aiMode, onAiModeChange }) => {
+const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, showSuggestions, aiMode, onAiModeChange, onRectChange }) => {
   // State variables
   const [inputValue, setInputValue] = useState(''); // The current value of the textarea.
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false); // Is the emoji picker open?
   const [isModePickerOpen, setIsModePickerOpen] = useState(false); // Is the mode picker open?
   const [isFocused, setIsFocused] = useState(false); // Input focus state for the glow effect.
+  const [isSending, setIsSending] = useState(false); // Triggers the send animation.
 
   // Refs for DOM elements
   const textareaRef = useRef<HTMLTextAreaElement>(null); // To access the textarea.
@@ -35,6 +37,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, showSug
   const emojiButtonRef = useRef<HTMLButtonElement>(null); // To detect clicks on the emoji button.
   const modePickerRef = useRef<HTMLDivElement>(null);
   const modeButtonRef = useRef<HTMLButtonElement>(null);
+  const formRef = useRef<HTMLFormElement>(null); // Ref for the main form element for position tracking.
   
   // Array of initial chat suggestions.
   const suggestions = [
@@ -42,6 +45,23 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, showSug
       "Explain quantum computing simply",
       "Write a futuristic poem"
   ]
+  
+  // This effect reports the form's position to the parent for animations.
+  useLayoutEffect(() => {
+    if (formRef.current) {
+        onRectChange(formRef.current.getBoundingClientRect());
+    }
+    const handleResize = () => {
+        if (formRef.current) {
+            onRectChange(formRef.current.getBoundingClientRect());
+        }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => {
+        window.removeEventListener('resize', handleResize);
+        onRectChange(null);
+    };
+  }, [onRectChange]);
 
   // When a suggestion is clicked, send it as a message.
   const handleSuggestionClick = (suggestion: string) => {
@@ -86,6 +106,9 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, showSug
     if (inputValue.trim() && !isLoading) {
       onSendMessage(inputValue.trim());
       setInputValue(''); // Clears the input field.
+      // Trigger the send animation.
+      setIsSending(true);
+      setTimeout(() => setIsSending(false), 500); // Duration of the pulse animation.
     }
   };
 
@@ -93,7 +116,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, showSug
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSubmit(e);
+      handleSubmit(e as any);
     }
   };
 
@@ -155,12 +178,13 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, showSug
                 </div>
             )}
             {/* Main form containing the textarea and send button */}
-            <form onSubmit={handleSubmit} className={`flex items-end gap-2 p-2 bg-input rounded-xl border border-input-border transition-all duration-300 ${isFocused ? 'glow-border-active' : ''}`}>
+            <form ref={formRef} onSubmit={handleSubmit} className={`relative flex items-end gap-2 p-2 bg-input rounded-xl border transition-all duration-300 ${isFocused ? 'glow-border-active border-primary' : 'border-input-border'} ${isSending ? 'input-is-sending' : ''}`}>
+                {/* Buttons and textarea now sit above the SVG layer */}
                 <button
                     type="button"
                     ref={modeButtonRef}
                     onClick={() => setIsModePickerOpen(prev => !prev)}
-                    className="flex-shrink-0 h-10 px-2 rounded-lg text-text-medium hover:bg-card-border flex items-center justify-center transition-colors disabled:opacity-50"
+                    className="flex-shrink-0 h-10 px-2 rounded-lg text-text-medium hover:bg-card-border flex items-center justify-center transition-colors disabled:opacity-50 z-10"
                     aria-label="Change AI mode"
                     disabled={isLoading}
                 >
@@ -170,7 +194,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, showSug
                     type="button"
                     ref={emojiButtonRef}
                     onClick={() => setIsEmojiPickerOpen(prev => !prev)}
-                    className="flex-shrink-0 w-10 h-10 rounded-lg text-text-medium hover:text-primary flex items-center justify-center transition-colors disabled:opacity-50"
+                    className="flex-shrink-0 w-10 h-10 rounded-lg text-text-medium hover:text-primary flex items-center justify-center transition-colors disabled:opacity-50 z-10"
                     aria-label="Add emoji"
                     disabled={isLoading}
                 >
@@ -186,14 +210,14 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, showSug
                     onBlur={() => setIsFocused(false)}
                     placeholder={aiMode === 'cognito' ? "Message Cognito..." : "Ask a coding question..."}
                     rows={1}
-                    className="flex-grow bg-transparent text-text-light placeholder-text-dark resize-none focus:outline-none p-2 max-h-48 custom-scrollbar"
+                    className="flex-grow bg-transparent text-text-light placeholder-text-dark resize-none focus:outline-none p-2 max-h-48 custom-scrollbar z-10"
                     disabled={isLoading}
                 />
                 {/* Send/Submit button */}
                 <button
                     type="submit"
                     disabled={isLoading || !inputValue.trim()}
-                    className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary text-primary-foreground flex items-center justify-center transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-yellow-400 hover:scale-110 active:scale-100"
+                    className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary text-primary-foreground flex items-center justify-center transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-yellow-400 hover:scale-110 active:scale-100 z-10"
                 >
                     {/* Show a spinner in the loading state, otherwise show the send icon */}
                     {isLoading ? (
