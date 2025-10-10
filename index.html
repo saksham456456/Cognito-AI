@@ -241,38 +241,7 @@
       }
       
       /* --- NEW, MORE PERFROMANT ANIMATIONS --- */
-      /* Python Loading Screen: Data stream effect */
-      @keyframes data-stream-x {
-        from { opacity: 0; transform: translateX(-50vw) scale(0.5); }
-        to { opacity: 0; transform: translateX(0) scale(1); }
-      }
-      @keyframes data-stream-y {
-        from { opacity: 0; transform: translateY(-50vh) scale(0.5); }
-        to { opacity: 0; transform: translateY(0) scale(1); }
-      }
-
-      /* Python Loading Screen: Status text cycler */
-      @keyframes status-cycle {
-        0% { transform: translateY(0%); }
-        11% { transform: translateY(0%); }
-        11.11% { transform: translateY(-11.11%); }
-        22.11% { transform: translateY(-11.11%); }
-        22.22% { transform: translateY(-22.22%); }
-        33.22% { transform: translateY(-22.22%); }
-        33.33% { transform: translateY(-33.33%); }
-        44.33% { transform: translateY(-33.33%); }
-        44.44% { transform: translateY(-44.44%); }
-        55.44% { transform: translateY(-44.44%); }
-        55.55% { transform: translateY(-55.55%); }
-        66.55% { transform: translateY(-55.55%); }
-        66.66% { transform: translateY(-66.66%); }
-        77.66% { transform: translateY(-66.66%); }
-        77.77% { transform: translateY(-77.77%); }
-        88.77% { transform: translateY(-77.77%); }
-        88.88% { transform: translateY(-88.88%); }
-        100% { transform: translateY(-88.88%); }
-      }
-
+      
       /* --- NEW: "COGNITIVE CHANNELING" ANIMATIONS --- */
       
       /* 1. Input bar pulse on send */
@@ -318,66 +287,125 @@
         }
       }
 
-      /* --- NEW: "CODING CORE DECONSTRUCTION" SPLASH SCREEN --- */
-      .animate-core-disintegration {
-          /* Main container for the animation. It's a relative box for overlays. */
-          position: relative;
+      /* --- REVAMPED: "CODING CORE SHUTDOWN" SPLASH SCREEN --- */
+      .core-shutdown-screen {
+        animation: shutdown-sequence 2.8s forwards ease-in-out;
+      }
+      @keyframes shutdown-sequence {
+        0% { opacity: 0; }
+        10% { opacity: 1; } /* Fade in */
+        90% { opacity: 1; } /* Hold */
+        100% { opacity: 0; } /* Fade out */
+      }
+
+      .shutdown-icon-pulse {
+        animation: shutdown-icon-pulse-anim 2.5s infinite ease-in-out;
+        animation-delay: 0.5s;
+      }
+      @keyframes shutdown-icon-pulse-anim {
+        0%, 100% {
+          transform: scale(1);
+          opacity: 1;
+          filter: drop-shadow(0 0 8px var(--primary-glow));
+        }
+        50% {
+          transform: scale(1.05);
+          opacity: 0.8;
+          filter: drop-shadow(0 0 16px var(--primary-glow));
+        }
+      }
+
+      .shutdown-log-line {
+          opacity: 0;
+          animation-name: fadeInUp;
+          animation-duration: 0.2s;
+          animation-timing-function: ease-out;
+          animation-fill-mode: forwards;
+      }
+
+      .animate-fade-out-quick {
+        animation: fade-out-quick 0.5s forwards ease-out;
+      }
+      @keyframes fade-out-quick {
+        to { opacity: 0; filter: blur(4px); }
+      }
+
+
+      /* --- NEW: "CODE CORE BOOT-UP" SPLASH SCREEN --- */
+      .core-boot-up {
+        animation: core-boot-sequence 3.2s forwards ease-in-out;
+      }
+      @keyframes core-boot-sequence {
+        0% { opacity: 0; transform: scale(0.98); }
+        10% { opacity: 1; transform: scale(1); } /* Fast fade in */
+        90% { opacity: 1; transform: scale(1); } /* Hold visible */
+        100% { opacity: 0; transform: scale(0.98); } /* Fast fade out */
+      }
+      
+      .boot-grid {
+        position: absolute;
+        inset: 0;
+        background-image:
+            linear-gradient(to right, hsla(220, 100%, 65%, 0.1) 1px, transparent 1px),
+            linear-gradient(to bottom, hsla(220, 100%, 65%, 0.1) 1px, transparent 1px);
+        background-size: 40px 40px;
+        animation: boot-grid-fade-in 1s ease-out forwards;
+        opacity: 0;
+      }
+      @keyframes boot-grid-fade-in {
+          to { opacity: 0.5; }
+      }
+
+      .core-svg-pulse {
+          animation: core-pulse-anim 2.5s infinite ease-in-out;
+      }
+      @keyframes core-pulse-anim {
+          0%, 100% { transform: scale(0.98); opacity: 0.7; }
+          50% { transform: scale(1.02); opacity: 1; }
+      }
+
+      .boot-log-line {
+          opacity: 0;
+          /* Uses existing fadeInUp animation */
+          animation-name: fadeInUp;
+          animation-duration: 0.2s;
+          animation-timing-function: ease-out;
+          animation-fill-mode: forwards;
+      }
+
+      /* --- REVAMPED: MAIN SPLASH SCREEN --- */
+      .splash-sequence {
+        animation: splash-screen-sequence 3.5s forwards ease-in-out;
+      }
+      @keyframes splash-screen-sequence {
+          0% { opacity: 0; }
+          15% { opacity: 1; } /* Fade in */
+          85% { opacity: 1; } /* Hold */
+          100% { opacity: 0; } /* Fade out */
+      }
+      .data-cascade {
+          animation: data-cascade-anim 2.5s ease-out forwards;
+          opacity: 0;
+      }
+      @keyframes data-cascade-anim {
+          0% { opacity: 0; filter: blur(5px); }
+          20% { opacity: 0.15; filter: blur(2px); }
+          80% { opacity: 0.15; filter: blur(2px); }
+          100% { opacity: 0; filter: blur(5px); }
+      }
+      
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+
+      .typing-effect {
           overflow: hidden;
-          /* This ensures after the animation, the element is gone, letting the chat view appear. */
-          animation: core-disintegration-hide 0.1s 1.9s forwards;
-      }
-      /* Apply animations to the direct child (the content being wrapped) */
-      .animate-core-disintegration > * {
-          animation: content-glitch-exit 0.8s ease-in-out forwards, 
-                     content-fade-out-exit 1.2s 0.8s ease-in forwards;
-      }
-      /* A separate overlay for the scanline wipe effect */
-      .scanline-wipe-overlay {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: linear-gradient(to bottom, transparent 30%, var(--bg-dark) 100%);
-          transform: translateY(-100%);
-          /* The wipe animation starts after 0.5s and lasts 1.5s */
-          animation: scanline-wipe-down-exit 1.5s 0.5s forwards cubic-bezier(0.7, 0, 0.3, 1);
-          z-index: 10;
-      }
-      /* This keyframe simply hides the container after all animations are done. */
-      @keyframes core-disintegration-hide {
-          to {
-              opacity: 0;
-              visibility: hidden;
-          }
-      }
-      /* The glitch effect for the content */
-      @keyframes content-glitch-exit {
-          0% { transform: translate(0, 0); }
-          15% { transform: translate(-4px, 2px) skewX(-4deg); }
-          30% { transform: translate(4px, -2px) skewX(4deg); }
-          45% { transform: translate(-2px, 1px) skewX(-2deg); }
-          60% { transform: translate(2px, -1px) skewX(2deg); }
-          75%, 100% { transform: translate(0, 0); }
-      }
-      /* The fade, blur, and scale effect for the content */
-      @keyframes content-fade-out-exit {
-          from {
-              opacity: 1;
-              filter: blur(0px);
-              transform: scale(1);
-          }
-          to {
-              opacity: 0;
-              filter: blur(10px);
-              transform: scale(0.96);
-          }
-      }
-      /* The scanline moving down */
-      @keyframes scanline-wipe-down-exit {
-          from { transform: translateY(-100%); }
-          to { transform: translateY(0%); }
+          white-space: nowrap;
+          animation-name: typing-reveal;
+          animation-duration: 1.5s;
+          animation-timing-function: steps(40, end);
+          animation-fill-mode: forwards;
       }
 
     </style>
@@ -417,7 +445,6 @@
             'neon-flicker': 'neon-flicker 1.5s infinite alternate',
             'orb-pulse': 'orb-pulse 1.5s ease-in-out infinite',
             'path-draw': 'path-draw 3s ease-out forwards',
-            'status-cycle': 'status-cycle 4s steps(9, end) forwards',
           },
           // Keyframes for animations
           keyframes: {
@@ -465,8 +492,6 @@
       }
     }
   </script>
-<!-- Loading Pyodide (Python in browser) -->
-<script src="https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js"></script>
 <!-- Importmap to support ES Modules. Importing React and Gemini SDK from a CDN. -->
 <script type="importmap">
 {

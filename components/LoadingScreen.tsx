@@ -1,69 +1,97 @@
-import React, { useEffect, useState } from 'react';
-import { CognitoLogo } from './Logo';
+import React, { useEffect, useState, useMemo } from 'react';
 
-const LoadingScreen = () => {
-    // State to control the visibility of SVG paths for the drawing animation.
-    const [pathsVisible, setPathsVisible] = useState(false);
+const bootLogMessages = [
+    "[INITIATING] COGNITO OS v2.1",
+    "[LOADING]    PERSONALITY_MATRIX.DAT",
+    "[CALIBRATING] HEURISTIC_PROCESSORS",
+    "[ESTABLISHING] SECURE_CHANNEL_TO_USER",
+    "[STATUS]     ALL SYSTEMS NOMINAL.",
+];
 
-    // 100ms after the component mounts, make the paths visible to start the animation.
+// A custom-animated logo specifically for the splash screen
+const AnimatedCognitoLogo = () => {
+    const [isDrawing, setIsDrawing] = useState(false);
+
     useEffect(() => {
-        const timer = setTimeout(() => setPathsVisible(true), 100);
-        return () => clearTimeout(timer); // Cleanup
+        const timer = setTimeout(() => setIsDrawing(true), 200);
+        return () => clearTimeout(timer);
     }, []);
+
+    // Helper to create smooth drawing transitions
+    const getDrawStyle = (length: number, duration: string, delay: string) => ({
+        strokeDasharray: length,
+        strokeDashoffset: isDrawing ? 0 : length,
+        transition: `stroke-dashoffset ${duration} ease-in-out ${delay}`,
+    });
     
-    // This function generates dynamic styles for the SVG path.
-    // The line drawing effect is created with 'stroke-dasharray' and 'stroke-dashoffset'.
-    const pathStyle = (length: number, delay: string) => ({
-        strokeDasharray: length, // The total length of the path.
-        strokeDashoffset: pathsVisible ? 0 : length, // When `pathsVisible` is true, the offset becomes 0, making the line appear.
-        transition: `stroke-dashoffset 2s cubic-bezier(0.4, 0, 0.2, 1)`, // Animation duration and timing function.
-        transitionDelay: delay // Delay before the animation starts.
+    // Helper for fade-in transitions
+    const getFadeStyle = (delay: string) => ({
+        opacity: isDrawing ? 1 : 0,
+        transition: `opacity 0.5s ease-in ${delay}`,
     });
 
-  return (
-    <div className="flex flex-col items-center justify-center h-screen w-screen bg-background">
-      <div className="flex flex-col items-center space-y-6">
-         <div className="relative w-48 h-48 flex items-center justify-center">
-            {/* SVG container for the neural network path animations */}
-            <svg viewBox="0 0 200 200" className="absolute w-full h-full">
-                <defs>
-                    {/* Glow filter definition */}
-                    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-                        <feGaussianBlur stdDeviation="3.5" result="coloredBlur" />
-                        <feMerge>
-                            <feMergeNode in="coloredBlur" />
-                            <feMergeNode in="SourceGraphic" />
-                        </feMerge>
-                    </filter>
-                </defs>
-                <g stroke="hsl(48, 100%, 55%)" fill="none" strokeWidth="1" filter="url(#glow)">
-                    {/* Different neural network paths, each with its own style (length, delay) */}
-                    <path d="M 20,100 C 50,20 150,20 180,100" style={pathStyle(275, '0s')} />
-                    <path d="M 20,100 C 50,180 150,180 180,100" style={pathStyle(275, '0s')} />
-                    <path d="M 100,20 C 20,50 20,150 100,180" style={pathStyle(275, '0.2s')} />
-                    <path d="M 100,20 C 180,50 180,150 100,180" style={pathStyle(275, '0.2s')} />
-                    <path d="M 40,40 C 100,80 100,120 40,160" style={pathStyle(170, '0.4s')} />
-                    <path d="M 160,40 C 100,80 100,120 160,160" style={pathStyle(170, '0.4s')} />
-                </g>
-            </svg>
-            {/* Fade in the logo slightly after the path animation */}
-            <div className={`transition-opacity duration-1000 delay-1000 ${pathsVisible ? 'opacity-100' : 'opacity-0'}`}>
-                <CognitoLogo className="h-24 w-24" />
+    return (
+        <svg viewBox="0 0 160 160" className="w-24 h-24" aria-label="Cognito Logo">
+            <defs>
+                <linearGradient id="goldGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" style={{ stopColor: 'hsl(50, 100%, 75%)' }} />
+                    <stop offset="100%" style={{ stopColor: 'hsl(45, 90%, 50%)' }} />
+                </linearGradient>
+                <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="4" result="coloredBlur" />
+                    <feMerge>
+                        <feMergeNode in="coloredBlur" />
+                        <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                </filter>
+            </defs>
+            <g stroke="url(#goldGradient)" fill="none" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" filter="url(#glow)">
+                {/* Paths are now animated individually */}
+                <path d="M 30 25 A 50 50 0 0 1 130 25" style={getDrawStyle(157, '1s', '0.2s')} />
+                <path d="M 30 135 A 50 50 0 0 0 130 135" transform="rotate(180, 80, 80)" style={getDrawStyle(157, '1s', '0.2s')} />
+                <rect x="55" y="40" width="50" height="40" rx="8" style={{ ...getDrawStyle(180, '0.8s', '0.6s'), ...getFadeStyle('0.6s') }} />
+                <rect x="45" y="85" width="70" height="45" rx="8" style={{ ...getDrawStyle(230, '0.8s', '0.8s'), ...getFadeStyle('0.8s') }} />
+                <circle cx="70" cy="60" r="7" fill="url(#goldGradient)" stroke="none" style={getFadeStyle('1.2s')} />
+                <circle cx="90" cy="60" r="7" fill="url(#goldGradient)" stroke="none" style={getFadeStyle('1.2s')} />
+                <path d="M 60 130 L 60 140" style={getDrawStyle(10, '0.3s', '1.4s')} />
+                <path d="M 100 130 L 100 140" style={getDrawStyle(10, '0.3s', '1.4s')} />
+            </g>
+        </svg>
+    );
+};
+
+const LoadingScreen = () => {
+    // Generate the characters for the data cascade effect only once.
+    const cascadeChars = useMemo(() => {
+        const chars = '01';
+        let content = '';
+        for (let i = 0; i < 2000; i++) {
+            content += chars[Math.floor(Math.random() * chars.length)];
+        }
+        return content;
+    }, []);
+
+    return (
+        <div className="flex flex-col items-center justify-center h-screen w-screen bg-background overflow-hidden splash-sequence crt-effect">
+            <div className="absolute inset-0 font-mono text-primary text-xs leading-none whitespace-pre data-cascade" style={{ animationDelay: '0.2s' }}>
+                {cascadeChars}
             </div>
-         </div>
-         {/* App name with text-glow animation */}
-        <h1 className="font-heading text-4xl font-bold tracking-[0.3em] text-primary animate-text-glow">
-            COGNITO
-        </h1>
-      </div>
-       {/* Loading message with subtle fade animation */}
-       <p className="text-text-medium mt-8 animate-subtle-fade">Initializing Cybernetic Core...</p>
-       {/* Creator credit with a simple fade-in effect. */}
-       <p className="font-code text-sm text-text-medium mt-4 h-5 opacity-0 fade-in-up" style={{ animationDelay: '1500ms' }}>
-           A Creation By <span className="text-primary font-bold text-glow-primary">SAKSHAM</span>
-       </p>
-    </div>
-  );
+            <div className="relative flex flex-col items-center justify-center z-10">
+                <AnimatedCognitoLogo />
+                <h1 className="font-heading text-4xl font-bold tracking-[0.3em] text-primary mt-4 opacity-0 fade-in-up" style={{ animationDelay: '1.5s' }}>
+                    COGNITO
+                </h1>
+                <div className="font-code text-sm text-text-medium mt-8 w-96 h-28 p-2 text-left">
+                    {bootLogMessages.map((msg, i) => (
+                        <p key={i} className="opacity-0 fade-in-up" style={{ animationDelay: `${1.7 + i * 0.2}s` }}>
+                            <span className="text-primary">{msg.substring(0, msg.indexOf(']') + 1)}</span>
+                            <span className="text-text-light">{msg.substring(msg.indexOf(']') + 1)}</span>
+                        </p>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
 };
 
 export default LoadingScreen;

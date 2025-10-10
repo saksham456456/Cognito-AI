@@ -13,7 +13,7 @@ declare global {
 
 type Language = 'python' | 'html' | 'css' | 'javascript';
 
-// NEW: A dedicated typing indicator for the assistant.
+// A dedicated typing indicator for the assistant.
 const PulsingDotsIndicator = () => (
     <div className="flex items-center gap-1.5">
         <div className="h-1.5 w-1.5 bg-current rounded-full animate-pulse" style={{ animationDelay: '0ms' }}></div>
@@ -24,7 +24,7 @@ const PulsingDotsIndicator = () => (
 
 
 const languageInfo: Record<Language, { name: string, boilerplate: string, icon: React.ReactNode }> = {
-    python: { name: 'Python', icon: <PythonLogoIcon className="w-5 h-5" />, boilerplate: `# Simple Python script\n\ndef greet(name):\n  print(f"Hello, {name}!")\n\ngreet("World")\n` },
+    python: { name: 'Python', icon: <PythonLogoIcon className="w-5 h-5" />, boilerplate: `print("Good Morning Saksham")` },
     html: { name: 'HTML', icon: <CodeBracketIcon className="w-5 h-5" />, boilerplate: `<!DOCTYPE html>\n<html>\n<head>\n  <title>My Page</title>\n  <link rel="stylesheet" href="style.css">\n</head>\n<body>\n  <h1>Welcome</h1>\n  <p>This is a sample page.</p>\n  <script src="script.js"></script>\n</body>\n</html>` },
     css: { name: 'CSS', icon: <CodeBracketIcon className="w-5 h-5" />, boilerplate: `body {\n  font-family: sans-serif;\n  background-color: #f0f0f0;\n  color: #333;\n}\n\nh1 {\n  color: navy;\n}` },
     javascript: { name: 'JavaScript', icon: <CodeBracketIcon className="w-5 h-5" />, boilerplate: `console.log("Hello from JavaScript!");\n\nconst heading = document.querySelector('h1');\nif (heading) {\n  heading.textContent = 'Hello, Don!';\n}` },
@@ -37,6 +37,7 @@ interface CodingPlaygroundProps {
     onSendMessage: (message: string, context?: { code: string; output: string; lang: string }) => void;
     isLoading: boolean;
     onCopyCode: (code: string) => void;
+    isExiting: boolean;
 }
 
 const CodingPlayground: React.FC<CodingPlaygroundProps> = ({ 
@@ -46,6 +47,7 @@ const CodingPlayground: React.FC<CodingPlaygroundProps> = ({
     onSendMessage, 
     isLoading, 
     onCopyCode,
+    isExiting,
 }) => {
     const [activeLang, setActiveLang] = useState<Language>('python');
     const [codes, setCodes] = useState<Record<Language, string>>({
@@ -67,21 +69,50 @@ const CodingPlayground: React.FC<CodingPlaygroundProps> = ({
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const assistantChatContainerRef = useRef<HTMLDivElement>(null);
 
-    // Load Pyodide
+    // This effect handles loading the Pyodide script and initializing the runtime.
+    // It runs only once when the component mounts.
     useEffect(() => {
         const loadPyodideEnvironment = async () => {
+            setIsPyodideLoading(true);
+            setError('');
+            
+            // Step 1: Load the pyodide.js script if it doesn't exist
+            const PYODIDE_SCRIPT_ID = 'pyodide-script';
+            if (!document.getElementById(PYODIDE_SCRIPT_ID)) {
+                await new Promise<void>((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.id = PYODIDE_SCRIPT_ID;
+                    script.src = 'https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js';
+                    script.onload = () => resolve();
+                    script.onerror = () => reject(new Error('Pyodide script failed to load. Please check your network connection.'));
+                    document.head.appendChild(script);
+                });
+            }
+
+            // Step 2: Initialize the Pyodide runtime now that the script is loaded
             try {
-                if (window.loadPyodide) {
-                    const pyodide = await window.loadPyodide({
-                        indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.25.1/full/',
-                    });
-                    pyodideRef.current = pyodide;
-                } else { setError("Pyodide script has not loaded."); }
-            } catch (err) { setError('Failed to load Python environment.'); } 
-            finally { setIsPyodideLoading(false); }
+                if (!window.loadPyodide) {
+                    throw new Error("window.loadPyodide is not available. Script might have failed silently.");
+                }
+                const pyodide = await window.loadPyodide({
+                    indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.25.1/full/'
+                });
+                
+                if (!pyodide || typeof pyodide.runPythonAsync !== 'function') {
+                    throw new Error("Pyodide object is invalid or not fully initialized.");
+                }
+                
+                pyodideRef.current = pyodide;
+            } catch (err: any) {
+                console.error("Pyodide initialization failed:", err);
+                setError(err.message || 'Failed to initialize Python environment.');
+            } finally {
+                setIsPyodideLoading(false);
+            }
         };
+
         loadPyodideEnvironment();
-    }, []);
+    }, []); // Empty dependency array ensures this runs only once on mount.
 
     // This effect now runs after the DOM is updated but before the browser paints,
     // ensuring the chat is scrolled to the bottom without any flickering.
@@ -114,25 +145,65 @@ const CodingPlayground: React.FC<CodingPlaygroundProps> = ({
         setIsExecuting(false);
     };
 
+    // REVAMPED: More robust Python execution with full error tracebacks.
     const runPythonCode = async () => {
         const pyodide = pyodideRef.current;
-        if (!pyodide || isPyodideLoading) return;
+        if (!pyodide || isPyodideLoading) {
+            setError("Python environment is not ready.");
+            return;
+        };
         try {
-            pyodide.runPython(`
-                import sys, io
-                sys.stdout = io.StringIO()
-                sys.stderr = io.StringIO()
-            `);
-            const result = await pyodide.runPythonAsync(codes.python);
-            const stdout = pyodide.runPython('sys.stdout.getvalue()');
-            const stderr = pyodide.runPython('sys.stderr.getvalue()');
-            if (stderr) setError(stderr);
-            else {
-                let finalOutput = stdout;
-                if (result !== undefined && result !== null) finalOutput += `\n<-- ${result}`;
-                setOutput(finalOutput.trim());
+            // Set the user's code as a global variable within the Python environment.
+            pyodide.globals.set("user_code", codes.python);
+
+            // This Python script will execute in Pyodide.
+            // It captures stdout, stderr, and any exceptions.
+            const executionWrapper = `
+import sys, io, traceback
+
+# Redirect stdout and stderr to capture the output.
+sys.stdout = io.StringIO()
+sys.stderr = io.StringIO()
+error = None
+
+try:
+    # 'user_code' is a global variable in this scope, set from JavaScript.
+    # We can execute it directly. The 'from js import user_code' was incorrect
+    # and has been removed.
+    exec(user_code, globals())
+except Exception:
+    # If an exception occurs, capture the full traceback for better debugging.
+    error = traceback.format_exc()
+
+# Get the captured output.
+stdout_val = sys.stdout.getvalue()
+stderr_val = sys.stderr.getvalue()
+
+# The full traceback is the most useful error message.
+if error:
+    stderr_val = error
+
+# Convert the Python dictionary to a JavaScript object to return it.
+from pyodide.ffi import to_js
+to_js({"stdout": stdout_val, "stderr": stderr_val})
+            `;
+            
+            const results = await pyodide.runPythonAsync(executionWrapper);
+            
+            const stdout = results.get("stdout");
+            const stderr = results.get("stderr");
+            // The object returned by `to_js` is a native JS object (Map), not a PyProxy.
+            // It doesn't need to be destroyed and doesn't have a .destroy() method.
+
+            if (stderr) {
+                setError(stderr.trim());
+            } else {
+                setOutput(stdout.trim());
             }
-        } catch (err: any) { setError(err.toString()); }
+        } catch (err: any) { 
+            // Catch errors from pyodide.runPythonAsync itself.
+            setError(err.toString()); 
+        }
     };
 
     const runWebCode = () => {
@@ -161,7 +232,7 @@ const CodingPlayground: React.FC<CodingPlaygroundProps> = ({
     };
 
     return (
-        <div className="flex flex-col h-full bg-background crt-effect relative overflow-hidden">
+        <div className={`flex flex-col h-full bg-background crt-effect relative overflow-hidden ${isExiting ? 'animate-fade-out-quick' : ''}`}>
              <header className="flex-shrink-0 flex items-center justify-between p-4 border-b border-card-border/50 bg-background/80 relative">
                 <button onClick={onToggleSidebar} className="p-1 rounded-md border border-transparent hover:border-card-border absolute left-4 top-1/2 -translate-y-1/2 md:hidden">
                     <MenuIcon className="h-6 w-6" />
@@ -201,7 +272,7 @@ const CodingPlayground: React.FC<CodingPlaygroundProps> = ({
                                     <span>{isCopied ? 'Copied!' : 'Copy Code'}</span>
                                </button>
                                <button onClick={runCode} disabled={isExecuting || (activeLang === 'python' && isPyodideLoading)} className="px-4 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-yellow-400 transition-colors border border-primary-foreground/20 text-sm font-bold disabled:opacity-50 disabled:cursor-wait flex items-center gap-2">
-                                   {isPyodideLoading && activeLang === 'python' ? 'INIT...' : isExecuting ? 'EXEC...' : 'RUN >'}
+                                   {isPyodideLoading && activeLang === 'python' ? 'INITIALIZING...' : isExecuting ? 'EXECUTING...' : 'RUN >'}
                                 </button>
                             </div>
                         </div>
@@ -215,7 +286,7 @@ const CodingPlayground: React.FC<CodingPlaygroundProps> = ({
                         <div className="flex-1 p-3 bg-black/50 border border-primary/20 rounded-b-lg overflow-y-auto custom-scrollbar">
                             {activeLang === 'python' ? (
                                 <pre className="text-sm font-code whitespace-pre-wrap">
-                                    {error ? <code className="text-red-500">{`[ERROR] ${error}`}</code>
+                                    {error ? <code className="text-red-500">{error}</code>
                                     : output ? <code className="text-gray-200">{output}</code>
                                     : <code className="text-gray-500 animate-pulse">[Awaiting execution...]</code>}
                                 </pre>

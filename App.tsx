@@ -65,7 +65,7 @@ const App: React.FC = () => {
                     setActiveChatId(loadedChats[0].id); // Set the first chat as active.
                 }
                 const elapsedTime = Date.now() - startTime;
-                const minLoadingTime = 2500; // Show the loading screen for a minimum of 2.5 seconds.
+                const minLoadingTime = 3500; // Show the loading screen for a minimum of 3.5 seconds.
                 if (elapsedTime < minLoadingTime) {
                     await new Promise(resolve => setTimeout(resolve, minLoadingTime - elapsedTime));
                 }
@@ -136,14 +136,19 @@ const App: React.FC = () => {
                     setCurrentView('coding');
                     setAiMode('code-assistant');
                     setIsTransitioning(false);
-                }, 3000); // 3-second loading screen
+                }, 3200); // Matches the 3.2s loading screen animation
             } else { // Exiting coding mode
                 setIsExiting(true);
+                // Pre-render the chat view behind the exit animation overlay
                 setTimeout(() => {
                     setCurrentView('chat');
                     setAiMode('cognito');
+                }, 500); // Switch view after 500ms, allowing overlay to be opaque
+                
+                // Unmount the exit animation overlay after it finishes
+                setTimeout(() => {
                     setIsExiting(false);
-                }, 2000); // 2-second exit animation to match CSS
+                }, 2800); // Matches the 2.8s exit animation
             }
         } else {
              setAiMode(newMode);
@@ -520,25 +525,20 @@ const App: React.FC = () => {
     const renderCurrentView = () => {
         if (currentView === 'coding') {
              return (
-                <CoreDisintegrationScreen show={isExiting}>
-                    <CodingPlayground 
-                        onToggleSidebar={() => setIsSidebarOpen(p => !p)} 
-                        onExit={() => handleAiModeChange('cognito')}
-                        chat={activeChat ?? null}
-                        onSendMessage={handleSendMessage}
-                        isLoading={isAiLoading}
-                        onCopyCode={handleCopyText}
-                    />
-                </CoreDisintegrationScreen>
+                <CodingPlayground 
+                    onToggleSidebar={() => setIsSidebarOpen(p => !p)} 
+                    onExit={() => handleAiModeChange('cognito')}
+                    chat={activeChat ?? null}
+                    onSendMessage={handleSendMessage}
+                    isLoading={isAiLoading}
+                    onCopyCode={handleCopyText}
+                    isExiting={isExiting}
+                />
             );
         }
-        
-        if (isTransitioning) return <CoreLoadingScreen show={true} />;
-
         // Fallback to chat view
         return renderChatView();
     };
-
 
     // Show LoadingScreen while data is being loaded from the DB.
     if (isDbLoading) {
@@ -568,7 +568,13 @@ const App: React.FC = () => {
              {/* If the sidebar is open on mobile, overlay the background */}
              {isSidebarOpen && <div onClick={() => setIsSidebarOpen(false)} className="fixed inset-0 bg-black/50 z-10 md:hidden"></div>}
             
-            {renderCurrentView()}
+            <main className="flex-1 flex flex-col relative">
+                {renderCurrentView()}
+            </main>
+
+            {/* OVERLAYS FOR TRANSITIONS */}
+            {isTransitioning && <CoreLoadingScreen show={true} />}
+            {isExiting && <CoreDisintegrationScreen show={true} />}
 
             {/* Rendering the modals */}
             <ProfileModal 
