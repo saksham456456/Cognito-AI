@@ -59,9 +59,6 @@ export const CognitoLogo = ({ className }: { className?: string }) => {
         {/* Arms */}
         <path d="M 45 95 Q 30 90, 30 105" />
         <path d="M 115 95 Q 130 90, 130 105" />
-        {/* Hands */}
-        <path d="M 28 103 L 32 107 M 28 107 L 32 103" />
-        <path d="M 128 103 L 132 107 M 128 107 L 132 103" />
 
         {/* Legs */}
         <path d="M 60 130 L 60 140" />
