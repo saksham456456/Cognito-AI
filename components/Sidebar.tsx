@@ -84,7 +84,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     // The main container for the sidebar. Slides in/out from the left on mobile.
-    <aside className={`absolute md:relative z-20 flex-shrink-0 w-80 glassmorphism flex flex-col transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
+    <aside className={`absolute md:relative z-20 h-full w-80 flex-shrink-0 glassmorphism flex flex-col overflow-hidden transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
       {/* Sidebar header */}
       <div className="p-4 border-b border-card-border flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -112,7 +112,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
       </div>
       {/* Chat list */}
-      <nav className="flex-1 overflow-y-auto custom-scrollbar p-4">
+      <nav className="flex-1 overflow-y-auto custom-scrollbar p-4 min-h-0">
           <ul className="space-y-2">
           {filteredChats.map(chat => {
               const isActive = activeChatId === chat.id;

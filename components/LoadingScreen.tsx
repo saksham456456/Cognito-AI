@@ -32,7 +32,7 @@ const AnimatedCognitoLogo = () => {
                         </feMerge>
                     </filter>
                 </defs>
-                <g stroke="url(#goldGradient)" fill="none" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" filter="url(#glow)">
+                <g stroke="url(#goldGradient)" fill="none" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
                     {/* Animate each part */}
                     <path d="M 30 25 A 50 50 0 0 1 130 25" style={anim('fly-in-top', '0.5s')} />
                     <path d="M 30 135 A 50 50 0 0 0 130 135" transform="rotate(180, 80, 80)" style={anim('fly-in-bottom', '0.5s')} />

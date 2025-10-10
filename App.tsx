@@ -461,7 +461,7 @@ const App: React.FC = () => {
     };
     
     const renderChatView = () => (
-        <div className="flex-1 flex flex-col relative">
+        <>
             <header className="flex-shrink-0 flex items-center justify-center p-4 border-b border-card-border glassmorphism relative">
                 {/* Menu button for mobile */}
                 <button onClick={() => setIsSidebarOpen(true)} className="p-1 rounded-md border border-transparent hover:border-card-border absolute left-4 top-1/2 -translate-y-1/2 md:hidden">
@@ -471,7 +471,7 @@ const App: React.FC = () => {
                     {activeChat ? activeChat.title : 'Cognito AI Assistant'}
                 </h1>
             </header>
-            <main className="flex-1 flex flex-col relative overflow-hidden min-h-0">
+            <div className="flex-1 flex flex-col relative overflow-hidden min-h-0">
                  {/* Faint logo in the background (watermark) */}
                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none watermark">
                     <CognitoLogo className="h-96 w-96" />
@@ -518,8 +518,8 @@ const App: React.FC = () => {
                     onAiModeChange={handleAiModeChange}
                     onRectChange={setInputRect}
                 />
-            </main>
-        </div>
+            </div>
+        </>
     );
 
     const renderCurrentView = () => {
@@ -547,7 +547,7 @@ const App: React.FC = () => {
 
     // The main JSX structure of the component.
     return (
-        <div className="bg-transparent h-screen flex text-card-foreground overflow-hidden">
+        <div className="bg-transparent h-screen grid md:grid-cols-[auto_1fr] text-card-foreground overflow-hidden">
             <BackgroundCanvas animationType={backgroundAnimation} />
             <Sidebar 
                 chats={chats}
@@ -568,7 +568,7 @@ const App: React.FC = () => {
              {/* If the sidebar is open on mobile, overlay the background */}
              {isSidebarOpen && <div onClick={() => setIsSidebarOpen(false)} className="fixed inset-0 bg-black/50 z-10 md:hidden"></div>}
             
-            <main className="flex-1 flex flex-col relative">
+            <main className="flex flex-col relative overflow-hidden">
                 {renderCurrentView()}
             </main>
 
