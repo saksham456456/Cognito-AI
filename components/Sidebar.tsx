@@ -193,6 +193,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                           className="bg-input border border-input-border rounded-md px-2 py-1 text-xs text-text-light focus:outline-none focus:border-primary transition-colors"
                       >
                           <option value="particles">Plexus</option>
+                          <option value="lightning">Arc Lightning</option>
                           <option value="matrix">Matrix</option>
                           <option value="hexagons">Hex Grid</option>
                           <option value="circuits">Circuits</option>
