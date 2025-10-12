@@ -13,6 +13,25 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose, t }) => {
   // If the modal is not open, don't render anything.
   if (!isOpen) return null;
 
+  const renderLineWithLink = (lineKey: string, linkKey: string, href: string) => {
+    const line = t(`modals.${lineKey}`);
+    const linkText = t(`modals.${linkKey}`);
+    if (!line || !line.includes('{{link}}')) {
+        return <p>{line}</p>;
+    }
+    const parts = line.split('{{link}}');
+    return (
+        <p>
+            {parts[0]}
+            <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">
+                {linkText}
+            </a>
+            {parts[1]}
+        </p>
+    );
+  };
+
+
   return (
     // Main container, covers the entire screen with a semi-transparent background.
     <div 
@@ -43,16 +62,9 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose, t }) => {
         </div>
         {/* Modal's body content */}
         <div className="space-y-4 text-sm text-text-light text-left">
-            <p>
-                {/* External link, opens in a new tab with _blank */}
-                <a href="https://www.instagram.com/reel/DPT0FM6k0MS/?utm_source=ig_web_copy_link&igsh=MTU2ZTN5anUwdHdicQ==" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">Cognito AI</a> {t('modals.aboutLine1').split('Cognito AI')[1]}
-            </p>
-            <p>
-                {t('modals.aboutLine2').split('Saksham')[0]}<a href="https://www.instagram.com/saksham_456456?utm_source=ig_web_button_share_sheet&igsh=MWplM21keGhpbmZnZw==" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">Saksham</a>{t('modals.aboutLine2').split('Saksham')[1]}
-            </p>
-            <p>
-                {t('modals.aboutLine3').split('Saksham\'s knowledge')[0]}<a href="https://github.com/saksham456456" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">{t('modals.aboutLine3').includes("Saksham's knowledge") ? "Saksham's knowledge" : "el conocimiento de Saksham"}</a>{t('modals.aboutLine3').split('Saksham\'s knowledge')[1] || t('modals.aboutLine3').split('el conocimiento de Saksham')[1]}
-            </p>
+            {renderLineWithLink('aboutLine1', 'aboutLine1Link', 'https://www.instagram.com/reel/DPT0FM6k0MS/?utm_source=ig_web_copy_link&igsh=MTU2ZTN5anUwdHdicQ==')}
+            {renderLineWithLink('aboutLine2', 'aboutLine2Link', 'https://www.instagram.com/saksham_456456?utm_source=ig_web_button_share_sheet&igsh=MWplM21keGhpbmZnZw==')}
+            {renderLineWithLink('aboutLine3', 'aboutLine3Link', 'https://github.com/saksham456456')}
         </div>
         {/* Modal's footer section */}
         <div className="mt-6 flex justify-end">

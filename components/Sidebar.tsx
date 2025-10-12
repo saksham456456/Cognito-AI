@@ -201,6 +201,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                           <option value="en">{t('languages.en')}</option>
                           <option value="es">{t('languages.es')}</option>
                           <option value="hi">{t('languages.hi')}</option>
+                          <option value="fr">{t('languages.fr')}</option>
+                          <option value="sa">{t('languages.sa')}</option>
+                          <option value="hi-en">{t('languages.hi-en')}</option>
                       </select>
                   </div>
               </li>
