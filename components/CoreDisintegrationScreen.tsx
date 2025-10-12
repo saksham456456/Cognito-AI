@@ -1,19 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { PowerIcon } from './icons';
 
-// New shutdown log messages
-const shutdownLogMessages = [
-    "[SYS] SHUTDOWN SEQUENCE INITIATED...",
-    "[MEM] VIRTUAL MEMORY DEALLOCATED",
-    "[CPU] RELEASING PROCESSOR KERNELS",
-    "[NET] SECURE LINK TERMINATED",
-    "[UI] DISENGAGING GRAPHICAL SHELL...",
-    "[OK] CORE SHUTDOWN COMPLETE.",
-    "[SYS] RETURNING TO COGNITO INTERFACE."
-];
-
-const CoreDisintegrationScreen: React.FC<{ show: boolean }> = ({ show }) => {
+const CoreDisintegrationScreen: React.FC<{ show: boolean, t: (key: string) => any }> = ({ show, t }) => {
     const [visibleLogLines, setVisibleLogLines] = useState(0);
+    const shutdownLogMessages: string[] = t('coreDisintegration.shutdownLog');
 
     // This effect reveals the log lines one by one during the shutdown sequence.
     useEffect(() => {
@@ -37,7 +27,7 @@ const CoreDisintegrationScreen: React.FC<{ show: boolean }> = ({ show }) => {
         return () => {
             timers.forEach(clearTimeout);
         };
-    }, [show]);
+    }, [show, shutdownLogMessages]);
 
     if (!show) return null;
 
@@ -51,7 +41,7 @@ const CoreDisintegrationScreen: React.FC<{ show: boolean }> = ({ show }) => {
                 {/* Header text */}
                 <div className="text-center opacity-0 fade-in-up" style={{ animationDelay: '0.2s' }}>
                     <h1 className="font-heading text-2xl font-bold text-text-light uppercase tracking-wider">
-                        DISENGAGING CODING CORE
+                        {t('coreDisintegration.title')}
                     </h1>
                 </div>
                 

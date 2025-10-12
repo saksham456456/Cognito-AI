@@ -38,6 +38,7 @@ interface CodingPlaygroundProps {
     isLoading: boolean;
     onCopyCode: (code: string) => void;
     isExiting: boolean;
+    t: (key: string) => string;
 }
 
 const CodingPlayground: React.FC<CodingPlaygroundProps> = ({ 
@@ -48,6 +49,7 @@ const CodingPlayground: React.FC<CodingPlaygroundProps> = ({
     isLoading, 
     onCopyCode,
     isExiting,
+    t
 }) => {
     const [activeLang, setActiveLang] = useState<Language>('python');
     const [codes, setCodes] = useState<Record<Language, string>>({
@@ -240,12 +242,12 @@ to_js({"stdout": stdout_val, "stderr": stderr_val})
                 <div className="flex items-center gap-2">
                     <CodeBracketIcon className="h-6 w-6 text-primary animate-pulse" />
                     <h1 className="font-heading text-xl font-bold tracking-widest text-primary uppercase" style={{textShadow: '0 0 5px var(--primary-glow)'}}>
-                        Coding Core
+                        {t('coding.title')}
                     </h1>
                 </div>
                  <button onClick={onExit} className="px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 border border-red-500/30 hover:border-red-500/50 transition-all text-sm font-bold flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>
-                    Exit Core
+                    {t('coding.exit')}
                 </button>
             </header>
             <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-2 p-2 min-h-0">
@@ -269,10 +271,10 @@ to_js({"stdout": stdout_val, "stderr": stderr_val})
                             <div className="flex items-center gap-2">
                                <button onClick={handleCopy} className="px-3 py-1.5 rounded-md bg-input/50 text-text-medium hover:text-primary transition-colors border border-input-border text-xs font-bold flex items-center gap-2">
                                     {isCopied ? <CheckIcon className="w-4 h-4 text-green-500"/> : <ClipboardIcon className="w-4 h-4"/>}
-                                    <span>{isCopied ? 'Copied!' : 'Copy Code'}</span>
+                                    <span>{isCopied ? t('coding.copied') : t('coding.copyCode')}</span>
                                </button>
                                <button onClick={runCode} disabled={isExecuting || (activeLang === 'python' && isPyodideLoading)} className="px-4 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-yellow-400 transition-colors border border-primary-foreground/20 text-sm font-bold disabled:opacity-50 disabled:cursor-wait flex items-center gap-2">
-                                   {isPyodideLoading && activeLang === 'python' ? 'INITIALIZING...' : isExecuting ? 'EXECUTING...' : 'RUN >'}
+                                   {isPyodideLoading && activeLang === 'python' ? t('coding.initializing') : isExecuting ? t('coding.executing') : t('coding.run')}
                                 </button>
                             </div>
                         </div>
@@ -281,14 +283,14 @@ to_js({"stdout": stdout_val, "stderr": stderr_val})
                      {/* Console */}
                     <div className="flex flex-col h-2/5">
                          <div className="p-2 border-b border-primary/20 bg-black/30 rounded-t-lg">
-                            <h2 className="font-code font-semibold text-primary/80 text-sm">/console.log</h2>
+                            <h2 className="font-code font-semibold text-primary/80 text-sm">{t('coding.consoleHeader')}</h2>
                         </div>
                         <div className="flex-1 p-3 bg-black/50 border border-primary/20 rounded-b-lg overflow-y-auto custom-scrollbar">
                             {activeLang === 'python' ? (
                                 <pre className="text-sm font-code whitespace-pre-wrap">
                                     {error ? <code className="text-red-500">{error}</code>
                                     : output ? <code className="text-gray-200">{output}</code>
-                                    : <code className="text-gray-500 animate-pulse">[Awaiting execution...]</code>}
+                                    : <code className="text-gray-500 animate-pulse">{t('coding.awaitingExecution')}</code>}
                                 </pre>
                             ) : (
                                 <iframe ref={iframeRef} title="Web Preview" className="w-full h-full bg-white" sandbox="allow-scripts"></iframe>
@@ -301,7 +303,7 @@ to_js({"stdout": stdout_val, "stderr": stderr_val})
                 <div className="lg:col-span-1 flex flex-col min-h-0 h-full border border-primary/20 rounded-lg bg-black/30">
                      <div className="p-2 border-b border-primary/20 bg-black/30 rounded-t-lg flex items-center gap-2">
                         <CognitoLogo className="w-5 h-5"/>
-                        <h2 className="font-code font-semibold text-primary/80 text-sm">/assistant.ai</h2>
+                        <h2 className="font-code font-semibold text-primary/80 text-sm">{t('coding.assistantHeader')}</h2>
                     </div>
                     <div ref={assistantChatContainerRef} className="flex-1 p-3 overflow-y-auto custom-scrollbar space-y-4 min-h-0">
                         {chat?.messages.map((msg, index) => {
@@ -322,7 +324,7 @@ to_js({"stdout": stdout_val, "stderr": stderr_val})
                     </div>
                     <div className="p-2 border-t border-primary/20">
                          <div className="flex items-center gap-2 p-1 bg-input rounded-lg border border-input-border focus-within:glow-border-active focus-within:border-primary transition-all duration-300">
-                             <input type="text" value={assistantInput} onChange={e => setAssistantInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAssistantSend()} placeholder="Ask a question..." className="flex-grow bg-transparent p-1 focus:outline-none text-sm"/>
+                             <input type="text" value={assistantInput} onChange={e => setAssistantInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAssistantSend()} placeholder={t('coding.assistantPlaceholder')} className="flex-grow bg-transparent p-1 focus:outline-none text-sm"/>
                              <button onClick={handleAssistantSend} disabled={isLoading} className="w-8 h-8 rounded-md bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0 disabled:opacity-50">
                                 {isLoading ? <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div> : <SendIcon className="w-4 h-4" />}
                              </button>

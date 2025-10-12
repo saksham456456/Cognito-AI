@@ -1,16 +1,5 @@
 import React, { useState, useEffect } from 'react';
 
-// New boot log messages
-const bootLogMessages = [
-    "[SYS] BOOT SEQUENCE INITIATED...",
-    "[MEM] VIRTUAL MEMORY ALLOCATED",
-    "[CPU] PROCESSOR KERNELS ONLINE",
-    "[NET] SECURE LINK ESTABLISHED",
-    "[ENV] RUNTIME ENVIRONMENT CALIBRATED",
-    "[UI] INTEGRATING GRAPHICAL SHELL...",
-    "[OK] CORE INITIALIZATION COMPLETE."
-];
-
 // New SVG for the booting core
 const CoreBootIcon = () => {
     // NEW: State to trigger the drawing animation via style transitions.
@@ -74,8 +63,9 @@ const CoreBootIcon = () => {
 };
 
 
-const CoreLoadingScreen: React.FC<{ show: boolean }> = ({ show }) => {
+const CoreLoadingScreen: React.FC<{ show: boolean, t: (key: string) => any }> = ({ show, t }) => {
     const [visibleLogLines, setVisibleLogLines] = useState(0);
+    const bootLogMessages: string[] = t('coreLoading.bootLog');
 
     // This effect reveals the log lines one by one.
     useEffect(() => {
@@ -100,7 +90,7 @@ const CoreLoadingScreen: React.FC<{ show: boolean }> = ({ show }) => {
         return () => {
             timers.forEach(clearTimeout);
         };
-    }, [show]);
+    }, [show, bootLogMessages]);
 
     if (!show) return null;
 
@@ -116,7 +106,7 @@ const CoreLoadingScreen: React.FC<{ show: boolean }> = ({ show }) => {
                 {/* Header text with typing animation */}
                 <div className="text-center">
                     <h1 className="font-heading text-2xl font-bold text-text-light uppercase tracking-wider typing-effect" style={{ animationDelay: '1s' }}>
-                        INITIALIZING CODE CORE
+                        {t('coreLoading.title')}
                     </h1>
                 </div>
                 

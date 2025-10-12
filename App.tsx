@@ -16,6 +16,44 @@ import CoreLoadingScreen from './components/CoreLoadingScreen';
 import CodingPlayground from './components/CodingPlayground';
 import CoreDisintegrationScreen from './components/CoreDisintegrationScreen';
 
+const translations: any = {
+  en: {
+    sidebar: { title: "COGNITO", newSession: "New Session", searchLogs: "Search logs...", background: "Background", about: "About Cognito AI", exportLog: "Export Log", purgeLogs: "Purge All Logs", profileName: "Operator", language: "Language" },
+    chatInput: { placeholderCognito: "Message Cognito...", placeholderCode: "Ask a coding question...", shiftEnter: "Shift + Enter for a new line.", suggestions: ["Give me ideas for a sci-fi story", "Explain quantum computing simply", "Write a futuristic poem"], modeCognito: "Cognito", modeCognitoDesc: "Your general purpose AI assistant.", modeCode: "Code Assistant", modeCodeDesc: "For programming and technical queries.", selectMode: "SELECT MODE" },
+    welcome: { greeting: "Welcome, {{name}}", prompt: "How can I help you navigate the digital cosmos today?" },
+    modals: { aboutTitle: "About Cognito AI", aboutSubtitle: "Your Personal AI Assistant", aboutLine1: "Cognito AI is a modern, responsive AI assistant crafted to provide intelligent answers and a premium user experience.", aboutLine2: "This application was developed by Saksham, a passionate frontend engineer with a knack for creating beautiful, functional user interfaces.", aboutLine3: "It is fueled by Saksham's knowledge, curiosity in ML & DBMS, and his interests.", profileTitle: "Operator Profile", profileSubtitle: "Update your callsign.", profileLabel: "Callsign", profilePlaceholder: "Enter your callsign", confirmPurgeTitle: "Purge All Logs?", confirmPurgeMessage: "This will permanently delete all conversation logs. This action cannot be undone.", confirmPurgeButton: "Purge All", save: "Save Changes", cancel: "Cancel", close: "Close" },
+    app: { newChatTitle: "New Conversation", newCodingSessionTitle: "New Coding Session", defaultChatTitle: "Cognito AI Assistant" },
+    coding: { title: "Coding Core", exit: "Exit Core", run: "RUN >", executing: "EXECUTING...", initializing: "INITIALIZING...", copyCode: "Copy Code", copied: "Copied!", consoleHeader: "/console.log", assistantHeader: "/assistant.ai", awaitingExecution: "[Awaiting execution...]", assistantPlaceholder: "Ask a question..." },
+    loading: { bootLog: ["[INITIATING] COGNITO OS v2.1", "[LOADING]    PERSONALITY_MATRIX.DAT", "[CALIBRATING] HEURISTIC_PROCESSORS", "[ESTABLISHING] SECURE_CHANNEL_TO_USER", "[STATUS]     ALL SYSTEMS NOMINAL."] },
+    coreLoading: { title: "INITIALIZING CODE CORE", bootLog: ["[SYS] BOOT SEQUENCE INITIATED...", "[MEM] VIRTUAL MEMORY ALLOCATED", "[CPU] PROCESSOR KERNELS ONLINE", "[NET] SECURE LINK ESTABLISHED", "[ENV] RUNTIME ENVIRONMENT CALIBRATED", "[UI] INTEGRATING GRAPHICAL SHELL...", "[OK] CORE INITIALIZATION COMPLETE."] },
+    coreDisintegration: { title: "DISENGAGING CODING CORE", shutdownLog: ["[SYS] SHUTDOWN SEQUENCE INITIATED...", "[MEM] VIRTUAL MEMORY DEALLOCATED", "[CPU] RELEASING PROCESSOR KERNELS", "[NET] SECURE LINK TERMINATED", "[UI] DISENGAGING GRAPHICAL SHELL...", "[OK] CORE SHUTDOWN COMPLETE.", "[SYS] RETURNING TO COGNITO INTERFACE."] },
+    languages: { en: "English", es: "Español", hi: "हिन्दी" }
+  },
+  es: {
+    sidebar: { title: "COGNITO", newSession: "Nueva Sesión", searchLogs: "Buscar registros...", background: "Fondo", about: "Acerca de Cognito AI", exportLog: "Exportar Registro", purgeLogs: "Purgar Registros", profileName: "Operador", language: "Idioma" },
+    chatInput: { placeholderCognito: "Mensaje a Cognito...", placeholderCode: "Haz una pregunta de código...", shiftEnter: "Shift + Enter para nueva línea.", suggestions: ["Dame ideas para una historia de ciencia ficción", "Explica la computación cuántica de forma sencilla", "Escribe un poema futurista"], modeCognito: "Cognito", modeCognitoDesc: "Tu asistente de IA de propósito general.", modeCode: "Asistente de Código", modeCodeDesc: "Para consultas técnicas y de programación.", selectMode: "SELECCIONAR MODO" },
+    welcome: { greeting: "Bienvenido, {{name}}", prompt: "¿Cómo puedo ayudarte a navegar el cosmos digital hoy?" },
+    modals: { aboutTitle: "Acerca de Cognito AI", aboutSubtitle: "Tu Asistente Personal de IA", aboutLine1: "Cognito AI es un asistente de IA moderno y receptivo, diseñado para proporcionar respuestas inteligentes y una experiencia de usuario premium.", aboutLine2: "Esta aplicación fue desarrollada por Saksham, un apasionado ingeniero de frontend con un don para crear interfaces de usuario hermosas y funcionales.", aboutLine3: "Está impulsado por el conocimiento de Saksham, su curiosidad en ML y SGBD, y sus intereses.", profileTitle: "Perfil de Operador", profileSubtitle: "Actualiza tu indicativo.", profileLabel: "Indicativo", profilePlaceholder: "Introduce tu indicativo", confirmPurgeTitle: "¿Purgar Todos los Registros?", confirmPurgeMessage: "Esto eliminará permanentemente todos los registros de conversación. Esta acción no se puede deshacer.", confirmPurgeButton: "Purgar Todo", save: "Guardar Cambios", cancel: "Cancelar", close: "Cerrar" },
+    app: { newChatTitle: "Nueva Conversación", newCodingSessionTitle: "Nueva Sesión de Código", defaultChatTitle: "Asistente Cognito AI" },
+    coding: { title: "Núcleo de Código", exit: "Salir del Núcleo", run: "EJECUTAR >", executing: "EJECUTANDO...", initializing: "INICIALIZANDO...", copyCode: "Copiar Código", copied: "¡Copiado!", consoleHeader: "/consola.log", assistantHeader: "/asistente.ai", awaitingExecution: "[Esperando ejecución...]", assistantPlaceholder: "Haz una pregunta..." },
+    loading: { bootLog: ["[INICIANDO] COGNITO OS v2.1", "[CARGANDO]   MATRIZ_DE_PERSONALIDAD.DAT", "[CALIBRANDO] PROCESADORES_HEURÍSTICOS", "[ESTABLECIENDO] CANAL_SEGURO_AL_USUARIO", "[ESTADO]     TODOS LOS SISTEMAS NOMINALES."] },
+    coreLoading: { title: "INICIALIZANDO NÚCLEO DE CÓDIGO", bootLog: ["[SIS] SECUENCIA DE ARRANQUE INICIADA...", "[MEM] MEMORIA VIRTUAL ASIGNADA", "[CPU] NÚCLEOS DE PROCESADOR EN LÍNEA", "[RED] ENLACE SEGURO ESTABLECIDO", "[ENT] ENTORNO DE EJECUCIÓN CALIBRADO", "[UI] INTEGRANDO SHELL GRÁFICO...", "[OK] INICIALIZACIÓN DEL NÚCLEO COMPLETA."] },
+    coreDisintegration: { title: "DESCONECTANDO NÚCLEO DE CÓDIGO", shutdownLog: ["[SIS] SECUENCIA DE APAGADO INICIADA...", "[MEM] MEMORIA VIRTUAL DESASIGNADA", "[CPU] LIBERANDO NÚCLEOS DE PROCESADOR", "[RED] ENLACE SEGURO TERMINADO", "[UI] DESCONECTANDO SHELL GRÁFICO...", "[OK] APAGADO DEL NÚCLEO COMPLETO.", "[SIS] VOLVIENDO A LA INTERFAZ DE COGNITO."] },
+    languages: { en: "English", es: "Español", hi: "हिन्दी" }
+  },
+  hi: {
+    sidebar: { title: "COGNITO", newSession: "नया सत्र", searchLogs: "लॉग खोजें...", background: "पृष्ठभूमि", about: "कॉग्निटो एआई के बारे में", exportLog: "लॉग निर्यात करें", purgeLogs: "सभी लॉग हटाएं", profileName: "ऑपरेटर", language: "भाषा" },
+    chatInput: { placeholderCognito: "कॉग्निटो को संदेश भेजें...", placeholderCode: "कोडिंग प्रश्न पूछें...", shiftEnter: "नई लाइन के लिए Shift + Enter दबाएं।", suggestions: ["मुझे एक विज्ञान-कथा कहानी के लिए विचार दें", "क्वांटम कंप्यूटिंग को सरल शब्दों में समझाएं", "एक भविष्यवादी कविता लिखें"], modeCognito: "कॉग्निटो", modeCognitoDesc: "आपका सामान्य प्रयोजन एआई सहायक।", modeCode: "कोड सहायक", modeCodeDesc: "प्रोग्रामिंग और तकनीकी प्रश्नों के लिए।", selectMode: "मोड चुनें" },
+    welcome: { greeting: "आपका स्वागत है, {{name}}", prompt: "आज मैं डिजिटल ब्रह्मांड में आपकी कैसे मदद कर सकता हूँ?" },
+    modals: { aboutTitle: "कॉग्निटो एआई के बारे में", aboutSubtitle: "आपका व्यक्तिगत एआई सहायक", aboutLine1: "कॉग्निटो एआई एक आधुनिक, उत्तरदायी एआई सहायक है जिसे बुद्धिमान उत्तर और एक प्रीमियम उपयोगकर्ता अनुभव प्रदान करने के लिए तैयार किया गया है।", aboutLine2: "यह एप्लिकेशन सक्षम द्वारा विकसित किया गया था, जो सुंदर, कार्यात्मक यूजर इंटरफेस बनाने की कला के साथ एक उत्साही फ्रंटएंड इंजीनियर है।", aboutLine3: "यह सक्षम के ज्ञान, एमएल और डीबीएमएस में जिज्ञासा, और उनकी रुचियों से प्रेरित है।", profileTitle: "ऑपरेटर प्रोफाइल", profileSubtitle: "अपना कॉलसाइन अपडेट करें।", profileLabel: "कॉलसाइन", profilePlaceholder: "अपना कॉलसाइन दर्ज करें", confirmPurgeTitle: "सभी लॉग हटाएं?", confirmPurgeMessage: "यह सभी वार्तालाप लॉग को स्थायी रूप से हटा देगा। यह क्रिया पूर्ववत नहीं की जा सकती।", confirmPurgeButton: "सभी हटाएं", save: "बदलाव सहेजें", cancel: "रद्द करें", close: "बंद करें" },
+    app: { newChatTitle: "नई बातचीत", newCodingSessionTitle: "नया कोडिंग सत्र", defaultChatTitle: "कॉग्निटो एआई सहायक" },
+    coding: { title: "कोडिंग कोर", exit: "कोर से बाहर निकलें", run: "चलाएं >", executing: "निष्पादित हो रहा है...", initializing: "शुरू हो रहा है...", copyCode: "कोड कॉपी करें", copied: "कॉपी किया गया!", consoleHeader: "/console.log", assistantHeader: "/assistant.ai", awaitingExecution: "[निष्पादन की प्रतीक्षा में...]", assistantPlaceholder: "एक प्रश्न पूछें..." },
+    loading: { bootLog: ["[प्रारंभ] कॉग्निटो ओएस v2.1", "[लोड हो रहा है] पर्सनैलिटी_मैट्रिक्स.डैट", "[कैलिब्रेटिंग] ह्यूरिस्टिक_प्रोसेसर", "[स्थापित] उपयोगकर्ता के लिए सुरक्षित चैनल", "[स्थिति] सभी सिस्टम सामान्य हैं।"] },
+    coreLoading: { title: "कोडिंग कोर शुरू हो रहा है", bootLog: ["[सिस्टम] बूट अनुक्रम शुरू...", "[मेमोरी] वर्चुअल मेमोरी आवंटित", "[सीपीयू] प्रोसेसर कर्नेल ऑनलाइन", "[नेट] सुरक्षित लिंक स्थापित", "[ईएनवी] रनटाइम वातावरण कैलिब्रेटेड", "[यूआई] ग्राफिकल शेल को एकीकृत करना...", "[ठीक है] कोर आरंभीकरण पूर्ण।"] },
+    coreDisintegration: { title: "कोडिंग कोर को निष्क्रिय करना", shutdownLog: ["[सिस्टम] शटडाउन अनुक्रम शुरू...", "[मेमोरी] वर्चुअल मेमोरी डीलोकेटेड", "[सीपीयू] प्रोसेसर कर्नेल जारी करना", "[नेट] सुरक्षित लिंक समाप्त", "[यूआई] ग्राफिकल शेल को निष्क्रिय करना...", "[ठीक है] कोर शटडाउन पूर्ण।", "[सिस्टम] कॉग्निटो इंटरफ़ेस पर लौटना।"] },
+    languages: { en: "English", es: "Español", hi: "हिन्दी" }
+  }
+};
 
 const App: React.FC = () => {
     // Defining state variables using the useState hook.
@@ -32,6 +70,7 @@ const App: React.FC = () => {
     const [backgroundAnimation, setBackgroundAnimation] = useState<string>(() => localStorage.getItem('backgroundAnimation') || 'particles'); // Background animation type.
     const [aiMode, setAiMode] = useState<AiMode>('cognito'); // Current AI mode.
     const [inputRect, setInputRect] = useState<DOMRect | null>(null); // Position of the input bar.
+    const [locale, setLocale] = useState<string>(() => localStorage.getItem('locale') || 'en');
     
     // App view management states
     const [currentView, setCurrentView] = useState<AppView>('chat');
@@ -47,6 +86,21 @@ const App: React.FC = () => {
 
     // Finding the active chat from the chats array.
     const activeChat = chats.find(c => c.id === activeChatId);
+    
+    // Translation function
+    const t = (key: string): any => {
+        const keys = key.split('.');
+        let result = translations[locale];
+        for (const k of keys) {
+            if (result) {
+                result = result[k];
+            } else {
+                return key; // Return key if path is invalid
+            }
+        }
+        return result || key;
+    };
+
 
      // This useEffect hook runs when the component mounts.
      useEffect(() => {
@@ -87,6 +141,11 @@ const App: React.FC = () => {
     useEffect(() => {
         localStorage.setItem('backgroundAnimation', backgroundAnimation);
     }, [backgroundAnimation]);
+
+     // Save locale to localStorage
+    useEffect(() => {
+        localStorage.setItem('locale', locale);
+    }, [locale]);
 
     // This useEffect saves the active chat to the DB whenever its messages or title change.
     // Debouncing (setTimeout) is used to avoid saving on every small change.
@@ -166,7 +225,7 @@ const App: React.FC = () => {
         if (!currentChatId) {
             isNewChat = true;
             const newChatId = Date.now().toString();
-            const newChat: Chat = { id: newChatId, title: "New Conversation", messages: [] };
+            const newChat: Chat = { id: newChatId, title: t('app.newChatTitle'), messages: [] };
             await saveChat(newChat); // Save the new chat to the DB.
             setChats(prev => [newChat, ...prev]);
             setActiveChatId(newChatId);
@@ -234,7 +293,7 @@ const App: React.FC = () => {
 
                 // For a new coding session, give it a default "Coding Session" title.
                 const titlePromise = currentView === 'coding' 
-                    ? Promise.resolve('Coding Session')
+                    ? Promise.resolve(t('app.newCodingSessionTitle'))
                     : getTitleForChat(messagesForTitle);
 
                 titlePromise
@@ -340,7 +399,7 @@ const App: React.FC = () => {
         // BUG FIX: If in coding mode, create a new session but stay in coding mode.
         if (currentView === 'coding') {
             const newChatId = Date.now().toString();
-            const newChat: Chat = { id: newChatId, title: "New Coding Session", messages: [] };
+            const newChat: Chat = { id: newChatId, title: t('app.newCodingSessionTitle'), messages: [] };
             saveChat(newChat).then(() => {
                 setChats(prev => [newChat, ...prev]);
                 setActiveChatId(newChatId);
@@ -468,7 +527,7 @@ const App: React.FC = () => {
                     <MenuIcon className="h-6 w-6" />
                 </button>
                 <h1 className={`font-heading text-xl font-bold tracking-widest text-center truncate px-12 md:px-0 uppercase animate-neon-flicker`}>
-                    {activeChat ? activeChat.title : 'Cognito AI Assistant'}
+                    {activeChat ? activeChat.title : t('app.defaultChatTitle')}
                 </h1>
             </header>
             <div className="flex-1 flex flex-col relative overflow-hidden min-h-0">
@@ -483,8 +542,8 @@ const App: React.FC = () => {
                             <div className="relative text-center flex flex-col items-center gap-4" style={{ top: '-5rem' }}>
                                 <CognitoLogo className="w-28 h-28" />
                                 <div className="text-center">
-                                    <h1 className="font-heading text-4xl font-bold text-gray-200">Welcome, {userName}</h1>
-                                    <p className="mt-1 text-lg text-gray-400">How can I help you navigate the digital cosmos today?</p>
+                                    <h1 className="font-heading text-4xl font-bold text-gray-200">{t('welcome.greeting').replace('{{name}}', userName)}</h1>
+                                    <p className="mt-1 text-lg text-gray-400">{t('welcome.prompt')}</p>
                                 </div>
                             </div>
                         </div>
@@ -517,6 +576,7 @@ const App: React.FC = () => {
                     aiMode={aiMode}
                     onAiModeChange={handleAiModeChange}
                     onRectChange={setInputRect}
+                    t={t}
                 />
             </div>
         </>
@@ -533,6 +593,7 @@ const App: React.FC = () => {
                     isLoading={isAiLoading}
                     onCopyCode={handleCopyText}
                     isExiting={isExiting}
+                    t={t}
                 />
             );
         }
@@ -542,7 +603,7 @@ const App: React.FC = () => {
 
     // Show LoadingScreen while data is being loaded from the DB.
     if (isDbLoading) {
-        return <LoadingScreen />;
+        return <LoadingScreen t={t} />;
     }
 
     // The main JSX structure of the component.
@@ -564,6 +625,9 @@ const App: React.FC = () => {
                 onAboutClick={() => setIsAboutModalOpen(true)}
                 backgroundAnimation={backgroundAnimation}
                 onBackgroundAnimationChange={setBackgroundAnimation}
+                t={t}
+                locale={locale}
+                onLocaleChange={setLocale}
             />
              {/* If the sidebar is open on mobile, overlay the background */}
              {isSidebarOpen && <div onClick={() => setIsSidebarOpen(false)} className="fixed inset-0 bg-black/50 z-10 md:hidden"></div>}
@@ -573,8 +637,8 @@ const App: React.FC = () => {
             </main>
 
             {/* OVERLAYS FOR TRANSITIONS */}
-            {isTransitioning && <CoreLoadingScreen show={true} />}
-            {isExiting && <CoreDisintegrationScreen show={true} />}
+            {isTransitioning && <CoreLoadingScreen show={true} t={t} />}
+            {isExiting && <CoreDisintegrationScreen show={true} t={t} />}
 
             {/* Rendering the modals */}
             <ProfileModal 
@@ -582,18 +646,21 @@ const App: React.FC = () => {
                 onClose={() => setIsProfileModalOpen(false)}
                 onSave={handleSaveProfile}
                 currentName={userName}
+                t={t}
             />
             <AboutModal 
                 isOpen={isAboutModalOpen}
                 onClose={() => setIsAboutModalOpen(false)}
+                t={t}
             />
             <ConfirmationModal
                 isOpen={isConfirmDeleteAllOpen}
                 onClose={() => setIsConfirmDeleteAllOpen(false)}
                 onConfirm={executeDeleteAllChats}
-                title="Purge All Logs?"
-                message="This will permanently delete all conversation logs. This action cannot be undone."
-                confirmButtonText="Purge All"
+                title={t('modals.confirmPurgeTitle')}
+                message={t('modals.confirmPurgeMessage')}
+                confirmButtonText={t('modals.confirmPurgeButton')}
+                t={t}
             />
         </div>
     );

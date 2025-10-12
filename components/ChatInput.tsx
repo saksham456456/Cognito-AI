@@ -11,6 +11,7 @@ interface ChatInputProps {
   aiMode: AiMode;
   onAiModeChange: (mode: AiMode) => void;
   onRectChange: (rect: DOMRect | null) => void; // Reports the input's position.
+  t: (key: string) => any;
 }
 
 // A small component for the suggestion button.
@@ -23,7 +24,7 @@ const SuggestionButton: React.FC<{ text: string; onClick: () => void }> = ({ tex
     </button>
 )
 
-const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, showSuggestions, aiMode, onAiModeChange, onRectChange }) => {
+const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, showSuggestions, aiMode, onAiModeChange, onRectChange, t }) => {
   // State variables
   const [inputValue, setInputValue] = useState(''); // The current value of the textarea.
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false); // Is the emoji picker open?
@@ -40,11 +41,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, showSug
   const formRef = useRef<HTMLFormElement>(null); // Ref for the main form element for position tracking.
   
   // Array of initial chat suggestions.
-  const suggestions = [
-      "Give me ideas for a sci-fi story",
-      "Explain quantum computing simply",
-      "Write a futuristic poem"
-  ]
+  const suggestions: string[] = t('chatInput.suggestions');
   
   // This effect reports the form's position to the parent for animations.
   useLayoutEffect(() => {
@@ -127,13 +124,13 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, showSug
 
   const ModePicker = () => (
       <div ref={modePickerRef} className="absolute bottom-full mb-2 w-64 glassmorphism rounded-xl p-2 shadow-lg z-10 fade-in-up" style={{ animationDuration: '200ms'}}>
-          <p className="text-xs text-text-dark px-2 pb-1 font-semibold">SELECT MODE</p>
+          <p className="text-xs text-text-dark px-2 pb-1 font-semibold">{t('chatInput.selectMode')}</p>
           <div className="space-y-1">
             <button onClick={() => handleModeChange('cognito')} className={`w-full flex items-center gap-3 p-2 rounded-lg text-left transition-colors ${aiMode === 'cognito' ? 'bg-primary/20' : 'hover:bg-input'}`}>
                 <CognitoLogo className="w-8 h-8 flex-shrink-0" />
                 <div>
-                    <p className={`font-semibold ${aiMode === 'cognito' ? 'text-primary' : 'text-text-light'}`}>Cognito</p>
-                    <p className="text-xs text-text-medium">Your general purpose AI assistant.</p>
+                    <p className={`font-semibold ${aiMode === 'cognito' ? 'text-primary' : 'text-text-light'}`}>{t('chatInput.modeCognito')}</p>
+                    <p className="text-xs text-text-medium">{t('chatInput.modeCognitoDesc')}</p>
                 </div>
             </button>
             <button onClick={() => handleModeChange('code-assistant')} className={`w-full flex items-center gap-3 p-2 rounded-lg text-left transition-colors ${aiMode === 'code-assistant' ? 'bg-primary/20' : 'hover:bg-input'}`}>
@@ -141,8 +138,8 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, showSug
                     <CodeBracketIcon className="w-7 h-7" />
                  </div>
                 <div>
-                    <p className={`font-semibold ${aiMode === 'code-assistant' ? 'text-primary' : 'text-text-light'}`}>Code Assistant</p>
-                    <p className="text-xs text-text-medium">For programming and technical queries.</p>
+                    <p className={`font-semibold ${aiMode === 'code-assistant' ? 'text-primary' : 'text-text-light'}`}>{t('chatInput.modeCode')}</p>
+                    <p className="text-xs text-text-medium">{t('chatInput.modeCodeDesc')}</p>
                 </div>
             </button>
           </div>
@@ -208,7 +205,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, showSug
                     onKeyDown={handleKeyDown}
                     onFocus={() => setIsFocused(true)}
                     onBlur={() => setIsFocused(false)}
-                    placeholder={aiMode === 'cognito' ? "Message Cognito..." : "Ask a coding question..."}
+                    placeholder={aiMode === 'cognito' ? t('chatInput.placeholderCognito') : t('chatInput.placeholderCode')}
                     rows={1}
                     className="flex-grow bg-transparent text-text-light placeholder-text-dark resize-none focus:outline-none p-2 max-h-48 custom-scrollbar z-10"
                     disabled={isLoading}

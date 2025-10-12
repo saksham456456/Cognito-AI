@@ -7,9 +7,10 @@ interface ProfileModalProps {
   onClose: () => void; // Function to close the modal.
   onSave: (newName: string) => void; // Function to save the name.
   currentName: string; // The current user's name.
+  t: (key: string) => string;
 }
 
-const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onSave, currentName }) => {
+const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onSave, currentName, t }) => {
   // State for the input field.
   const [name, setName] = useState(currentName);
 
@@ -57,13 +58,13 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onSave, cu
         {/* Modal header */}
         <div className="flex flex-col items-center">
             <UserCircleIcon className="w-20 h-20 text-primary mb-4" />
-            <h2 id="profile-modal-title" className="font-heading text-2xl font-bold text-text-light mb-2">Operator Profile</h2>
-            <p className="text-sm text-text-medium mb-6">Update your callsign.</p>
+            <h2 id="profile-modal-title" className="font-heading text-2xl font-bold text-text-light mb-2">{t('modals.profileTitle')}</h2>
+            <p className="text-sm text-text-medium mb-6">{t('modals.profileSubtitle')}</p>
         </div>
         {/* Modal form area */}
         <div className="space-y-4">
             <div>
-                <label htmlFor="userName" className="text-sm font-medium text-text-light">Callsign</label>
+                <label htmlFor="userName" className="text-sm font-medium text-text-light">{t('modals.profileLabel')}</label>
                 <input
                     id="userName"
                     type="text"
@@ -71,7 +72,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onSave, cu
                     onChange={(e) => setName(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSave()} // Also save on Enter key press.
                     className="mt-1 w-full bg-input border border-input-border rounded-lg px-3 py-2 text-text-light focus:outline-none focus:border-primary transition-colors"
-                    placeholder="Enter your callsign"
+                    placeholder={t('modals.profilePlaceholder')}
                 />
             </div>
         </div>
@@ -81,13 +82,13 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onSave, cu
                 onClick={onClose}
                 className="px-4 py-2 rounded-lg bg-input hover:bg-input-border transition-colors border border-card-border"
             >
-                Cancel
+                {t('modals.cancel')}
             </button>
             <button
                 onClick={handleSave}
                 className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-yellow-400 transition-colors border border-primary-foreground/20"
             >
-                Save Changes
+                {t('modals.save')}
             </button>
         </div>
       </div>

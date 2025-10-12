@@ -9,6 +9,7 @@ interface ConfirmationModalProps {
   title: string; // The modal's title.
   message: string; // The modal's message body.
   confirmButtonText?: string; // Text for the confirm button (optional, defaults to 'Confirm').
+  t: (key: string) => string;
 }
 
 const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ 
@@ -17,7 +18,8 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   onConfirm, 
   title, 
   message, 
-  confirmButtonText = 'Confirm' 
+  confirmButtonText = 'Confirm',
+  t
 }) => {
   // If the modal is not open, don't render anything.
   if (!isOpen) return null;
@@ -59,7 +61,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                 onClick={onClose}
                 className="px-4 py-2 rounded-lg bg-input hover:bg-input-border transition-colors border border-card-border"
             >
-                Cancel
+                {t('modals.cancel')}
             </button>
             <button
                 onClick={onConfirm}

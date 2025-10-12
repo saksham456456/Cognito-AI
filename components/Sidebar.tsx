@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import type { Chat } from '../types';
 import { CognitoLogo } from './Logo';
-import { PlusIcon, MessageSquareIcon, SearchIcon, PencilIcon, CheckIcon, XIcon, UserCircleIcon, SunIcon, MoonIcon, DownloadIcon, TrashIcon, InfoIcon, CodeBracketIcon, LayersIcon } from './icons';
+import { PlusIcon, MessageSquareIcon, SearchIcon, PencilIcon, CheckIcon, XIcon, UserCircleIcon, SunIcon, MoonIcon, DownloadIcon, TrashIcon, InfoIcon, CodeBracketIcon, LayersIcon, GlobeIcon } from './icons';
 
 // Interface for the Sidebar's props.
 interface SidebarProps {
@@ -19,6 +19,9 @@ interface SidebarProps {
   onAboutClick: () => void;
   backgroundAnimation: string;
   onBackgroundAnimationChange: (animation: string) => void;
+  t: (key: string) => string;
+  locale: string;
+  onLocaleChange: (locale: string) => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -35,7 +38,10 @@ const Sidebar: React.FC<SidebarProps> = ({
   onProfileClick,
   onAboutClick,
   backgroundAnimation,
-  onBackgroundAnimationChange
+  onBackgroundAnimationChange,
+  t,
+  locale,
+  onLocaleChange
 }) => {
   // State variables
   const [searchTerm, setSearchTerm] = useState(''); // Value of the search input.
@@ -89,7 +95,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       <div className="p-4 border-b border-card-border flex items-center justify-between">
         <div className="flex items-center gap-3">
           <CognitoLogo className="h-8 w-8" />
-          <h1 className="font-heading text-xl font-bold text-primary tracking-widest uppercase text-glow-primary">COGNITO</h1>
+          <h1 className="font-heading text-xl font-bold text-primary tracking-widest uppercase text-glow-primary">{t('sidebar.title')}</h1>
         </div>
       </div>
 
@@ -97,14 +103,14 @@ const Sidebar: React.FC<SidebarProps> = ({
           {/* New Chat button */}
           <button onClick={onNewChat} className="w-full flex items-center justify-center gap-2 p-2 rounded-lg transition-colors border border-input-border hover:border-primary text-text-medium hover:text-primary font-semibold neon-glow-button">
               <PlusIcon className="w-5 h-5" />
-              New Session
+              {t('sidebar.newSession')}
           </button>
           {/* Search bar */}
           <div className="relative">
               <SearchIcon className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-text-dark"/>
               <input
                   type="text"
-                  placeholder="Search logs..."
+                  placeholder={t('sidebar.searchLogs')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full bg-input border border-input-border rounded-lg pl-10 pr-4 py-2 text-text-light focus:outline-none focus:border-primary transition-colors"
@@ -176,16 +182,32 @@ const Sidebar: React.FC<SidebarProps> = ({
                   <UserCircleIcon className="w-10 h-10 text-primary" />
                   <div className="truncate">
                       <p className="font-semibold text-text-light">{userName}</p>
-                      <p className="text-xs text-text-medium">Operator</p>
+                      <p className="text-xs text-text-medium">{t('sidebar.profileName')}</p>
                   </div>
               </button>
           </div>
           {/* Action buttons */}
           <ul className="space-y-1 mt-2">
+                <li>
+                  <div className="w-full flex items-center gap-3 p-2 rounded-md text-sm text-text-medium">
+                      <GlobeIcon className="w-5 h-5" />
+                      <label htmlFor="language-select" className="flex-1">{t('sidebar.language')}</label>
+                      <select
+                          id="language-select"
+                          value={locale}
+                          onChange={(e) => onLocaleChange(e.target.value)}
+                          className="bg-input border border-input-border rounded-md px-2 py-1 text-xs text-text-light focus:outline-none focus:border-primary transition-colors"
+                      >
+                          <option value="en">{t('languages.en')}</option>
+                          <option value="es">{t('languages.es')}</option>
+                          <option value="hi">{t('languages.hi')}</option>
+                      </select>
+                  </div>
+              </li>
                <li>
                   <div className="w-full flex items-center gap-3 p-2 rounded-md text-sm text-text-medium">
                       <LayersIcon className="w-5 h-5" />
-                      <label htmlFor="bg-animation-select" className="flex-1">Background</label>
+                      <label htmlFor="bg-animation-select" className="flex-1">{t('sidebar.background')}</label>
                       <select
                           id="bg-animation-select"
                           value={backgroundAnimation}
@@ -206,7 +228,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                       className="w-full flex items-center gap-3 p-2 rounded-md text-sm text-text-medium hover:bg-input hover:text-text-light transition-colors group"
                   >
                       <InfoIcon className="w-5 h-5" />
-                      <span>About Cognito AI</span>
+                      <span>{t('sidebar.about')}</span>
                   </button>
               </li>
               <li>
@@ -216,7 +238,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                       className="w-full flex items-center gap-3 p-2 rounded-md text-sm text-text-medium hover:bg-input hover:text-text-light transition-colors group disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                       <DownloadIcon className="w-5 h-5" />
-                      <span>Export Log</span>
+                      <span>{t('sidebar.exportLog')}</span>
                   </button>
               </li>
               <li>
@@ -226,7 +248,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                       className="w-full flex items-center gap-3 p-2 rounded-md text-sm text-red-500 hover:bg-red-500/10 transition-colors group disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                       <TrashIcon className="w-5 h-5" />
-                      <span>Purge All Logs</span>
+                      <span>{t('sidebar.purgeLogs')}</span>
                   </button>
               </li>
           </ul>
