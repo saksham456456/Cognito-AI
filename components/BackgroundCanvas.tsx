@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect } from 'react';
 
 // Props interface
@@ -58,24 +57,52 @@ abstract class Animation {
   }
 }
 
-// --- 1. Particle Plexus Animation (Restored Original Physics) ---
+// --- 1. Particle Plexus Animation ---
 class OGParticle {
-    x: number; y: number; size: number;
-    vx: number; vy: number;
-    homeX: number; homeY: number;
+    x: number = 0; y: number = 0; size: number = 0;
+    vx: number = 0; vy: number = 0;
     baseColor: string;
     currentColor: string;
+    life: number = 0;
+    maxLife: number = 0;
 
-    constructor(x: number, y: number, size: number, color: string) {
-        this.x = x; this.y = y; this.size = size;
-        this.homeX = x; this.homeY = y;
-        this.vx = (Math.random() - 0.5) * 2;
-        this.vy = (Math.random() - 0.5) * 2;
+    constructor(canvasWidth: number, canvasHeight: number, color: string) {
         this.baseColor = color;
         this.currentColor = color;
+        this.reset(canvasWidth, canvasHeight);
+    }
+    
+    reset(canvasWidth: number, canvasHeight: number) {
+        this.x = Math.random() * canvasWidth;
+        this.y = Math.random() * canvasHeight;
+        this.vx = (Math.random() - 0.5) * 1;
+        this.vy = (Math.random() - 0.5) * 1;
+        // Life in frames (e.g., 5-10 seconds at 60fps)
+        this.maxLife = Math.random() * 300 + 300; 
+        this.life = this.maxLife;
+        this.size = Math.random() * 2 + 1;
+    }
+
+    getOpacity(): number {
+        const fadeInDuration = this.maxLife * 0.1;
+        const fadeOutDuration = this.maxLife * 0.2;
+        let opacity = 1;
+
+        if (this.life > this.maxLife - fadeInDuration) {
+            // Fading in
+            opacity = (this.maxLife - this.life) / fadeInDuration;
+        } else if (this.life < fadeOutDuration) {
+            // Fading out
+            opacity = this.life / fadeOutDuration;
+        }
+        return opacity;
     }
 
     draw(ctx: CanvasRenderingContext2D) {
+        const opacity = this.getOpacity();
+        if (opacity <= 0) return;
+
+        ctx.globalAlpha = opacity;
         ctx.fillStyle = this.currentColor;
         ctx.shadowColor = this.currentColor;
         ctx.shadowBlur = this.size * 2;
@@ -84,43 +111,43 @@ class OGParticle {
         ctx.closePath();
         ctx.fill();
         ctx.shadowBlur = 0;
+        ctx.globalAlpha = 1; // Reset global alpha
     }
     
-    update(mouse: {x:number, y:number, radius:number}) {
+    update(mouse: {x:number, y:number, radius:number}, canvasWidth: number, canvasHeight: number) {
+        this.life--;
+        if (this.life <= 0) {
+            this.reset(canvasWidth, canvasHeight);
+        }
+
         // --- Mouse interaction force ---
         const dxMouse = mouse.x - this.x;
         const dyMouse = mouse.y - this.y;
         const distanceMouse = Math.sqrt(dxMouse*dxMouse + dyMouse*dyMouse);
-        let forceX = 0;
-        let forceY = 0;
-
+        
         if (distanceMouse < mouse.radius) {
             const force = (mouse.radius - distanceMouse) / mouse.radius;
-            forceX -= dxMouse / distanceMouse * force * 2;
-            forceY -= dyMouse / distanceMouse * force * 2;
+            // Repel from mouse
+            this.vx -= dxMouse / distanceMouse * force * 0.5;
+            this.vy -= dyMouse / distanceMouse * force * 0.5;
             this.currentColor = 'hsl(50, 100%, 95%)';
         } else {
             this.currentColor = this.baseColor;
         }
         
-        // --- Spring force to home position ---
-        const dxHome = this.homeX - this.x;
-        const dyHome = this.homeY - this.y;
-        const springConstant = 0.01;
-        forceX += dxHome * springConstant;
-        forceY += dyHome * springConstant;
-
-        // Apply forces
-        this.vx += forceX;
-        this.vy += forceY;
+        // --- Damping ---
+        this.vx *= 0.99;
+        this.vy *= 0.99;
         
-        // Damping/friction
-        this.vx *= 0.95;
-        this.vy *= 0.95;
-
-        // Update position
+        // --- Update position ---
         this.x += this.vx;
         this.y += this.vy;
+
+        // --- Screen wrapping ---
+        if (this.x > canvasWidth + this.size) this.x = -this.size;
+        if (this.x < -this.size) this.x = canvasWidth + this.size;
+        if (this.y > canvasHeight + this.size) this.y = -this.size;
+        if (this.y < -this.size) this.y = canvasHeight + this.size;
     }
 }
 
@@ -132,11 +159,8 @@ class ParticlePlexusAnimation extends Animation {
         this.particles = [];
         const numberOfParticles = (this.canvas.height * this.canvas.width) / 12000;
         for (let i = 0; i < numberOfParticles; i++) {
-            const size = Math.random() * 2 + 1;
-            const x = Math.random() * this.canvas.width;
-            const y = Math.random() * this.canvas.height;
             const color = `hsla(48, 100%, 55%, 0.8)`;
-            this.particles.push(new OGParticle(x, y, size, color));
+            this.particles.push(new OGParticle(this.canvas.width, this.canvas.height, color));
         }
         window.addEventListener('mousemove', this.handleMouseMove);
         window.addEventListener('mouseout', this.handleMouseOut);
@@ -156,7 +180,7 @@ class ParticlePlexusAnimation extends Animation {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
         this.particles.forEach(p => {
-            p.update(this.mouse);
+            p.update(this.mouse, this.canvas.width, this.canvas.height);
             p.draw(this.ctx);
         });
         
@@ -172,10 +196,14 @@ class ParticlePlexusAnimation extends Animation {
                 const distance = Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
 
                 if (distance < maxDistance) {
-                    const opacity = 1 - (distance / maxDistance);
+                    const baseOpacity = 1 - (distance / maxDistance);
+                    const finalOpacity = baseOpacity * p1.getOpacity() * p2.getOpacity();
+
+                    if (finalOpacity <= 0) continue;
+                    
                     const proximity = 1 - (distance / maxDistance);
                     const hue = 220 - (172 * proximity * proximity);
-                    const color = `hsla(${hue}, 100%, 65%, ${opacity})`;
+                    const color = `hsla(${hue}, 100%, 65%, ${finalOpacity})`;
                     const lineWidth = 0.5 + proximity;
                     
                     const dxMouseA = this.mouse.x - p1.x;
@@ -191,7 +219,7 @@ class ParticlePlexusAnimation extends Animation {
                     this.ctx.strokeStyle = color;
                     this.ctx.lineWidth = lineWidth;
                     this.ctx.shadowColor = color;
-                    this.ctx.shadowBlur = glowAmount;
+                    this.ctx.shadowBlur = glowAmount * finalOpacity;
                     
                     this.ctx.beginPath();
                     this.ctx.moveTo(p1.x, p1.y);
@@ -388,155 +416,203 @@ class CircuitsAnimation extends Animation {
     }
 }
 
-// --- 5. Arc Lightning Animation (Enhanced) ---
-class LightningBolt {
-    public life = 1;
-    private segments: {x: number, y: number}[][] = [];
-    private color: string;
-    private glow: number;
-    private isMainBolt: boolean;
+// --- 5. Realistic Digital Lightning Animation (NOW WITH CLASHES) ---
+class Spark {
+    x: number; y: number; vx: number; vy: number; life: number; size: number;
+    constructor(x: number, y: number) {
+        this.x = x;
+        this.y = y;
+        const angle = Math.random() * Math.PI * 2;
+        const speed = Math.random() * 6 + 3;
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
+        this.life = 1;
+        this.size = Math.random() * 2.5 + 1;
+    }
+    update() {
+        this.x += this.vx; this.y += this.vy; this.vx *= 0.96; this.vy *= 0.96; this.life -= 0.03;
+    }
+    isDead() { return this.life <= 0; }
+    draw(ctx: CanvasRenderingContext2D, color: string) {
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.fillStyle = color.replace(')', `, ${this.life})`).replace('hsl', 'hsla');
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size * this.life, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    }
+}
 
-    constructor(startX: number, startY: number, endX: number, endY: number, color: string, isMainBolt: boolean) {
-        this.color = color;
-        this.glow = isMainBolt ? 30 : 15;
-        this.isMainBolt = isMainBolt;
-        
-        const mainPath = this.createPath(startX, startY, endX, endY, 120);
-        this.segments.push(mainPath);
-
-        if (isMainBolt) {
-            const numBranches = Math.floor(Math.random() * 4) + 3;
-            for(let i=0; i < numBranches; i++) {
-                const branchStartNode = mainPath[Math.floor(Math.random() * (mainPath.length - 2)) + 1];
-                const branchAngle = Math.atan2(endY - startY, endX - startX) + (Math.random() - 0.5) * Math.PI / 1.5;
-                const branchLength = (Math.random() * 100 + 50);
-                const branchEndX = branchStartNode.x + Math.cos(branchAngle) * branchLength;
-                const branchEndY = branchStartNode.y + Math.sin(branchAngle) * branchLength;
-                this.segments.push(this.createPath(branchStartNode.x, branchStartNode.y, branchEndX, branchEndY, 60));
-            }
+class Explosion {
+    x: number; y: number; sparks: Spark[] = [];
+    shockwave = { radius: 0, opacity: 1 };
+    color: string;
+    constructor(x: number, y: number, sparkCount: number, color: string) {
+        this.x = x; this.y = y; this.color = color;
+        for (let i = 0; i < sparkCount; i++) this.sparks.push(new Spark(x, y));
+    }
+    update() {
+        this.sparks.forEach(s => s.update());
+        this.sparks = this.sparks.filter(s => !s.isDead());
+        if (this.shockwave.opacity > 0) {
+            this.shockwave.radius += 8;
+            this.shockwave.opacity -= 0.02;
         }
     }
+    isDead() { return this.sparks.length === 0 && this.shockwave.opacity <= 0; }
+    draw(ctx: CanvasRenderingContext2D) {
+        this.sparks.forEach(spark => spark.draw(ctx, this.color));
+        if (this.shockwave.opacity > 0) {
+            ctx.save();
+            ctx.globalCompositeOperation = 'lighter';
+            const shockwaveColor = `hsla(50, 100%, 75%, ${this.shockwave.opacity})`;
+            ctx.strokeStyle = shockwaveColor;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.shockwave.radius, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+        }
+    }
+}
 
+class LightningBolt {
+    public life = 1.0;
+    public createsSparksOnDeath = true;
+    public endPoint: {x: number, y: number};
+    private segments: {x: number, y: number}[][] = [];
+    public color: string;
+    public isSuperBolt: boolean;
+
+    constructor(startX: number, startY: number, endX: number, endY: number, color: string, isSuperBolt: boolean) {
+        this.color = color;
+        this.isSuperBolt = isSuperBolt;
+        this.endPoint = { x: endX, y: endY };
+        const mainPath = this.createPath(startX, startY, endX, endY, this.isSuperBolt ? 150 : 100);
+        this.segments.push(mainPath);
+        const numBranches = this.isSuperBolt ? Math.floor(Math.random() * 6) + 4 : Math.floor(Math.random() * 3) + 1;
+        for(let i=0; i < numBranches; i++) {
+            const branchStartNode = mainPath[Math.floor(Math.random() * (mainPath.length * 0.7)) + Math.floor(mainPath.length * 0.1)];
+            if (!branchStartNode) continue;
+            const mainAngle = Math.atan2(endY - startY, endX - startX);
+            const branchAngle = mainAngle + (Math.random() - 0.5) * Math.PI / 1.2;
+            const branchLength = (Math.random() * 100 + 50) / (this.isSuperBolt ? 1 : 1.8);
+            const branchEndX = branchStartNode.x + Math.cos(branchAngle) * branchLength;
+            const branchEndY = branchStartNode.y + Math.sin(branchAngle) * branchLength;
+            this.segments.push(this.createPath(branchStartNode.x, branchStartNode.y, branchEndX, branchEndY, 60));
+        }
+    }
     private createPath(startX: number, startY: number, endX: number, endY: number, maxDisplacement: number): {x: number, y: number}[] {
-        let path = [{x: startX, y: startY}, {x: endX, y: endY}];
-        let displacement = maxDisplacement;
-
+        let path = [{x: startX, y: startY}, {x: endX, y: endY}]; let displacement = maxDisplacement;
         for (let i = 0; i < 8; i++) {
             let newPath = [];
             for (let j = 0; j < path.length - 1; j++) {
-                const start = path[j];
-                const end = path[j+1];
-                const midX = (start.x + end.x) / 2 + (Math.random() - 0.5) * displacement;
-                const midY = (start.y + end.y) / 2 + (Math.random() - 0.5) * displacement;
-                newPath.push(start, {x: midX, y: midY});
-            }
-            newPath.push(path[path.length - 1]);
-            path = newPath;
-            displacement /= 2.1;
-        }
-        return path;
+                const start = path[j]; const end = path[j+1]; const midX = (start.x + end.x) / 2; const midY = (start.y + end.y) / 2;
+                const dx = end.x - start.x; const dy = end.y - start.y; const normal = Math.sqrt(dx*dx + dy*dy) || 1;
+                const offsetX = -dy / normal * (Math.random() - 0.5) * displacement; const offsetY = dx / normal * (Math.random() - 0.5) * displacement;
+                newPath.push(start, {x: midX + offsetX, y: midY + offsetY});
+            } newPath.push(path[path.length - 1]); path = newPath; displacement /= 1.7;
+        } return path;
     }
-
-    update() { this.life -= 0.03; }
+    update() { this.life -= 0.025; }
     isDead() { return this.life <= 0; }
-
-    draw(ctx: CanvasRenderingContext2D) {
-        ctx.save();
-        ctx.globalAlpha = this.life;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-
-        ctx.shadowColor = this.color;
-        ctx.shadowBlur = this.glow * this.life;
-        ctx.strokeStyle = `hsla(${this.color.split(',')[0].substring(4)}, 100%, 75%, ${0.2 * this.life})`;
-        ctx.lineWidth = this.isMainBolt ? 8 : 4;
-        this.drawSegmentsSmooth(ctx);
-
-        ctx.shadowBlur = 0;
-        ctx.strokeStyle = `hsla(0, 0%, 100%, ${0.7 * this.life})`;
-        ctx.lineWidth = this.isMainBolt ? 2 : 1;
-        this.drawSegmentsSmooth(ctx);
-        
-        ctx.restore();
+    private drawSegments(ctx: CanvasRenderingContext2D) {
+        this.segments.forEach(path => { if (path.length < 1) return; ctx.beginPath(); ctx.moveTo(path[0].x, path[0].y); for (let i = 1; i < path.length; i++) ctx.lineTo(path[i].x, path[i].y); ctx.stroke(); });
     }
-    
-    private drawSegmentsSmooth(ctx: CanvasRenderingContext2D) {
-        this.segments.forEach(path => {
-            if (path.length < 2) return;
-            ctx.beginPath();
-            ctx.moveTo(path[0].x, path[0].y);
-            for (let i = 1; i < path.length - 2; i++) {
-                const xc = (path[i].x + path[i + 1].x) / 2;
-                const yc = (path[i].y + path[i + 1].y) / 2;
-                ctx.quadraticCurveTo(path[i].x, path[i].y, xc, yc);
-            }
-            ctx.quadraticCurveTo(path[path.length - 2].x, path[path.length - 2].y, path[path.length - 1].x, path[path.length - 1].y);
-            ctx.stroke();
-        });
+    private drawFlickeringSegments(ctx: CanvasRenderingContext2D, flickerAmount: number) {
+        const flicker = () => (Math.random() - 0.5) * flickerAmount * this.life;
+        this.segments.forEach(path => { if (path.length < 1) return; ctx.beginPath(); ctx.moveTo(path[0].x + flicker(), path[0].y + flicker()); for (let i = 1; i < path.length; i++) ctx.lineTo(path[i].x + flicker(), path[i].y + flicker()); ctx.stroke(); });
+    }
+    draw(ctx: CanvasRenderingContext2D) {
+        if (this.life <= 0) return;
+        const coreAlpha = 0.9 * this.life * (0.5 + Math.random() * 0.5); const glowAlpha = 0.3 * this.life * (0.5 + Math.random() * 0.5);
+        ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        const widths = this.isSuperBolt ? [20, 12, 4] : [14, 8, 2];
+        ctx.strokeStyle = this.color.replace(')', `, ${glowAlpha * 0.5})`).replace('hsl', 'hsla'); ctx.lineWidth = widths[0] + (Math.random() - 0.5) * 6; this.drawFlickeringSegments(ctx, 10);
+        ctx.strokeStyle = this.color.replace(')', `, ${glowAlpha})`).replace('hsl', 'hsla'); ctx.lineWidth = widths[1] + (Math.random() - 0.5) * 4; this.drawFlickeringSegments(ctx, 5);
+        ctx.strokeStyle = `hsla(0, 0%, 100%, ${coreAlpha})`; ctx.lineWidth = widths[2]; this.drawSegments(ctx);
+        ctx.restore();
     }
 }
 
 class ArcLightningAnimation extends Animation {
     private bolts: LightningBolt[] = [];
-    private mouse = { x: -999, y: -999, moved: false };
-    private lastStrike = 0;
-    private lastBurst = 0;
+    private explosions: Explosion[] = [];
+    private screenFlash = { opacity: 0 };
 
-    init() {
-        window.addEventListener('mousemove', this.handleMouseMove);
-        window.addEventListener('mouseout', this.handleMouseOut);
+    init() { this.bolts = []; this.explosions = []; this.screenFlash = { opacity: 0 }; }
+
+    private getRandomEdgePoint(): {x: number, y: number, edge: number} {
+        const { width, height } = this.canvas; const edge = Math.floor(Math.random() * 4);
+        let x, y;
+        if (edge === 0) { x = Math.random() * width; y = 0; }
+        else if (edge === 1) { x = width; y = Math.random() * height; }
+        else if (edge === 2) { x = Math.random() * width; y = height; }
+        else { x = 0; y = Math.random() * height; }
+        return { x, y, edge };
     }
-    handleMouseMove = (e: MouseEvent) => { this.mouse.x = e.clientX; this.mouse.y = e.clientY; this.mouse.moved = true; }
-    handleMouseOut = () => { this.mouse.x = -999; this.mouse.y = -999; this.mouse.moved = false; }
+    
+    private createClash() {
+        const { width, height } = this.canvas;
+        const cx = width * (0.3 + Math.random() * 0.4); const cy = height * (0.3 + Math.random() * 0.4);
+        const startPoint1 = this.getRandomEdgePoint();
+        let startPoint2 = this.getRandomEdgePoint();
+        while (startPoint2.edge === startPoint1.edge) startPoint2 = this.getRandomEdgePoint();
+        
+        const bolt1 = new LightningBolt(startPoint1.x, startPoint1.y, cx, cy, this.themeColors.primary, false);
+        bolt1.createsSparksOnDeath = false;
+        const bolt2 = new LightningBolt(startPoint2.x, startPoint2.y, cx, cy, this.themeColors.accent1, false);
+        bolt2.createsSparksOnDeath = false;
+        this.bolts.push(bolt1, bolt2);
+        
+        const explosionColor = Math.random() > 0.5 ? this.themeColors.primary : this.themeColors.accent1;
+        this.explosions.push(new Explosion(cx, cy, 120, explosionColor));
+        this.screenFlash.opacity = 0.8;
+    }
 
-    animate(timestamp: number) {
-        this.ctx.fillStyle = 'rgba(10, 10, 14, 0.2)';
+    private createNormalBolt() {
+        const isSuperBolt = Math.random() > 0.997;
+        const start = this.getRandomEdgePoint();
+        let end = this.getRandomEdgePoint();
+        while (end.edge === start.edge) end = this.getRandomEdgePoint();
+        const color = isSuperBolt ? this.themeColors.primary : this.themeColors.accent1;
+        this.bolts.push(new LightningBolt(start.x, start.y, end.x, end.y, color, isSuperBolt));
+        if (isSuperBolt) this.screenFlash.opacity = 1;
+    }
+    
+    animate() {
+        this.ctx.fillStyle = this.themeColors.bgDark;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        const now = timestamp;
-        if (this.mouse.moved && now - this.lastStrike > 150) {
-            const fromEdge = Math.floor(Math.random() * 4);
-            let startX, startY;
-            switch(fromEdge) {
-                case 0: startX = 0; startY = Math.random() * this.canvas.height; break;
-                case 1: startX = this.canvas.width; startY = Math.random() * this.canvas.height; break;
-                case 2: startX = Math.random() * this.canvas.width; startY = 0; break;
-                case 3: default: startX = Math.random() * this.canvas.width; startY = this.canvas.height; break;
-            }
-            this.bolts.push(new LightningBolt(startX, startY, this.mouse.x, this.mouse.y, this.themeColors.primary, true));
-            this.lastStrike = now;
-            this.mouse.moved = false;
-        }
+        const rand = Math.random();
+        if (rand > 0.992 && this.bolts.length < 10) this.createClash();
+        else if (rand > 0.95 && this.bolts.length < 20) this.createNormalBolt();
 
-        if (Math.random() > 0.96 && this.bolts.length < 15) {
-            const startX = Math.random() * this.canvas.width; const startY = Math.random() * this.canvas.height;
-            const endX = startX + (Math.random() - 0.5) * 400; const endY = startY + (Math.random() - 0.5) * 400;
-            this.bolts.push(new LightningBolt(startX, startY, endX, endY, this.themeColors.accent1, false));
+        for (let i = this.explosions.length - 1; i >= 0; i--) {
+            const explosion = this.explosions[i];
+            explosion.update();
+            if (explosion.isDead()) this.explosions.splice(i, 1);
+            else explosion.draw(this.ctx);
         }
-
-        if (now - this.lastBurst > 3000 && Math.random() > 0.98) {
-            const burstX = Math.random() * this.canvas.width * 0.6 + this.canvas.width * 0.2;
-            const burstY = Math.random() * this.canvas.height * 0.6 + this.canvas.height * 0.2;
-            const numSpokes = Math.floor(Math.random() * 5) + 5;
-            for (let i = 0; i < numSpokes; i++) {
-                const angle = (i / numSpokes) * Math.PI * 2; const length = Math.random() * 150 + 100;
-                const endX = burstX + Math.cos(angle) * length; const endY = burstY + Math.sin(angle) * length;
-                this.bolts.push(new LightningBolt(burstX, burstY, endX, endY, this.themeColors.accent1, false));
-            }
-            this.lastBurst = now;
-        }
-
         for (let i = this.bolts.length - 1; i >= 0; i--) {
             const bolt = this.bolts[i];
             bolt.update();
-            if(bolt.isDead()) { this.bolts.splice(i, 1); } else { bolt.draw(this.ctx); }
+            if (bolt.isDead()) {
+                if (bolt.createsSparksOnDeath) {
+                    const sparkCount = bolt.isSuperBolt ? 50 : 20;
+                    this.explosions.push(new Explosion(bolt.endPoint.x, bolt.endPoint.y, sparkCount, bolt.color));
+                }
+                this.bolts.splice(i, 1);
+            } else {
+                bolt.draw(this.ctx);
+            }
         }
-    }
-    
-    stop() {
-        super.stop();
-        window.removeEventListener('mousemove', this.handleMouseMove);
-        window.removeEventListener('mouseout', this.handleMouseOut);
+        if (this.screenFlash.opacity > 0) {
+            this.ctx.fillStyle = `hsla(0, 0%, 100%, ${this.screenFlash.opacity * 0.3})`;
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            this.screenFlash.opacity -= 0.05;
+        }
     }
 }
 
