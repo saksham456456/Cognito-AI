@@ -445,37 +445,105 @@ class Spark {
 }
 
 class Explosion {
-    x: number; y: number; sparks: Spark[] = [];
-    shockwave = { radius: 0, opacity: 1 };
-    color: string;
+    x: number; y: number; sparks: Spark[] = []; color: string;
+    shockwave = { radius: 0, opacity: 1, speed: 12, lineWidth: 5, noiseSeed: Math.random() * 100 };
+    internalArcs: { startAngle: number, endAngle: number, life: number, radiusOffset: number }[] = [];
+    
     constructor(x: number, y: number, sparkCount: number, color: string) {
         this.x = x; this.y = y; this.color = color;
         for (let i = 0; i < sparkCount; i++) this.sparks.push(new Spark(x, y));
-    }
-    update() {
-        this.sparks.forEach(s => s.update());
-        this.sparks = this.sparks.filter(s => !s.isDead());
-        if (this.shockwave.opacity > 0) {
-            this.shockwave.radius += 8;
-            this.shockwave.opacity -= 0.02;
+
+        const numArcs = Math.floor(Math.random() * 3) + 3;
+        for (let i = 0; i < numArcs; i++) {
+            const startAngle = Math.random() * Math.PI * 2;
+            const length = (Math.random() * 0.4 + 0.2) * (Math.random() > 0.5 ? 1 : -1);
+            this.internalArcs.push({
+                startAngle: startAngle,
+                endAngle: startAngle + length,
+                life: 1,
+                radiusOffset: Math.random() * 20 + 10
+            });
         }
     }
+
+    update() {
+        // Push sparks with the shockwave
+        this.sparks.forEach(s => {
+            const dx = s.x - this.x;
+            const dy = s.y - this.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (Math.abs(dist - this.shockwave.radius) < 20) {
+                const pushForce = (20 - Math.abs(dist - this.shockwave.radius)) / 20;
+                s.vx += (dx / dist) * pushForce * 0.8;
+                s.vy += (dy / dist) * pushForce * 0.8;
+            }
+            s.update();
+        });
+        this.sparks = this.sparks.filter(s => !s.isDead());
+        
+        if (this.shockwave.opacity > 0) {
+            this.shockwave.radius += this.shockwave.speed;
+            this.shockwave.speed *= 0.97; // Decelerate
+            this.shockwave.opacity -= 0.015;
+            this.shockwave.lineWidth *= 0.98; // Thin out
+        }
+        
+        this.internalArcs.forEach(arc => arc.life -= 0.04);
+        this.internalArcs = this.internalArcs.filter(arc => arc.life > 0);
+    }
+
     isDead() { return this.sparks.length === 0 && this.shockwave.opacity <= 0; }
+
     draw(ctx: CanvasRenderingContext2D) {
         this.sparks.forEach(spark => spark.draw(ctx, this.color));
-        if (this.shockwave.opacity > 0) {
-            ctx.save();
-            ctx.globalCompositeOperation = 'lighter';
-            const shockwaveColor = `hsla(50, 100%, 75%, ${this.shockwave.opacity})`;
-            ctx.strokeStyle = shockwaveColor;
-            ctx.lineWidth = 3;
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+
+        // Draw main, distorted shockwave
+        if (this.shockwave.opacity > 0 && this.shockwave.lineWidth > 0.5) {
+            const gradient = ctx.createRadialGradient(this.x, this.y, Math.max(0, this.shockwave.radius - 50), this.x, this.y, this.shockwave.radius);
+            gradient.addColorStop(0, `hsla(60, 100%, 95%, ${this.shockwave.opacity * 0.8})`);
+            gradient.addColorStop(0.7, `hsla(48, 100%, 55%, ${this.shockwave.opacity})`);
+            gradient.addColorStop(0.9, `hsla(30, 100%, 50%, ${this.shockwave.opacity * 0.5})`);
+            gradient.addColorStop(1, `hsla(30, 100%, 50%, 0)`);
+
+            ctx.strokeStyle = gradient;
+            ctx.lineWidth = this.shockwave.lineWidth;
+            
             ctx.beginPath();
-            ctx.arc(this.x, this.y, this.shockwave.radius, 0, Math.PI * 2);
+            const points = 80;
+            for (let i = 0; i <= points; i++) {
+                const angle = (i / points) * Math.PI * 2;
+                const noise1 = Math.sin(angle * 7 + this.shockwave.noiseSeed) * this.shockwave.speed * 0.6;
+                const noise2 = Math.sin(angle * 25 + this.shockwave.noiseSeed * 2) * this.shockwave.speed * 0.3;
+                const distortedRadius = this.shockwave.radius + noise1 + noise2;
+                const px = this.x + Math.cos(angle) * distortedRadius;
+                const py = this.y + Math.sin(angle) * distortedRadius;
+                if (i === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.closePath();
             ctx.stroke();
-            ctx.restore();
         }
+
+        // Draw internal crackling tendrils
+        this.internalArcs.forEach(arc => {
+            if (arc.life > 0 && this.shockwave.opacity > 0) {
+                const radius = this.shockwave.radius - arc.radiusOffset;
+                if (radius > 0) {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, radius, arc.startAngle, arc.endAngle);
+                    ctx.strokeStyle = `hsla(0, 0%, 100%, ${arc.life * this.shockwave.opacity * 0.8})`;
+                    ctx.lineWidth = Math.random() * 1.5 + 0.5; // Jagged width
+                    ctx.stroke();
+                }
+            }
+        });
+
+        ctx.restore();
     }
 }
+
 
 class LightningBolt {
     public life = 1.0;
