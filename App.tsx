@@ -71,7 +71,7 @@ const translations: any = {
     welcome: { greeting: "स्वागतम्, {{name}}", prompt: "अद्य अहं डिजिटल-जगति कथं साहाय्यं करवाणि?" },
     modals: { aboutTitle: "कोग्निटो एआई विषये", aboutSubtitle: "भवतः व्यक्तिगतः एआई सहायकः", aboutLine1: "{{link}} एकः आधुनिकः, प्रतिक्रियाशीलः एआई सहायकः अस्ति यः बुद्धिमत्-उत्तराणि, उत्तम-उपयोक्तृ-अनुभवं च प्रदातुं निर्मितः।", aboutLine1Link: "कोग्निटो एआई", aboutLine2: "इदं अनुप्रयोगं {{link}}-द्वारा विकसितम्, यः सुन्दर-क्रियाशील-उपयोक्तृ-अन्तरापृष्ठानि निर्मातुं कुशलः उत्साही फ्रन्टएण्ड-अभियन्ता अस्ति।", aboutLine2Link: "सक्षम", aboutLine3: "इदं {{link}}, एमएल-डीबीएमएस-मध्ये तस्य जिज्ञासया, तस्य रुचिभिश्च चालितम्।", aboutLine3Link: "सक्षमस्य ज्ञानेन", profileTitle: "प्रचालक-विवरणम्", profileSubtitle: "भवतः आह्वानचिह्नं नूतनीकरोतु।", profileLabel: "आह्वानचिह्नम्", profilePlaceholder: "आह्वानचिह्नं लिखतु", confirmPurgeTitle: "सर्वाणि अभिलेखानि निष्कासयितुं इच्छति वा?", confirmPurgeMessage: "एतेन सर्वाणि वार्तालाप-अभिलेखानि स्थायिरूपेण विलोप्स्यन्ते। एतत् कार्यं प्रतिवर्तयितुं न शक्यते।", confirmPurgeButton: "सर्वाणि निष्कासय", save: "संरक्षतु", cancel: "रद्दं करोतु", close: "पिदधातु" },
     app: { newChatTitle: "नवीनः वार्तालापः", newCodingSessionTitle: "नवीनं कूटलेखनसत्रम्", defaultChatTitle: "कोग्निटो एआई सहायकः" },
-    coding: { title: "कूटलेखन-केन्द्रम्", exit: "केन्द्रात् निर्गच्छतु", run: "चालयतु >", executing: "निष्पाद्यमानम्...", initializing: "आरभ्यमाणम्...", copyCode: "कूटं प्रतिलिपिं करोतु", copied: "प्रतिलिपिः कृता!", consoleHeader: "/console.log", assistantHeader: "/assistant.ai", awaitingExecution: "[निष्पादनं प्रतीक्षमाणम्...]", assistantPlaceholder: "प्रश्नं पृच्छतु..." },
+    coding: { title: "कूटलेखन-केन्द्रम्", exit: "केन्द्रात् निर्गच्छतु", run: "चालयतु >", executing: "निष्पाद्यमानम्...", initializing: "आरभ्यमाणम्...", copyCode: "कूटं प्रतिलिपिं करोतु", copied: "प्रतिलिपिः कृता!", consoleHeader: "/console.log", assistantHeader: "/assistant.ai", awaitingExecution: "[निष्पादनं प्रतीक्षमाणम्...]", placeholder: "प्रश्नं पृच्छतु..." },
     loading: { bootLog: ["[प्रारम्भः] कोग्निटो ओएस v2.1", "[भारणम्]   व्यक्तित्व-मैट्रिक्स.डैट", "[समंजनम्]   अनुमानात्मक-प्रसंसाधकाः", "[स्थापनम्]   उपयोक्त्रे सुरक्षित-चैनलम्", "[स्थितिः]     सर्वाणि तन्त्राणि सामान्यनि।"] },
     coreLoading: { title: "कूटलेखन-केन्द्रम् आरभ्यते", bootLog: ["[तन्त्रम्] बूट्-अनुक्रमः आरब्धः...", "[स्मृतिः] आभासी स्मृतिः वितरिता", "[सीपीयू] प्रोसेसर-केन्द्रकाणि ऑनलाइन्", "[जालम्] सुरक्षित-सम्पर्कः स्थापितः", "[पर्यावरणम्] रनटाइम-पर्यावरणं समंजितम्", "[यूआई] ग्राफिकल-शेल् एकीकृतम्...", "[ओके] केन्द्र-आरम्भः पूर्णः।"] },
     coreDisintegration: { title: "कूटलेखन-केन्द्रं वियोज्यते", shutdownLog: ["[तन्त्रम्] शटडाउन-अनुक्रमः आरब्धः...", "[स्मृतिः] आभासी स्मृतिः अविभाजिता", "[सीपीयू] प्रोसेसर-केन्द्रकाणि मुक्तानि", "[जालम्] सुरक्षित-सम्पर्कः समाप्तः", "[यूआई] ग्राफिकल-शेल् वियोजितम्...", "[ओके] केन्द्र-शटडाउन पूर्णम्।", "[तन्त्रम्] कोग्निटो-अन्तरापृष्ठं प्रति गमनम्।"] },
@@ -123,18 +123,27 @@ const App: React.FC = () => {
     // Finding the active chat from the chats array.
     const activeChat = chats.find(c => c.id === activeChatId);
     
-    // Translation function
-    const t = (key: string): any => {
+    // REVAMPED: More robust translation function to prevent startup crashes.
+    const t = (key: string, fallback?: any): any => {
         const keys = key.split('.');
-        let result = translations[locale];
+        let result: any = translations[locale];
+
+        // Fallback to English if the selected locale doesn't exist in our translations object.
+        if (!result) {
+            result = translations['en'];
+        }
+
         for (const k of keys) {
-            if (result) {
+            // Check if the current result is an object and the key exists.
+            if (result && typeof result === 'object' && k in result) {
                 result = result[k];
             } else {
-                return key; // Return key if path is invalid
+                // If the path is invalid, return the provided fallback value, or the key itself.
+                return fallback !== undefined ? fallback : key;
             }
         }
-        return result || key;
+        
+        return result !== undefined ? result : (fallback !== undefined ? fallback : key);
     };
 
 

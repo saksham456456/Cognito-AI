@@ -63,9 +63,9 @@ const CoreBootIcon = () => {
 };
 
 
-const CoreLoadingScreen: React.FC<{ show: boolean, t: (key: string) => any }> = ({ show, t }) => {
+const CoreLoadingScreen: React.FC<{ show: boolean, t: (key: string, fallback?: any) => any }> = ({ show, t }) => {
     const [visibleLogLines, setVisibleLogLines] = useState(0);
-    const bootLogMessages: string[] = t('coreLoading.bootLog');
+    const bootLogMessages: string[] = t('coreLoading.bootLog', []);
 
     // This effect reveals the log lines one by one.
     useEffect(() => {
@@ -112,7 +112,7 @@ const CoreLoadingScreen: React.FC<{ show: boolean, t: (key: string) => any }> = 
                 
                 {/* Boot log */}
                 <div className="w-96 h-48 bg-black/30 border border-primary/20 rounded-md p-4 font-code text-sm text-green-400 opacity-0 fade-in-up" style={{ animationDelay: '1.2s' }}>
-                    {bootLogMessages.slice(0, visibleLogLines).map((msg, i) => (
+                    {Array.isArray(bootLogMessages) && bootLogMessages.slice(0, visibleLogLines).map((msg, i) => (
                         <p key={i} className="boot-log-line" style={{ animationDelay: `${i * 50}ms` }}>
                             {msg}
                             {/* Show blinking cursor only on the last visible line */}

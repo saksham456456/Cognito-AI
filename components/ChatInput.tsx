@@ -11,7 +11,7 @@ interface ChatInputProps {
   aiMode: AiMode;
   onAiModeChange: (mode: AiMode) => void;
   onRectChange: (rect: DOMRect | null) => void; // Reports the input's position.
-  t: (key: string) => any;
+  t: (key: string, fallback?: any) => any;
 }
 
 // A small component for the suggestion button.
@@ -41,7 +41,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, showSug
   const formRef = useRef<HTMLFormElement>(null); // Ref for the main form element for position tracking.
   
   // Array of initial chat suggestions.
-  const suggestions: string[] = t('chatInput.suggestions');
+  const suggestions: string[] = t('chatInput.suggestions', []);
   
   // This effect reports the form's position to the parent for animations.
   useLayoutEffect(() => {
@@ -151,7 +151,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, showSug
         {/* If showSuggestions is true, show the suggestions */}
         {showSuggestions && (
             <div className="flex justify-center items-center gap-3 mb-4 animate-fade-in-up">
-                {suggestions.map((text) => (
+                {Array.isArray(suggestions) && suggestions.map((text) => (
                     <SuggestionButton key={text} text={text} onClick={() => handleSuggestionClick(text)} />
                 ))}
             </div>

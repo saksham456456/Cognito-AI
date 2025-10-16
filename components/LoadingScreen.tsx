@@ -66,8 +66,8 @@ const AnimatedCognitoLogo = () => {
     );
 };
 
-const LoadingScreen = ({ t }: { t: (key: string) => any }) => {
-    const bootLogMessages: string[] = t('loading.bootLog');
+const LoadingScreen = ({ t }: { t: (key: string, fallback?: any) => any }) => {
+    const bootLogMessages: string[] = t('loading.bootLog', []);
     
     return (
         <div className="flex flex-col items-center justify-center h-screen w-screen bg-background overflow-hidden splash-sequence crt-effect">
@@ -78,7 +78,7 @@ const LoadingScreen = ({ t }: { t: (key: string) => any }) => {
                     COGNITO
                 </h1>
                 <div className="font-code text-sm text-text-medium mt-8 w-96 h-28 p-2 text-left">
-                    {bootLogMessages.map((msg, i) => (
+                    {Array.isArray(bootLogMessages) && bootLogMessages.map((msg, i) => (
                         <p key={i} className="opacity-0 fade-in-up" style={{ animationDelay: `${2.6 + i * 0.15}s` }}>
                             <span className="text-primary">{msg.substring(0, msg.indexOf(']') + 1)}</span>
                             <span className="text-text-light">{msg.substring(msg.indexOf(']') + 1)}</span>
