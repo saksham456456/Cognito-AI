@@ -142,39 +142,40 @@ class ParticlePlexusAnimation extends Animation {
 }
 
 
-// --- 2. ARC LIGHTNING --- (NEW: More realistic implementation)
+// --- 2. ARC LIGHTNING --- (NEW: Random intensity and initial blast)
 class LightningBolt {
     segments: { x: number, y: number }[] = [];
     life: number = 1.0;
     color: string;
     lineWidth: number;
     children: LightningBolt[] = [];
+    intensity: number;
 
-    constructor(x: number, y: number, endY: number, color: string, isBranch: boolean = false) {
+    constructor(x: number, y: number, endY: number, color: string, isBranch: boolean = false, particleCallback: (x: number, y: number, color: string) => void, intensity: number = 1.0) {
         this.color = color;
-        this.lineWidth = isBranch ? Math.random() * 1.5 + 0.5 : Math.random() * 2.5 + 1;
+        this.intensity = isBranch ? intensity * 0.7 : intensity;
+        this.lineWidth = (isBranch ? Math.random() * 1.5 + 0.5 : Math.random() * 2.5 + 1) * this.intensity;
         
         let lastSeg = { x, y };
         this.segments.push(lastSeg);
 
-        // Generate segments until we reach the target Y or go off-screen
         while(lastSeg.y < endY && lastSeg.y < window.innerHeight + 50) {
-            // Move generally downwards
             const angle = Math.PI / 2 + (Math.random() - 0.5) * 0.8;
             const segLength = Math.random() * 15 + 5;
             
             let newX = lastSeg.x + Math.cos(angle) * segLength;
             let newY = lastSeg.y + Math.sin(angle) * segLength;
-
-            // Add significant random jitter
             newX += (Math.random() - 0.5) * 20;
 
             const newSeg = { x: newX, y: newY };
             this.segments.push(newSeg);
 
-            // Chance to branch, with branches being less likely to branch themselves
+            if (!isBranch && Math.random() > 0.98) {
+                particleCallback(newSeg.x, newSeg.y, color);
+            }
+
             if (this.children.length < 5 && Math.random() > (isBranch ? 0.99 : 0.96)) {
-                this.children.push(new LightningBolt(newSeg.x, newSeg.y, newSeg.y + Math.random() * (endY - newSeg.y), color, true));
+                this.children.push(new LightningBolt(newSeg.x, newSeg.y, newSeg.y + Math.random() * (endY - newSeg.y), color, true, particleCallback, this.intensity));
             }
             
             lastSeg = newSeg;
@@ -182,15 +183,14 @@ class LightningBolt {
     }
 
     update() {
-        // Faster, non-linear fade
-        this.life -= 0.04;
+        this.life -= 0.04 / (1 + (this.intensity - 1) * 0.2); // Intense bolts last a little longer
         this.children.forEach(child => child.update());
     }
 
     draw(ctx: CanvasRenderingContext2D) {
         if (this.life <= 0) return;
         
-        const alpha = Math.pow(this.life, 1.5); // Fade out faster at the end
+        const alpha = Math.min(1.0, Math.pow(this.life, 2.0) * this.intensity);
         if (alpha <= 0) return;
         
         ctx.beginPath();
@@ -199,21 +199,18 @@ class LightningBolt {
             ctx.lineTo(this.segments[i].x, this.segments[i].y);
         }
 
-        // 1. Draw the main glow
         ctx.strokeStyle = this.color;
         ctx.lineWidth = this.lineWidth * 2.5;
         ctx.globalAlpha = alpha * 0.4;
-        ctx.shadowBlur = 30;
+        ctx.shadowBlur = 30 * this.intensity;
         ctx.shadowColor = this.color;
         ctx.stroke();
 
-        // 2. Draw a slightly thinner, brighter core
         ctx.lineWidth = this.lineWidth;
         ctx.globalAlpha = alpha * 0.6;
-        ctx.shadowBlur = 10;
+        ctx.shadowBlur = 10 * this.intensity;
         ctx.stroke();
         
-        // 3. Draw the bright white center
         ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = this.lineWidth * 0.6;
         ctx.globalAlpha = alpha;
@@ -224,64 +221,158 @@ class LightningBolt {
     }
 }
 
+class EnergizedParticle {
+    x: number; y: number;
+    vx: number; vy: number;
+    life: number = 1.0;
+    size: number;
+    color: string;
+
+    constructor(x: number, y: number, color: string) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 1;
+        this.vy = (Math.random() - 0.5) * 1;
+        this.size = Math.random() * 1.5 + 0.5;
+        this.color = color;
+    }
+
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life -= 0.01;
+    }
+
+    draw(ctx: CanvasRenderingContext2D) {
+        if (this.life <= 0) return;
+        ctx.globalAlpha = this.life;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.shadowBlur = 5;
+        ctx.shadowColor = this.color;
+        ctx.fill();
+    }
+}
+
 class ArcLightningAnimation extends Animation {
     private bolts: LightningBolt[] = [];
+    private particles: EnergizedParticle[] = [];
     private spawnCooldown: number = 0;
     private flashOpacity: number = 0;
+    private sheetOpacity: number = 0;
+    private sheetCooldown: number = 0;
+    private glitchTimeoutId: number | null = null;
+    private needsInitialBlast: boolean = false;
 
     init() { 
-        this.bolts = []; 
+        this.bolts = [];
+        this.particles = [];
         this.lastTimestamp = performance.now();
+        this.needsInitialBlast = true; // Flag for one-time blast
+    }
+
+    private triggerGlitchEffect(duration: number) {
+        const mainContent = document.querySelector('main');
+        if (mainContent) {
+            if (this.glitchTimeoutId) {
+                clearTimeout(this.glitchTimeoutId);
+            }
+            mainContent.classList.add('glitch-surge-effect');
+            this.glitchTimeoutId = window.setTimeout(() => {
+                mainContent.classList.remove('glitch-surge-effect');
+                this.glitchTimeoutId = null;
+            }, duration);
+        }
+    }
+
+    private executeInitialBlast() {
+        const numBolts = Math.floor(Math.random() * 4) + 5; // 5 to 8 bolts
+        for (let i = 0; i < numBolts; i++) {
+            const intensity = Math.random() * 0.8 + 1.2; // Blast bolts are more intense
+            const startX = Math.random() * this.canvas.width;
+            const endY = this.canvas.height;
+            const color = Math.random() > 0.1 ? this.themeColors.accent1 : this.themeColors.primary;
+            this.bolts.push(new LightningBolt(startX, 0, endY, color, false, this.addParticle, intensity));
+        }
+        this.flashOpacity = 0.8; // A big initial flash
+        this.triggerGlitchEffect(500); // A longer glitch for the blast
+        this.spawnCooldown = Math.random() * 2000 + 4000; // Longer cooldown after the blast
+    }
+
+    addParticle = (x: number, y: number, color: string) => {
+        const count = Math.floor(Math.random() * 5 + 3);
+        for(let i=0; i < count; i++) {
+            this.particles.push(new EnergizedParticle(x, y, color));
+        }
     }
 
     animate(timestamp: number) {
         const delta = timestamp - this.lastTimestamp;
         this.lastTimestamp = timestamp;
+        
+        if (this.needsInitialBlast) {
+            this.executeInitialBlast();
+            this.needsInitialBlast = false;
+        }
 
         this.ctx.globalCompositeOperation = 'source-over';
         this.ctx.fillStyle = this.themeColors.bgDark;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Handle quick flash effect
+        // Ambient Sheet Lightning
+        this.sheetCooldown -= delta;
+        if(this.sheetCooldown <= 0) {
+            this.sheetCooldown = Math.random() * 6000 + 2000;
+            this.sheetOpacity = Math.random() * 0.1 + 0.05;
+        }
+        if(this.sheetOpacity > 0) {
+            this.ctx.fillStyle = `hsla(220, 100%, 80%, ${this.sheetOpacity})`;
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            this.sheetOpacity = Math.max(0, this.sheetOpacity - 0.02);
+        }
+
+        // Main Strike Flash
         if (this.flashOpacity > 0) {
             this.ctx.fillStyle = `rgba(200, 220, 255, ${this.flashOpacity})`;
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-            this.flashOpacity = Math.max(0, this.flashOpacity - 0.15); // Much faster fade
+            this.flashOpacity = Math.max(0, this.flashOpacity - 0.1);
         }
 
-        // Spawn new parent bolts based on a cooldown timer
         this.spawnCooldown -= delta;
         if (this.spawnCooldown <= 0) {
-            this.spawnCooldown = Math.random() * 800 + 400; // Cooldown between 0.4s and 1.2s
-
+            this.spawnCooldown = Math.random() * 3000 + 800;
             const color = Math.random() > 0.1 ? this.themeColors.accent1 : this.themeColors.primary;
             const startX = Math.random() * this.canvas.width;
             const endY = this.canvas.height;
+            const intensity = Math.random() * 1.0 + 0.5; // Random intensity from 0.5 to 1.5
             
-            this.bolts.push(new LightningBolt(startX, 0, endY, color, false));
+            this.bolts.push(new LightningBolt(startX, 0, endY, color, false, this.addParticle, intensity));
             
-            // Trigger an intense flash
-            this.flashOpacity = Math.random() * 0.2 + 0.2;
+            this.flashOpacity = Math.min(0.8, (Math.random() * 0.3 + 0.3) * intensity);
+            this.triggerGlitchEffect(300);
         }
         
-        // Use 'lighter' composite operation for an additive glow effect
         this.ctx.globalCompositeOperation = 'lighter';
 
         this.bolts = this.bolts.filter(b => {
             b.update();
             return b.life > 0;
         });
+        this.bolts.forEach(b => b.draw(this.ctx));
         
-        this.bolts.forEach(b => {
-            b.draw(this.ctx);
+        this.particles = this.particles.filter(p => {
+            p.update();
+            return p.life > 0;
         });
+        this.particles.forEach(p => p.draw(this.ctx));
 
-        // Reset canvas state for the next frame
         this.ctx.globalAlpha = 1;
         this.ctx.shadowBlur = 0;
         this.ctx.globalCompositeOperation = 'source-over';
     }
 }
+
 
 // --- 3. MATRIX RAIN ---
 class MatrixSymbol {
