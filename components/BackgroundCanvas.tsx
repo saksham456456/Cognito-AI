@@ -59,7 +59,7 @@ abstract class Animation {
 }
 
 
-// --- 1. VIRAL PARTICLE PLEXUS ANIMATION --- (Remains colorful as requested)
+// --- 1. VIRAL PARTICLE PLEXUS ANIMATION ---
 class Particle {
     x: number; y: number;
     vx: number; vy: number;
@@ -142,75 +142,148 @@ class ParticlePlexusAnimation extends Animation {
 }
 
 
-// --- 2. ARC LIGHTNING --- (Reverted to a less colorful state)
+// --- 2. ARC LIGHTNING --- (NEW: More realistic implementation)
 class LightningBolt {
-    x: number; y: number;
     segments: { x: number, y: number }[] = [];
-    life: number;
-    maxLife: number;
+    life: number = 1.0;
     color: string;
     lineWidth: number;
+    children: LightningBolt[] = [];
 
-    constructor(x: number, y: number, color: string) {
-        this.x = x;
-        this.y = y;
-        this.life = 1;
-        this.maxLife = 1;
+    constructor(x: number, y: number, endY: number, color: string, isBranch: boolean = false) {
         this.color = color;
-        this.lineWidth = Math.random() * 2 + 1;
-        this.segments.push({ x: this.x, y: this.y });
+        this.lineWidth = isBranch ? Math.random() * 1.5 + 0.5 : Math.random() * 2.5 + 1;
+        
+        let lastSeg = { x, y };
+        this.segments.push(lastSeg);
+
+        // Generate segments until we reach the target Y or go off-screen
+        while(lastSeg.y < endY && lastSeg.y < window.innerHeight + 50) {
+            // Move generally downwards
+            const angle = Math.PI / 2 + (Math.random() - 0.5) * 0.8;
+            const segLength = Math.random() * 15 + 5;
+            
+            let newX = lastSeg.x + Math.cos(angle) * segLength;
+            let newY = lastSeg.y + Math.sin(angle) * segLength;
+
+            // Add significant random jitter
+            newX += (Math.random() - 0.5) * 20;
+
+            const newSeg = { x: newX, y: newY };
+            this.segments.push(newSeg);
+
+            // Chance to branch, with branches being less likely to branch themselves
+            if (this.children.length < 5 && Math.random() > (isBranch ? 0.99 : 0.96)) {
+                this.children.push(new LightningBolt(newSeg.x, newSeg.y, newSeg.y + Math.random() * (endY - newSeg.y), color, true));
+            }
+            
+            lastSeg = newSeg;
+        }
     }
 
     update() {
-        this.life -= 0.02;
-        if (this.segments.length < 100) {
-            const lastSeg = this.segments[this.segments.length - 1];
-            const newSeg = {
-                x: lastSeg.x + (Math.random() - 0.5) * 30,
-                y: lastSeg.y + (Math.random() - 0.5) * 30,
-            };
-            this.segments.push(newSeg);
+        // Faster, non-linear fade
+        this.life -= 0.04;
+        this.children.forEach(child => child.update());
+    }
+
+    draw(ctx: CanvasRenderingContext2D) {
+        if (this.life <= 0) return;
+        
+        const alpha = Math.pow(this.life, 1.5); // Fade out faster at the end
+        if (alpha <= 0) return;
+        
+        ctx.beginPath();
+        ctx.moveTo(this.segments[0].x, this.segments[0].y);
+        for (let i = 1; i < this.segments.length; i++) {
+            ctx.lineTo(this.segments[i].x, this.segments[i].y);
         }
+
+        // 1. Draw the main glow
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = this.lineWidth * 2.5;
+        ctx.globalAlpha = alpha * 0.4;
+        ctx.shadowBlur = 30;
+        ctx.shadowColor = this.color;
+        ctx.stroke();
+
+        // 2. Draw a slightly thinner, brighter core
+        ctx.lineWidth = this.lineWidth;
+        ctx.globalAlpha = alpha * 0.6;
+        ctx.shadowBlur = 10;
+        ctx.stroke();
+        
+        // 3. Draw the bright white center
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = this.lineWidth * 0.6;
+        ctx.globalAlpha = alpha;
+        ctx.shadowBlur = 0;
+        ctx.stroke();
+
+        this.children.forEach(child => child.draw(ctx));
     }
 }
 
 class ArcLightningAnimation extends Animation {
     private bolts: LightningBolt[] = [];
-    private spawnRate: number = 0.2;
+    private spawnCooldown: number = 0;
+    private flashOpacity: number = 0;
 
-    init() { this.bolts = []; }
+    init() { 
+        this.bolts = []; 
+        this.lastTimestamp = performance.now();
+    }
 
-    animate() {
+    animate(timestamp: number) {
+        const delta = timestamp - this.lastTimestamp;
+        this.lastTimestamp = timestamp;
+
         this.ctx.globalCompositeOperation = 'source-over';
-        this.ctx.fillStyle = `rgba(10, 10, 14, 0.2)`;
+        this.ctx.fillStyle = this.themeColors.bgDark;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.globalCompositeOperation = 'lighter';
 
-        if (Math.random() < this.spawnRate) {
-            const color = Math.random() > 0.1 ? this.themeColors.accent1 : this.themeColors.primary; // Mostly blue, some yellow sparks
-            const x = Math.random() * this.canvas.width;
-            const y = Math.random() * this.canvas.height;
-            this.bolts.push(new LightningBolt(x, y, color));
+        // Handle quick flash effect
+        if (this.flashOpacity > 0) {
+            this.ctx.fillStyle = `rgba(200, 220, 255, ${this.flashOpacity})`;
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            this.flashOpacity = Math.max(0, this.flashOpacity - 0.15); // Much faster fade
         }
 
-        this.bolts = this.bolts.filter(b => b.life > 0);
-        this.bolts.forEach(b => {
+        // Spawn new parent bolts based on a cooldown timer
+        this.spawnCooldown -= delta;
+        if (this.spawnCooldown <= 0) {
+            this.spawnCooldown = Math.random() * 800 + 400; // Cooldown between 0.4s and 1.2s
+
+            const color = Math.random() > 0.1 ? this.themeColors.accent1 : this.themeColors.primary;
+            const startX = Math.random() * this.canvas.width;
+            const endY = this.canvas.height;
+            
+            this.bolts.push(new LightningBolt(startX, 0, endY, color, false));
+            
+            // Trigger an intense flash
+            this.flashOpacity = Math.random() * 0.2 + 0.2;
+        }
+        
+        // Use 'lighter' composite operation for an additive glow effect
+        this.ctx.globalCompositeOperation = 'lighter';
+
+        this.bolts = this.bolts.filter(b => {
             b.update();
-            this.ctx.beginPath();
-            this.ctx.moveTo(b.segments[0].x, b.segments[0].y);
-            for (let i = 1; i < b.segments.length; i++) {
-                this.ctx.lineTo(b.segments[i].x, b.segments[i].y);
-            }
-            this.ctx.strokeStyle = b.color;
-            this.ctx.lineWidth = b.lineWidth * b.life;
-            this.ctx.globalAlpha = b.life * 0.8;
-            this.ctx.stroke();
+            return b.life > 0;
         });
+        
+        this.bolts.forEach(b => {
+            b.draw(this.ctx);
+        });
+
+        // Reset canvas state for the next frame
         this.ctx.globalAlpha = 1;
+        this.ctx.shadowBlur = 0;
+        this.ctx.globalCompositeOperation = 'source-over';
     }
 }
 
-// --- 3. MATRIX RAIN --- (Reverted to classic green/yellow)
+// --- 3. MATRIX RAIN ---
 class MatrixSymbol {
     x: number; y: number;
     fontSize: number;
@@ -277,7 +350,7 @@ class MatrixAnimation extends Animation {
     }
 }
 
-// --- 4. HEX GRID --- (Reverted to a single color scheme)
+// --- 4. HEX GRID ---
 class Hexagon {
     x: number; y: number;
     size: number;
@@ -341,7 +414,7 @@ class HexGridAnimation extends Animation {
     }
 }
 
-// --- 5. CIRCUITS --- (Reverted to a single color scheme)
+// --- 5. CIRCUITS ---
 class CircuitNode {
     x: number; y: number;
     constructor(x: number, y: number) { this.x = x; this.y = y; }
