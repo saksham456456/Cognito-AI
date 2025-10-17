@@ -126,14 +126,37 @@ interface MessageProps {
   onStopGeneration: () => void; // Function for the "Stop Generating" button.
   speakingMessageId: string | null; // The ID of the message currently being spoken.
   inputRect: DOMRect | null; // The position of the chat input bar for animations.
+  t: (key: string, fallback?: any) => any; // Translation function.
 }
 
-// A small component for the AI "typing..." indicator.
-const PulsingOrbIndicator = () => (
-    <div className="flex items-center justify-center p-2">
-      <div className="h-4 w-4 bg-primary rounded-full animate-orb-pulse"></div>
-    </div>
-);
+// UPGRADED: Thematic "typing..." indicator with cycling text.
+const TypingIndicator: React.FC<{ t: (key: string, fallback?: any) => any }> = ({ t }) => {
+    const [loadingText, setLoadingText] = useState('...');
+    const loadingMessages = t('loading.thinking', []);
+
+    useEffect(() => {
+        if (!Array.isArray(loadingMessages) || loadingMessages.length === 0) return;
+
+        const pickRandom = () => loadingMessages[Math.floor(Math.random() * loadingMessages.length)];
+        setLoadingText(pickRandom());
+
+        const intervalId = setInterval(() => {
+            setLoadingText(pickRandom());
+        }, 2500); // Cycle text every 2.5 seconds
+
+        return () => clearInterval(intervalId);
+    }, [loadingMessages]);
+
+    return (
+        <div className="flex items-center gap-2 text-text-medium font-code text-sm p-2">
+            <div className="h-2 w-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0ms' }}></div>
+            <div className="h-2 w-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '200ms' }}></div>
+            <div className="h-2 w-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '400ms' }}></div>
+            <span>{loadingText}</span>
+        </div>
+    );
+};
+
 
 // The main message component.
 const MessageComponent: React.FC<MessageProps> = ({ 
@@ -145,7 +168,8 @@ const MessageComponent: React.FC<MessageProps> = ({
     onRegenerate, 
     onStopGeneration,
     speakingMessageId,
-    inputRect
+    inputRect,
+    t
 }) => {
   const [isCopied, setIsCopied] = useState(false); // State for whether the text has been copied.
   const isUser = message.role === 'user'; // Checking if the message is from the user or the model.
@@ -223,7 +247,7 @@ const MessageComponent: React.FC<MessageProps> = ({
         {/* Message bubble */}
         <div className={bubbleClasses}>
           {isTyping ? (
-              <PulsingOrbIndicator />
+              <TypingIndicator t={t} />
           ) : (
             <MarkdownRenderer
                 content={message.content}

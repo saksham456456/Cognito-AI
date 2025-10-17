@@ -8,6 +8,7 @@ interface ChatInputProps {
   onSendMessage: (message: string) => void; // Function to send a message.
   isLoading: boolean; // Is the AI currently generating a response?
   showSuggestions: boolean; // Should initial suggestions be shown?
+  suggestions: string[]; // The array of suggestion strings to display.
   aiMode: AiMode;
   onAiModeChange: (mode: AiMode) => void;
   onRectChange: (rect: DOMRect | null) => void; // Reports the input's position.
@@ -24,7 +25,7 @@ const SuggestionButton: React.FC<{ text: string; onClick: () => void }> = ({ tex
     </button>
 )
 
-const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, showSuggestions, aiMode, onAiModeChange, onRectChange, t }) => {
+const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, showSuggestions, suggestions, aiMode, onAiModeChange, onRectChange, t }) => {
   // State variables
   const [inputValue, setInputValue] = useState(''); // The current value of the textarea.
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false); // Is the emoji picker open?
@@ -39,9 +40,6 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, showSug
   const modePickerRef = useRef<HTMLDivElement>(null);
   const modeButtonRef = useRef<HTMLButtonElement>(null);
   const formRef = useRef<HTMLFormElement>(null); // Ref for the main form element for position tracking.
-  
-  // Array of initial chat suggestions.
-  const suggestions: string[] = t('chatInput.suggestions', []);
   
   // This effect reports the form's position to the parent for animations.
   useLayoutEffect(() => {
