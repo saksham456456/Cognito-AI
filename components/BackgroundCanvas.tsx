@@ -142,7 +142,7 @@ class ParticlePlexusAnimation extends Animation {
 }
 
 
-// --- 2. ARC LIGHTNING --- (NEW: Random intensity and initial blast)
+// --- 2. ARC LIGHTNING --- (OPTIMIZED)
 class LightningBolt {
     segments: { x: number, y: number }[] = [];
     life: number = 1.0;
@@ -174,7 +174,8 @@ class LightningBolt {
                 particleCallback(newSeg.x, newSeg.y, color);
             }
 
-            if (this.children.length < 5 && Math.random() > (isBranch ? 0.99 : 0.96)) {
+            // Reduced branching for performance
+            if (this.children.length < 3 && Math.random() > (isBranch ? 0.99 : 0.97)) {
                 this.children.push(new LightningBolt(newSeg.x, newSeg.y, newSeg.y + Math.random() * (endY - newSeg.y), color, true, particleCallback, this.intensity));
             }
             
@@ -183,7 +184,7 @@ class LightningBolt {
     }
 
     update() {
-        this.life -= 0.04 / (1 + (this.intensity - 1) * 0.2); // Intense bolts last a little longer
+        this.life -= 0.04 / (1 + (this.intensity - 1) * 0.2);
         this.children.forEach(child => child.update());
     }
 
@@ -193,29 +194,30 @@ class LightningBolt {
         const alpha = Math.min(1.0, Math.pow(this.life, 2.0) * this.intensity);
         if (alpha <= 0) return;
         
+        ctx.save();
+        
         ctx.beginPath();
         ctx.moveTo(this.segments[0].x, this.segments[0].y);
         for (let i = 1; i < this.segments.length; i++) {
             ctx.lineTo(this.segments[i].x, this.segments[i].y);
         }
 
+        // Main glow stroke - reduced shadowBlur
         ctx.strokeStyle = this.color;
-        ctx.lineWidth = this.lineWidth * 2.5;
-        ctx.globalAlpha = alpha * 0.4;
-        ctx.shadowBlur = 30 * this.intensity;
+        ctx.lineWidth = this.lineWidth;
+        ctx.globalAlpha = alpha * 0.8;
+        ctx.shadowBlur = 15 * this.intensity;
         ctx.shadowColor = this.color;
         ctx.stroke();
 
-        ctx.lineWidth = this.lineWidth;
-        ctx.globalAlpha = alpha * 0.6;
-        ctx.shadowBlur = 10 * this.intensity;
-        ctx.stroke();
-        
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = this.lineWidth * 0.6;
+        // Bright core stroke
+        ctx.strokeStyle = 'hsla(0, 0%, 100%, 0.8)';
+        ctx.lineWidth = this.lineWidth * 0.5;
         ctx.globalAlpha = alpha;
         ctx.shadowBlur = 0;
         ctx.stroke();
+        
+        ctx.restore();
 
         this.children.forEach(child => child.draw(ctx));
     }
@@ -287,17 +289,17 @@ class ArcLightningAnimation extends Animation {
     }
 
     private executeInitialBlast() {
-        const numBolts = Math.floor(Math.random() * 4) + 5; // 5 to 8 bolts
+        const numBolts = Math.floor(Math.random() * 4) + 5;
         for (let i = 0; i < numBolts; i++) {
-            const intensity = Math.random() * 0.8 + 1.2; // Blast bolts are more intense
+            const intensity = Math.random() * 0.8 + 1.2;
             const startX = Math.random() * this.canvas.width;
             const endY = this.canvas.height;
             const color = Math.random() > 0.1 ? this.themeColors.accent1 : this.themeColors.primary;
             this.bolts.push(new LightningBolt(startX, 0, endY, color, false, this.addParticle, intensity));
         }
-        this.flashOpacity = 0.8; // A big initial flash
-        this.triggerGlitchEffect(500); // A longer glitch for the blast
-        this.spawnCooldown = Math.random() * 2000 + 4000; // Longer cooldown after the blast
+        this.flashOpacity = 0.8;
+        this.triggerGlitchEffect(500);
+        this.spawnCooldown = Math.random() * 2000 + 4000;
     }
 
     addParticle = (x: number, y: number, color: string) => {
@@ -341,11 +343,19 @@ class ArcLightningAnimation extends Animation {
 
         this.spawnCooldown -= delta;
         if (this.spawnCooldown <= 0) {
-            this.spawnCooldown = Math.random() * 3000 + 800;
+            // Adapt spawn rate to screen size for performance
+            const screenArea = this.canvas.width * this.canvas.height;
+            const baseArea = 1280 * 720; // Reference area
+            const performanceFactor = Math.max(1, screenArea / baseArea);
+            
+            const maxCooldown = 3000 * performanceFactor;
+            const minCooldown = 800 * performanceFactor;
+            this.spawnCooldown = Math.random() * (maxCooldown - minCooldown) + minCooldown;
+            
             const color = Math.random() > 0.1 ? this.themeColors.accent1 : this.themeColors.primary;
             const startX = Math.random() * this.canvas.width;
             const endY = this.canvas.height;
-            const intensity = Math.random() * 1.0 + 0.5; // Random intensity from 0.5 to 1.5
+            const intensity = Math.random() * 1.0 + 0.5;
             
             this.bolts.push(new LightningBolt(startX, 0, endY, color, false, this.addParticle, intensity));
             
@@ -394,16 +404,15 @@ class MatrixSymbol {
     }
 
     draw(ctx: CanvasRenderingContext2D) {
-        const chars = '01╌╍╎╏┠┨┯┷┿╳';
+        // NEW: Expanded character set with alphanumeric and symbolic characters.
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890<>[]{}/\\|?!@#$%&*-_=+';
         
-        // Characters only change periodically to reduce visual noise
         if (Math.random() > 0.95) {
             this.text = chars.charAt(Math.floor(Math.random() * chars.length));
         }
         
-        // The first character of the stream is the "leader"
         if (this.y * this.fontSize < this.fontSize * 2) {
-            ctx.fillStyle = '#fff'; // Bright white leader
+            ctx.fillStyle = '#fff';
             ctx.shadowBlur = 5;
             ctx.shadowColor = '#fff';
         } else {
@@ -412,7 +421,7 @@ class MatrixSymbol {
         }
         
         ctx.fillText(this.text, this.x * this.fontSize, this.y * this.fontSize);
-        ctx.shadowBlur = 0; // Reset shadow for next draw call
+        ctx.shadowBlur = 0;
 
         if (this.y * this.fontSize > this.canvasHeight && Math.random() > 0.975) {
             this.y = 0;
@@ -431,10 +440,10 @@ class MatrixAnimation extends Animation {
         this.columns = Math.floor(this.canvas.width / this.fontSize);
         this.symbols = [];
         for (let i = 0; i < this.columns; i++) {
-            const isPrimary = Math.random() < 0.05; // 5% of columns will be the primary theme color
+            const isPrimary = Math.random() < 0.05;
             this.symbols[i] = new MatrixSymbol(
                 i, 
-                Math.random() * -50, // Start off-screen at random heights
+                Math.random() * -50,
                 this.fontSize, 
                 this.canvas.height, 
                 this.themeColors.primary,
@@ -498,7 +507,7 @@ class HexGridAnimation extends Animation {
         this.hexagons = [];
         const hexWidth = this.hexSize * 2;
         const hexHeight = Math.sqrt(3) * this.hexSize;
-        const color = this.themeColors.accent1; // Use only the blue accent color
+        const color = this.themeColors.accent1;
 
         for (let y = 0, i = 0; y < this.canvas.height + hexHeight; y += hexHeight / 2) {
             for (let x = 0; x < this.canvas.width + hexWidth; x += hexWidth * 0.75) {
@@ -572,7 +581,7 @@ class CircuitsAnimation extends Animation {
             const n1 = this.nodes[Math.floor(Math.random() * this.nodes.length)];
             const n2 = this.nodes[Math.floor(Math.random() * this.nodes.length)];
             if (n1 !== n2) {
-                const color = Math.random() > 0.2 ? this.themeColors.accent1 : this.themeColors.primary; // Mostly blue pulses with some yellow
+                const color = Math.random() > 0.2 ? this.themeColors.accent1 : this.themeColors.primary;
                 this.pulses.push(new CircuitPulse(n1, n2, color));
             }
         }
@@ -614,12 +623,10 @@ const BackgroundCanvas: React.FC<BackgroundCanvasProps> = ({ animationType }) =>
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    // Stop previous animation if it exists
     if (animationRef.current) {
       animationRef.current.stop();
     }
 
-    // Create a new animation instance based on the type
     switch (animationType) {
       case 'particles':
         animationRef.current = new ParticlePlexusAnimation(canvas, ctx);
@@ -656,7 +663,7 @@ const BackgroundCanvas: React.FC<BackgroundCanvasProps> = ({ animationType }) =>
         animationRef.current.stop();
       }
     };
-  }, [animationType]); // Re-run effect when animationType changes
+  }, [animationType]);
 
   return <canvas ref={canvasRef} className="fixed inset-0 -z-10" />;
 };

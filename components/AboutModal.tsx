@@ -66,15 +66,6 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose, t }) => {
             {renderLineWithLink('aboutLine2', 'aboutLine2Link', 'https://www.instagram.com/saksham_456456?utm_source=ig_web_button_share_sheet&igsh=MWplM21keGhpbmZnZw==')}
             {renderLineWithLink('aboutLine3', 'aboutLine3Link', 'https://github.com/saksham456456')}
         </div>
-        {/* Modal's footer section */}
-        <div className="mt-6 flex justify-end">
-            <button
-                onClick={onClose}
-                className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-yellow-400 transition-colors border border-primary-foreground/20"
-            >
-                {t('modals.close')}
-            </button>
-        </div>
       </div>
     </div>
   );
