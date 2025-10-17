@@ -394,15 +394,25 @@ class MatrixSymbol {
     }
 
     draw(ctx: CanvasRenderingContext2D) {
-        const chars = 'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン0123456789';
-        this.text = chars.charAt(Math.floor(Math.random() * chars.length));
+        const chars = '01╌╍╎╏┠┨┯┷┿╳';
         
-        ctx.fillStyle = this.isPrimary ? this.color : 'hsl(120, 70%, 35%)';
-        if (Math.random() > 0.98 && !this.isPrimary) {
-             ctx.fillStyle = '#fff'; // Random white characters for highlights
+        // Characters only change periodically to reduce visual noise
+        if (Math.random() > 0.95) {
+            this.text = chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        
+        // The first character of the stream is the "leader"
+        if (this.y * this.fontSize < this.fontSize * 2) {
+            ctx.fillStyle = '#fff'; // Bright white leader
+            ctx.shadowBlur = 5;
+            ctx.shadowColor = '#fff';
+        } else {
+            ctx.fillStyle = this.isPrimary ? this.color : 'hsl(120, 70%, 35%)';
+            ctx.shadowBlur = 0;
         }
         
         ctx.fillText(this.text, this.x * this.fontSize, this.y * this.fontSize);
+        ctx.shadowBlur = 0; // Reset shadow for next draw call
 
         if (this.y * this.fontSize > this.canvasHeight && Math.random() > 0.975) {
             this.y = 0;
@@ -424,7 +434,7 @@ class MatrixAnimation extends Animation {
             const isPrimary = Math.random() < 0.05; // 5% of columns will be the primary theme color
             this.symbols[i] = new MatrixSymbol(
                 i, 
-                0, 
+                Math.random() * -50, // Start off-screen at random heights
                 this.fontSize, 
                 this.canvas.height, 
                 this.themeColors.primary,
