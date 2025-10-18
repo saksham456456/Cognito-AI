@@ -384,79 +384,154 @@ class ArcLightningAnimation extends Animation {
 }
 
 
-// --- 3. MATRIX RAIN ---
-class MatrixSymbol {
+// --- 3. SECURITY MATRIX ANIMATION ---
+class SecurityGridNode {
     x: number; y: number;
-    fontSize: number;
-    canvasHeight: number;
-    text: string;
-    color: string;
-    isPrimary: boolean;
+    connections: SecurityGridNode[] = [];
+    constructor(x: number, y: number) { this.x = x; this.y = y; }
+}
 
-    constructor(x: number, y: number, fontSize: number, canvasHeight: number, color: string, isPrimary: boolean = false) {
-        this.x = x;
-        this.y = y;
-        this.fontSize = fontSize;
-        this.canvasHeight = canvasHeight;
-        this.text = ' ';
+class SecurityPulse {
+    from: SecurityGridNode;
+    to: SecurityGridNode;
+    progress: number = 0;
+    speed: number;
+    color: string;
+    life: number = 255; // simple countdown life
+
+    constructor(from: SecurityGridNode, color: string) {
+        this.from = from;
+        this.to = from.connections[Math.floor(Math.random() * from.connections.length)];
+        this.speed = Math.random() * 0.02 + 0.01;
         this.color = color;
-        this.isPrimary = isPrimary;
+    }
+
+    update() {
+        this.progress += this.speed;
+        this.life -= 1;
+        if (this.progress >= 1) {
+            this.from = this.to;
+            this.to = this.from.connections[Math.floor(Math.random() * this.from.connections.length)];
+            this.progress = 0;
+        }
+        return this.life <= 0 || !this.to;
     }
 
     draw(ctx: CanvasRenderingContext2D) {
-        // NEW: Expanded character set with alphanumeric and symbolic characters.
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890<>[]{}/\\|?!@#$%&*-_=+';
+        if (!this.to) return;
+        const x = this.from.x + (this.to.x - this.from.x) * this.progress;
+        const y = this.from.y + (this.to.y - this.from.y) * this.progress;
         
-        if (Math.random() > 0.95) {
-            this.text = chars.charAt(Math.floor(Math.random() * chars.length));
-        }
+        ctx.beginPath();
+        ctx.arc(x, y, 2.5, 0, Math.PI * 2);
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, 5);
+        gradient.addColorStop(0, `hsla(${this.color}, 100%, 80%, ${this.life / 255})`);
+        gradient.addColorStop(1, `hsla(${this.color}, 100%, 50%, 0)`);
         
-        if (this.y * this.fontSize < this.fontSize * 2) {
-            ctx.fillStyle = '#fff';
-            ctx.shadowBlur = 5;
-            ctx.shadowColor = '#fff';
-        } else {
-            ctx.fillStyle = this.isPrimary ? this.color : 'hsl(120, 70%, 35%)';
-            ctx.shadowBlur = 0;
-        }
-        
-        ctx.fillText(this.text, this.x * this.fontSize, this.y * this.fontSize);
-        ctx.shadowBlur = 0;
-
-        if (this.y * this.fontSize > this.canvasHeight && Math.random() > 0.975) {
-            this.y = 0;
-        } else {
-            this.y += 1;
-        }
+        ctx.fillStyle = gradient;
+        ctx.fill();
     }
 }
 
-class MatrixAnimation extends Animation {
-    private columns: number = 0;
-    private symbols: MatrixSymbol[] = [];
-    private fontSize: number = 16;
+
+class SecurityMatrixAnimation extends Animation {
+    private nodes: SecurityGridNode[] = [];
+    private pulses: SecurityPulse[] = [];
+    private gridSize: number = 40;
+    private padlockPath: Path2D | null = null;
+    private baseColors: string[] = [];
 
     init() {
-        this.columns = Math.floor(this.canvas.width / this.fontSize);
-        this.symbols = [];
-        for (let i = 0; i < this.columns; i++) {
-            const isPrimary = Math.random() < 0.05;
-            this.symbols[i] = new MatrixSymbol(
-                i, 
-                Math.random() * -50,
-                this.fontSize, 
-                this.canvas.height, 
-                this.themeColors.primary,
-                isPrimary
-            );
+        this.nodes = [];
+        this.pulses = [];
+        this.baseColors = [
+            this.themeColors.accent1.match(/hsl\((\d+)/)?.[1] || '220', // blue
+            this.themeColors.accent2.match(/hsl\((\d+)/)?.[1] || '310', // pink
+            '180' // cyan/teal
+        ];
+        
+        // Create padlock path
+        this.padlockPath = new Path2D("M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z");
+        
+        const cols = Math.ceil(this.canvas.width / this.gridSize);
+        const rows = Math.ceil(this.canvas.height / this.gridSize);
+
+        for (let j = 0; j < rows; j++) {
+            for (let i = 0; i < cols; i++) {
+                // Add jitter for a more organic look
+                const x = i * this.gridSize + (Math.random() - 0.5) * 10;
+                const y = j * this.gridSize + (Math.random() - 0.5) * 10;
+                this.nodes.push(new SecurityGridNode(x, y));
+            }
         }
+        
+        this.nodes.forEach(node1 => {
+            this.nodes.forEach(node2 => {
+                if (node1 === node2) return;
+                const dist = Math.hypot(node1.x - node2.x, node1.y - node2.y);
+                if (dist < this.gridSize * 1.5 && Math.random() > 0.6) {
+                    node1.connections.push(node2);
+                }
+            });
+        });
+
+        // Ensure every node has at least one connection if possible
+        this.nodes.forEach(node => {
+            if(node.connections.length === 0) {
+                 let closest = this.nodes.filter(n => n !== node).sort((a,b) => Math.hypot(node.x-a.x, node.y-a.y) - Math.hypot(node.x-b.x, node.y-b.y))[0];
+                 if(closest) node.connections.push(closest);
+            }
+        });
+    }
+    
+    drawPadlock() {
+        if (!this.padlockPath) return;
+        const scale = Math.min(this.canvas.width, this.canvas.height) / 150; // Scale based on screen size
+        this.ctx.save();
+        this.ctx.translate(this.canvas.width / 2, this.canvas.height / 2);
+        this.ctx.scale(scale, scale);
+        this.ctx.translate(-12, -12); // Center the 24x24 icon
+
+        this.ctx.strokeStyle = `hsla(180, 80%, 30%, 0.4)`;
+        this.ctx.lineWidth = 1 / scale;
+        this.ctx.shadowColor = `hsla(180, 100%, 50%, 0.7)`;
+        this.ctx.shadowBlur = 10;
+        this.ctx.stroke(this.padlockPath);
+        
+        this.ctx.restore();
     }
 
     animate() {
-        this.ctx.fillStyle = 'rgba(10, 10, 14, 0.05)';
+        this.ctx.fillStyle = 'rgba(10, 10, 14, 0.15)'; // Fading effect
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.font = `${this.fontSize}px monospace`;
-        this.symbols.forEach(s => s.draw(this.ctx));
+        
+        this.drawPadlock();
+
+        // Spawn new pulses
+        if (this.pulses.length < (this.canvas.width * this.canvas.height / 10000) && this.nodes.length > 0) {
+            const startNode = this.nodes[Math.floor(Math.random() * this.nodes.length)];
+            if (startNode.connections.length > 0) {
+                const color = this.baseColors[Math.floor(Math.random() * this.baseColors.length)];
+                this.pulses.push(new SecurityPulse(startNode, color));
+            }
+        }
+
+        // Draw circuit lines
+        this.ctx.beginPath();
+        this.nodes.forEach(node => {
+            node.connections.forEach(conn => {
+                this.ctx.moveTo(node.x, node.y);
+                this.ctx.lineTo(conn.x, conn.y);
+            });
+        });
+        this.ctx.strokeStyle = 'hsla(180, 80%, 20%, 0.2)';
+        this.ctx.lineWidth = 0.5;
+        this.ctx.stroke();
+
+        // Update and draw pulses
+        this.ctx.shadowBlur = 0;
+        this.pulses = this.pulses.filter(p => !p.update());
+        this.pulses.forEach(p => p.draw(this.ctx));
     }
 }
 
@@ -634,8 +709,8 @@ const BackgroundCanvas: React.FC<BackgroundCanvasProps> = ({ animationType }) =>
       case 'lightning':
         animationRef.current = new ArcLightningAnimation(canvas, ctx);
         break;
-      case 'matrix':
-        animationRef.current = new MatrixAnimation(canvas, ctx);
+      case 'security':
+        animationRef.current = new SecurityMatrixAnimation(canvas, ctx);
         break;
       case 'hexagons':
         animationRef.current = new HexGridAnimation(canvas, ctx);

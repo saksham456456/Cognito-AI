@@ -77,13 +77,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, onSave, cu
             </div>
         </div>
         {/* Modal action buttons */}
-        <div className="mt-6 flex justify-end gap-3">
-            <button
-                onClick={onClose}
-                className="px-4 py-2 rounded-lg bg-input hover:bg-input-border transition-colors border border-card-border"
-            >
-                {t('modals.cancel')}
-            </button>
+        <div className="mt-6 flex justify-end">
             <button
                 onClick={handleSave}
                 className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-yellow-400 transition-colors border border-primary-foreground/20"
