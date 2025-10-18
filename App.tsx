@@ -409,7 +409,8 @@ const App: React.FC = () => {
             // Determine which AI mode to use for the API call.
             const modeForAPI = currentView === 'coding' ? 'code-assistant' : 'cognito';
             const chatSession = startChat(history, modeForAPI);
-            const responseStream = await chatSession.sendMessageStream(messageForApi);
+            // Fix: Pass an object with the 'message' property to sendMessageStream.
+            const responseStream = await chatSession.sendMessageStream({ message: messageForApi });
             
             for await (const chunk of responseStream) {
                 if (stopGenerationRef.current) break;
@@ -523,7 +524,8 @@ const App: React.FC = () => {
         try {
             const modeForAPI = currentView === 'coding' ? 'code-assistant' : 'cognito';
             const chatSession = startChat(history, modeForAPI);
-            const responseStream = await chatSession.sendMessageStream(lastUserMessageContent);
+            // Fix: Pass an object with the 'message' property to sendMessageStream.
+            const responseStream = await chatSession.sendMessageStream({ message: lastUserMessageContent });
 
             for await (const chunk of responseStream) {
                  if (stopGenerationRef.current) break;
