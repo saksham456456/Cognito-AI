@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { startChat, getTitleForChat } from './services/geminiService';
+import { startChat, getTitleForChat, generateSpeech } from './services/geminiService';
 import { saveChat, loadChats, deleteChat, deleteAllChats } from './services/dbService';
 import type { Message, Chat, AiMode, AppView } from './types';
 import MessageComponent from './components/Message';
@@ -51,7 +51,7 @@ const translations: any = {
     },
     modals: { aboutTitle: "Cognito AI // Información del Sistema", aboutSubtitle: "Protocolo de Asistente Cognitivo v2.1", aboutLine1: "{{link}} es un asistente de IA moderno y receptivo, diseñado para proporcionar respuestas inteligentes y una experiencia de usuario premium.", aboutLine1Link: "Cognito AI", aboutLine2: "Esta aplicación fue desarrollada por {{link}}, un apasionado ingeniero de frontend con un don para crear interfaces de usuario hermosas y funcionales.", aboutLine2Link: "Saksham", aboutLine3: "Está impulsado por {{link}}, su curiosidad en ML y SGBD, y sus intereses.", aboutLine3Link: "el conocimiento de Saksham", profileTitle: "Identificación de Operador", profileSubtitle: "Actualiza tu indicativo.", profileLabel: "Indicativo", profilePlaceholder: "Introduce tu indicativo", confirmPurgeTitle: "¿Confirmar Borrar Todos los Chats?", confirmPurgeMessage: "Esto borrará permanentemente todas las conversaciones. Esta acción es irreversible y los datos no se pueden recuperar.", confirmPurgeButton: "Borrar Todo", save: "Confirmar Cambios", cancel: "Abortar", close: "Desconectar" },
     app: { newChatTitle: "Nueva Sesión Cognitiva", newCodingSessionTitle: "Sesión de Núcleo de Código", defaultChatTitle: "INTERFAZ COGNITO AI" },
-    coding: { title: "INTERFAZ DEL NÚCLEO DE CÓDIGO", exit: "Desconectar Núcleo", run: "EJECUTAR >", executing: "EJECUTANDO...", initializing: "INICIALIZANDO...", copyCode: "Copiar Fragmento", copied: "Fragmento Copiado", consoleHeader: "// SALIDA_CONSOLA", assistantHeader: "// INTERFAZ_ASISTENTE", awaitingExecution: "[Esperando comando de ejecución...]", assistantPlaceholder: "Introduce consulta..." },
+    coding: { title: "INTERFAZ DEL NÚCLEO DE CÓDIGO", exit: "Desconectar Núcleo", run: "EJECUTAR >", executing: "EJECUTANDO...", initializing: "INICIALIZANDO...", copyCode: "Copiar Fragmento", copied: "Fragmento Copiado", consoleHeader: "// SALIDA_CONSOLA", assistantHeader: "// INTERFAZ_ASISTENTE", awaitingExecution: "[Esperando comando de ejecución...]", placeholder: "Introduce consulta..." },
     loading: { bootLog: ["[INICIANDO] COGNITO OS v2.1", "[CARGANDO]   MATRIZ_DE_PERSONALIDAD.DAT", "[CALIBRANDO] PROCESADORES_HEURÍSTICOS", "[ESTABLECIENDO] CANAL_SEGURO_AL_USUARIO", "[ESTADO]     TODOS LOS SISTEMAS NOMINALES."], thinking: ["Engaging cognitive processors...", "Accessing neural network...", "Parsing data streams...", "Compiling response matrix...", "Reticulating splines...", "Querying the global datasphere..."] },
     errors: { api: ["Signal lost. An anomaly has occurred in the data stream. Please try re-routing your query.", "Cognitive dissonance detected. My processors were unable to resolve your request. Please rephrase.", "A data corruption has been detected in the pipeline. I've purged the faulty packets. Please send your query again.", "My connection to the core has been severed. Please check your network link and retry."] },
     coreLoading: { title: "INICIALIZANDO NÚCLEO DE CÓDIGO", bootLog: ["[SIS] SECUENCIA DE ARRANQUE INICIADA...", "[MEM] MEMORIA VIRTUAL ASIGNADA", "[CPU] NÚCLEOS DE PROCESADOR EN LÍNEA", "[RED] ENLACE SEGURO ESTABLECIDO", "[ENT] ENTORNO DE EJECUCIÓN CALIBRADO", "[UI] INTEGRANDO SHELL GRÁFICO...", "[OK] INICIALIZACIÓN DEL NÚCLEO COMPLETA."] },
@@ -71,7 +71,7 @@ const translations: any = {
     },
     modals: { aboutTitle: "कॉग्निटो एआई // सिस्टम जानकारी", aboutSubtitle: "कॉग्निटिव असिस्टेंट प्रोटोकॉल v2.1", aboutLine1: "{{link}} एक आधुनिक, उत्तरदायी एआई सहायक है जिसे बुद्धिमान उत्तर और एक प्रीमियम उपयोगकर्ता अनुभव प्रदान करने के लिए तैयार किया गया है।", aboutLine1Link: "कॉग्निटो एआई", aboutLine2: "यह एप्लिकेशन {{link}} द्वारा विकसित किया गया था, जो सुंदर, कार्यात्मक यूजर इंटरफेस बनाने की कला के साथ एक उत्साही फ्रंटएंड इंजीनियर है।", aboutLine2Link: "सक्षम", aboutLine3: "यह {{link}}, एमएल और डीबीएमएस में जिज्ञासा, और उनकी रुचियों से प्रेरित है।", aboutLine3Link: "सक्षम के ज्ञान", profileTitle: "ऑपरेटर पहचान", profileSubtitle: "अपना कॉलसाइन अपडेट करें।", profileLabel: "कॉलसाइन", profilePlaceholder: "अपना कॉलसाइन दर्ज करें", confirmPurgeTitle: "सभी चैट साफ़ करने की पुष्टि करें?", confirmPurgeMessage: "यह सभी वार्तालापों को स्थायी रूप से मिटा देगा। यह क्रिया अपरिवर्तनीय है और डेटा पुनर्प्राप्त नहीं किया जा सकता है।", confirmPurgeButton: "सब साफ़ करें", save: "बदलाव लागू करें", cancel: "रद्द करें", close: "डिस्कनेक्ट करें" },
     app: { newChatTitle: "नया कॉग्निटिव सत्र", newCodingSessionTitle: "कोड कोर सत्र", defaultChatTitle: "कॉग्निटो एआई इंटरफ़ेस" },
-    coding: { title: "कोड कोर इंटरफ़ेस", exit: "कोर से अलग हों", run: "निष्पादित करें >", executing: "निष्पादित हो रहा है...", initializing: "शुरू हो रहा है...", copyCode: "स्निपेट कॉपी करें", copied: "स्निपेट कॉपी किया गया", consoleHeader: "// कंसोल_आउटपुट", assistantHeader: "// सहायक_इंटरफ़ेस", awaitingExecution: "[निष्पादन कमांड की प्रतीक्षा में...]", assistantPlaceholder: "प्रश्न दर्ज करें..." },
+    coding: { title: "कोड कोर इंटरफ़ेस", exit: "कोर से अलग हों", run: "निष्पादित करें >", executing: "निष्पादित हो रहा है...", initializing: "शुरू हो रहा है...", copyCode: "स्निपेट कॉपी करें", copied: "स्निपेट कॉपी किया गया", consoleHeader: "// कंसोल_आउटपुट", assistantHeader: "// सहायक_इंटरफ़ेस", awaitingExecution: "[निष्पादन कमांड की प्रतीक्षा में...]", placeholder: "प्रश्न दर्ज करें..." },
     loading: { bootLog: ["[प्रारंभ] कॉग्निटो ओएस v2.1", "[लोड हो रहा है] पर्सनैलिटी_मैट्रिक्स.डैट", "[कैलिब्रेटिंग] ह्यूरिस्टिक_प्रोसेसर", "[स्थापित] उपयोगकर्ता के लिए सुरक्षित चैनल", "[स्थिति] सभी सिस्टम सामान्य हैं।"], thinking: ["Engaging cognitive processors...", "Accessing neural network...", "Parsing data streams...", "Compiling response matrix...", "Reticulating splines...", "Querying the global datasphere..."] },
     errors: { api: ["Signal lost. An anomaly has occurred in the data stream. Please try re-routing your query.", "Cognitive dissonance detected. My processors were unable to resolve your request. Please rephrase.", "A data corruption has been detected in the pipeline. I've purged the faulty packets. Please send your query again.", "My connection to the core has been severed. Please check your network link and retry."] },
     coreLoading: { title: "कोडिंग कोर शुरू हो रहा है", bootLog: ["[सिस्टम] बूट अनुक्रम शुरू...", "[मेमोरी] वर्चुअल मेमोरी आवंटित", "[सीपीयू] प्रोसेसर कर्नेल ऑनलाइन", "[नेट] सुरक्षित लिंक स्थापित", "[ईएनवी] रनटाइम वातावरण कैलिब्रेटेड", "[यूआई] ग्राफिकल शेल को एकीकृत करना...", "[ठीक है] कोर आरंभीकरण पूर्ण।"] },
@@ -91,7 +91,7 @@ const translations: any = {
     },
     modals: { aboutTitle: "Cognito AI // Infos Système", aboutSubtitle: "Protocole d'Assistant Cognitif v2.1", aboutLine1: "{{link}} est un assistant IA moderne et réactif, conçu pour fournir des réponses intelligentes et une expérience utilisateur de premier ordre.", aboutLine1Link: "Cognito AI", aboutLine2: "Cette application a été développée par {{link}}, un ingénieur frontend passionné avec un talent pour créer des interfaces utilisateur belles et fonctionnelles.", aboutLine2Link: "Saksham", aboutLine3: "Elle est alimentée par {{link}}, sa curiosité pour le ML & SGBD, et ses intérêts.", aboutLine3Link: "les connaissances de Saksham", profileTitle: "Identification de l'Opérateur", profileSubtitle: "Mettez à jour votre indicatif.", profileLabel: "Indicatif", profilePlaceholder: "Entrez votre indicatif", confirmPurgeTitle: "Confirmer la Suppression de Tous les Chats ?", confirmPurgeMessage: "Ceci effacera définitivement toutes les conversations. Cette action est irréversible et les données ne peuvent être récupérées.", confirmPurgeButton: "Tout Effacer", save: "Valider les Changements", cancel: "Abandonner", close: "Déconnecter" },
     app: { newChatTitle: "Nouvelle Session Cognitive", newCodingSessionTitle: "Session Noyau de Code", defaultChatTitle: "INTERFACE COGNITO AI" },
-    coding: { title: "INTERFACE DU NOYAU DE CODAGE", exit: "Désengager le Noyau", run: "EXÉCUTER >", executing: "EXÉCUTION...", initializing: "INITIALISATION...", copyCode: "Copier l'Extrait", copied: "Extrait Copié", consoleHeader: "// SORTIE_CONSOLE", assistantHeader: "// INTERFACE_ASSISTANT", awaitingExecution: "[En attente de commande d'exécution...]", assistantPlaceholder: "Entrez la requête..." },
+    coding: { title: "INTERFACE DU NOYAU DE CODAGE", exit: "Désengager le Noyau", run: "EXÉCUTER >", executing: "EXÉCUTION...", initializing: "INITIALISATION...", copyCode: "Copier l'Extrait", copied: "Extrait Copié", consoleHeader: "// SORTIE_CONSOLE", assistantHeader: "// INTERFACE_ASSISTANT", awaitingExecution: "[En attente de commande d'exécution...]", placeholder: "Entrez la requête..." },
     loading: { bootLog: ["[INITIALISATION] COGNITO OS v2.1", "[CHARGEMENT]   MATRICE_PERSONNALITÉ.DAT", "[CALIBRAGE]    PROCESSEURS_HEURISTIQUES", "[ÉTABLISSEMENT] CANAL_SÉCURISÉ_VERS_UTILISATEUR", "[STATUT]       TOUS_SYSTÈMES_NOMINAUX."], thinking: ["Engaging cognitive processors...", "Accessing neural network...", "Parsing data streams...", "Compiling response matrix...", "Reticulating splines...", "Querying the global datasphere..."] },
     errors: { api: ["Signal lost. An anomaly has occurred in the data stream. Please try re-routing your query.", "Cognitive dissonance detected. My processors were unable to resolve your request. Please rephrase.", "A data corruption has been detected in the pipeline. I've purged the faulty packets. Please send your query again.", "My connection to the core has been severed. Please check your network link and retry."] },
     coreLoading: { title: "INITIALISATION DU NOYAU DE CODAGE", bootLog: ["[SYS] SÉQUENCE DE DÉMARRAGE INITIÉE...", "[MEM] MÉMOIRE VIRTUELLE ALLOUÉE", "[CPU] COEURS DE PROCESSEUR EN LIGNE", "[NET] LIAISON SÉCURISÉE ÉTABLIE", "[ENV] ENVIRONNEMENT D'EXÉCUTION CALIBRÉ", "[UI] INTÉGRATION DE L'INTERFACE GRAPHIQUE...", "[OK] INITIALISATION DU NOYAU TERMINÉE."] },
@@ -140,6 +140,41 @@ const translations: any = {
   }
 };
 
+// --- NEW: Audio decoding helper functions for Gemini TTS ---
+// Decodes a base64 string into a byte array.
+function decode(base64: string): Uint8Array {
+  const binaryString = atob(base64);
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
+}
+
+// Decodes raw PCM audio data into an AudioBuffer for playback.
+async function decodeAudioData(
+  data: Uint8Array,
+  ctx: AudioContext,
+  sampleRate: number,
+  numChannels: number,
+): Promise<AudioBuffer> {
+  // The raw data is 16-bit PCM, so we create a Int16Array view on the buffer.
+  const dataInt16 = new Int16Array(data.buffer);
+  const frameCount = dataInt16.length / numChannels;
+  const buffer = ctx.createBuffer(numChannels, frameCount, sampleRate);
+
+  for (let channel = 0; channel < numChannels; channel++) {
+    const channelData = buffer.getChannelData(channel);
+    for (let i = 0; i < frameCount; i++) {
+      // Normalize the 16-bit integer samples to the [-1.0, 1.0] range for the Web Audio API.
+      channelData[i] = dataInt16[i * numChannels + channel] / 32768.0;
+    }
+  }
+  return buffer;
+}
+
+
 const App: React.FC = () => {
     // Defining state variables using the useState hook.
     const [isAiLoading, setIsAiLoading] = useState(false); // Is the AI generating a response?
@@ -147,6 +182,7 @@ const App: React.FC = () => {
     const [activeChatId, setActiveChatId] = useState<string | null>(null); // The ID of the currently open chat.
     const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Is the sidebar open on mobile?
     const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null); // Which message is being spoken by text-to-speech.
+    const [ttsLoadingMessageId, setTtsLoadingMessageId] = useState<string | null>(null); // Which message's audio is being fetched.
     const [userName, setUserName] = useState(() => localStorage.getItem('userName') || 'Operator'); // The user's name, loaded from localStorage.
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false); // Is the profile modal open?
     const [isAboutModalOpen, setIsAboutModalOpen] = useState(false); // Is the about modal open?
@@ -167,6 +203,9 @@ const App: React.FC = () => {
     const saveTimeoutRef = useRef<number | null>(null); // Debounce timer for saving the chat.
     const chatsRef = useRef(chats); // Holds the current value of the chats state to avoid stale closures.
     const stopGenerationRef = useRef(false); // Flag to stop the AI response stream.
+    const audioContextRef = useRef<AudioContext | null>(null); // Ref for the Web Audio API context.
+    const audioSourceRef = useRef<AudioBufferSourceNode | null>(null); // Ref for the current audio source.
+    const ttsGenerationInProgress = useRef(new Set<string>()); // NEW: Tracks in-flight TTS generation requests.
     chatsRef.current = chats;
 
     // Finding the active chat from the chats array.
@@ -370,7 +409,7 @@ const App: React.FC = () => {
             // Determine which AI mode to use for the API call.
             const modeForAPI = currentView === 'coding' ? 'code-assistant' : 'cognito';
             const chatSession = startChat(history, modeForAPI);
-            const responseStream = await chatSession.sendMessageStream({ message: messageForApi });
+            const responseStream = await chatSession.sendMessageStream(messageForApi);
             
             for await (const chunk of responseStream) {
                 if (stopGenerationRef.current) break;
@@ -430,8 +469,27 @@ const App: React.FC = () => {
                 return chat;
             }));
         } finally {
-            setIsAiLoading(false); // Loading state off.
+            setIsAiLoading(false);
             stopGenerationRef.current = false;
+            // Proactively generate and cache TTS audio for the new message.
+            if (fullResponse.trim() && !ttsGenerationInProgress.current.has(modelMessageId)) {
+                ttsGenerationInProgress.current.add(modelMessageId);
+                setTtsLoadingMessageId(modelMessageId);
+                generateSpeech(fullResponse).then(audioData => {
+                    if (audioData) {
+                        setChats(prev => prev.map(c => 
+                            c.id === currentChatId 
+                                ? { ...c, messages: c.messages.map(m => m.id === modelMessageId ? { ...m, audioContent: audioData } : m) } 
+                                : c
+                        ));
+                    }
+                }).catch(err => {
+                    console.error("Proactive TTS generation failed:", err);
+                }).finally(() => {
+                    ttsGenerationInProgress.current.delete(modelMessageId);
+                    setTtsLoadingMessageId(prevId => (prevId === modelMessageId ? null : prevId));
+                });
+            }
         }
     };
     
@@ -465,7 +523,7 @@ const App: React.FC = () => {
         try {
             const modeForAPI = currentView === 'coding' ? 'code-assistant' : 'cognito';
             const chatSession = startChat(history, modeForAPI);
-            const responseStream = await chatSession.sendMessageStream({ message: lastUserMessageContent });
+            const responseStream = await chatSession.sendMessageStream(lastUserMessageContent);
 
             for await (const chunk of responseStream) {
                  if (stopGenerationRef.current) break;
@@ -503,6 +561,23 @@ const App: React.FC = () => {
         } finally {
             setIsAiLoading(false);
             stopGenerationRef.current = false;
+             // Proactively generate and cache TTS audio for the regenerated message.
+            if (fullResponse.trim() && !ttsGenerationInProgress.current.has(modelMessageId)) {
+                ttsGenerationInProgress.current.add(modelMessageId);
+                setTtsLoadingMessageId(modelMessageId);
+                generateSpeech(fullResponse).then(audioData => {
+                    if (audioData) {
+                        setChats(prev => prev.map(c => 
+                            c.id === activeChat.id 
+                                ? { ...c, messages: c.messages.map(m => m.id === modelMessageId ? { ...m, audioContent: audioData } : m) } 
+                                : c
+                        ));
+                    }
+                }).catch(err => console.error("Proactive TTS generation failed:", err)).finally(() => {
+                    ttsGenerationInProgress.current.delete(modelMessageId);
+                    setTtsLoadingMessageId(prevId => (prevId === modelMessageId ? null : prevId));
+                });
+            }
         }
     };
 
@@ -592,20 +667,95 @@ const App: React.FC = () => {
         navigator.clipboard.writeText(text);
     };
 
-    // To toggle text-to-speech.
-    const handleToggleSpeak = (message: Message) => {
+    // REVAMPED: Text-to-speech using pre-fetched audio and on-demand fallback.
+    const handleToggleSpeak = async (message: Message) => {
+        // Stop any currently playing audio
+        if (audioSourceRef.current) {
+            try { audioSourceRef.current.stop(); } catch (e) { /* Ignore errors */ }
+            audioSourceRef.current = null;
+        }
+        speechSynthesis.cancel();
+
+        // If a generation is already in progress for this message, do nothing.
+        if (ttsGenerationInProgress.current.has(message.id)) {
+            return;
+        }
+
+        // If the clicked message was the one playing, just stop it
         if (speakingMessageId === message.id) {
-            speechSynthesis.cancel(); // If it's already speaking, stop it.
             setSpeakingMessageId(null);
-        } else {
-            speechSynthesis.cancel(); // If another message is speaking, stop it.
-            const utterance = new SpeechSynthesisUtterance(message.content);
-            utterance.onend = () => setSpeakingMessageId(null);
-            utterance.onerror = () => setSpeakingMessageId(null);
-            speechSynthesis.speak(utterance);
+            return;
+        }
+
+        setSpeakingMessageId(null); // Reset speaking state
+
+        const playAudio = async (audioData: string) => {
+            if (!audioContextRef.current) {
+                const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+                audioContextRef.current = new AudioContext({ sampleRate: 24000 });
+            }
+            const audioContext = audioContextRef.current;
+            
+            const audioBytes = decode(audioData);
+            const audioBuffer = await decodeAudioData(audioBytes, audioContext, 24000, 1);
+            
+            const source = audioContext.createBufferSource();
+            source.buffer = audioBuffer;
+            source.connect(audioContext.destination);
+            source.onended = () => {
+                // Only clear the speaking state if this message was the one that ended
+                if (speakingMessageId === message.id) {
+                    setSpeakingMessageId(null);
+                }
+                audioSourceRef.current = null;
+            };
+            
+            audioSourceRef.current = source;
             setSpeakingMessageId(message.id);
+            source.start();
+        };
+
+        if (message.audioContent) {
+            try {
+                // Play pre-fetched audio instantly
+                await playAudio(message.audioContent);
+            } catch (error) {
+                console.error("Error playing pre-fetched audio:", error);
+                alert("Sorry, there was an error playing the audio.");
+                setSpeakingMessageId(null);
+            }
+        } else {
+            // Fallback: generate audio on-demand for older messages
+            try {
+                ttsGenerationInProgress.current.add(message.id);
+                setTtsLoadingMessageId(message.id);
+                const audioData = await generateSpeech(message.content);
+
+                // If another speak request was made while this was loading, abort.
+                if (ttsLoadingMessageId !== message.id) return;
+                
+                if (!audioData) throw new Error("No audio data was returned from the API.");
+                
+                // Cache the newly generated audio in the state for future plays
+                setChats(prev => prev.map(c => 
+                    c.id === activeChatId 
+                        ? { ...c, messages: c.messages.map(m => m.id === message.id ? { ...m, audioContent: audioData } : m) }
+                        : c
+                ));
+                
+                await playAudio(audioData);
+
+            } catch (error) {
+                console.error("Error in on-demand TTS process:", error);
+                alert("Sorry, there was an error generating the audio for this message.");
+                setSpeakingMessageId(null);
+            } finally {
+                ttsGenerationInProgress.current.delete(message.id);
+                setTtsLoadingMessageId(prevId => (prevId === message.id ? null : prevId));
+            }
         }
     };
+
 
     // To export the active chat to a text file.
     const handleExportChat = () => {
@@ -673,6 +823,7 @@ const App: React.FC = () => {
                                         onRegenerate={handleRegenerateResponse}
                                         onStopGeneration={handleStopGeneration}
                                         speakingMessageId={speakingMessageId}
+                                        ttsLoadingMessageId={ttsLoadingMessageId}
                                         inputRect={inputRect}
                                         t={t}
                                     />

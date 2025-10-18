@@ -6,6 +6,7 @@ export interface Message {
   id: string; // A unique ID for each message.
   role: MessageRole; // Who sent the message - user or model.
   content: string; // The actual text content of the message.
+  audioContent?: string | null; // To store pre-generated TTS audio data.
 }
 
 // The structure of an entire conversation (chat).

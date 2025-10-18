@@ -60,8 +60,8 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, showSug
 
   // When a suggestion is clicked, send it as a message.
   const handleSuggestionClick = (suggestion: string) => {
-      setInputValue(suggestion);
       onSendMessage(suggestion); // Sends the message to the main component.
+      setInputValue('');
   }
 
   // Whenever inputValue changes, dynamically adjust the textarea's height.

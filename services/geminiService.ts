@@ -1,5 +1,5 @@
 // REFACTOR: Importing GoogleGenAI from the @google/genai SDK.
-import { GoogleGenAI, Chat } from "@google/genai";
+import { GoogleGenAI, Chat, Modality } from "@google/genai";
 import type { Message, AiMode } from '../types';
 
 // REFACTOR: Initializing the GoogleGenAI client with the API key from environment variables, as per guidelines.
@@ -99,5 +99,37 @@ export async function getTitleForChat(messages: Message[]): Promise<string> {
     } catch (error) {
         console.error("Error generating title with Gemini:", error);
         return "New Conversation"; // Default title on error.
+    }
+}
+
+/**
+ * NEW: Generates speech from text using the Gemini TTS model.
+ * @param text The text to convert to speech.
+ * @returns A base64 encoded string of the raw audio data, or null on error.
+ */
+export async function generateSpeech(text: string): Promise<string | null> {
+    try {
+        // Sanitize text for TTS by removing code blocks and other markdown that doesn't translate well to speech.
+        const sanitizedText = text.replace(/```[\s\S]*?```/g, 'Code snippet provided.');
+
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash-preview-tts",
+            contents: [{ parts: [{ text: sanitizedText }] }],
+            config: {
+                responseModalities: [Modality.AUDIO],
+                speechConfig: {
+                    voiceConfig: {
+                        // Using 'Kore' for a clear, young Indian male voice as requested.
+                        prebuiltVoiceConfig: { voiceName: 'Kore' },
+                    },
+                },
+            },
+        });
+        
+        const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+        return base64Audio || null;
+    } catch (error) {
+        console.error("Error generating speech with Gemini:", error);
+        return null;
     }
 }

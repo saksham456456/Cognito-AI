@@ -125,6 +125,7 @@ interface MessageProps {
   onRegenerate: () => void; // Function for the regenerate button.
   onStopGeneration: () => void; // Function for the "Stop Generating" button.
   speakingMessageId: string | null; // The ID of the message currently being spoken.
+  ttsLoadingMessageId: string | null; // The ID of the message whose audio is currently loading.
   inputRect: DOMRect | null; // The position of the chat input bar for animations.
   t: (key: string, fallback?: any) => any; // Translation function.
 }
@@ -168,6 +169,7 @@ const MessageComponent: React.FC<MessageProps> = ({
     onRegenerate, 
     onStopGeneration,
     speakingMessageId,
+    ttsLoadingMessageId,
     inputRect,
     t
 }) => {
@@ -175,6 +177,7 @@ const MessageComponent: React.FC<MessageProps> = ({
   const isUser = message.role === 'user'; // Checking if the message is from the user or the model.
   const isTyping = message.role === 'model' && !message.content && isAiLoading; // Checking if the AI is currently typing.
   const isSpeaking = speakingMessageId === message.id; // Checking if this message is being spoken.
+  const isTtsLoading = ttsLoadingMessageId === message.id; // Checking if this message's audio is loading.
 
   const messageRef = useRef<HTMLDivElement>(null);
   const isNewUserMessage = isLastMessage && isUser && !isAiLoading;
@@ -208,8 +211,17 @@ const MessageComponent: React.FC<MessageProps> = ({
         {isCopied ? <CheckIcon className="w-4 h-4 text-green-500" /> : <ClipboardIcon className="w-4 h-4 text-text-medium" />}
       </button>
       {/* Speak button */}
-      <button onClick={() => onSpeak(message)} title="Speak" className="p-1.5 rounded-full bg-input hover:bg-input-border transition-colors border border-card-border">
-        <Volume2Icon className={`w-4 h-4 ${isSpeaking ? 'text-primary' : 'text-text-medium'}`} />
+      <button 
+        onClick={() => onSpeak(message)} 
+        title="Speak" 
+        className="p-1.5 rounded-full bg-input hover:bg-input-border transition-colors border border-card-border disabled:opacity-50 disabled:cursor-not-allowed"
+        disabled={!!ttsLoadingMessageId && !isTtsLoading}
+      >
+        {isTtsLoading ? (
+            <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+        ) : (
+            <Volume2Icon className={`w-4 h-4 ${isSpeaking ? 'text-primary' : 'text-text-medium'}`} />
+        )}
       </button>
       {/* Regenerate button (only shown for the last model message) */}
       {isLastMessage && !isAiLoading && (
