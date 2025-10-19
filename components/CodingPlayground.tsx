@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import type { Message, Chat } from '../types';
 import { MenuIcon, CodeBracketIcon, PythonLogoIcon, SendIcon, ClipboardIcon, CheckIcon } from './icons';
@@ -48,7 +49,7 @@ print(result)
     },
     html: { name: 'HTML', icon: <CodeBracketIcon className="w-5 h-5" />, boilerplate: `<!DOCTYPE html>\n<html>\n<head>\n  <title>My Page</title>\n  <link rel="stylesheet" href="style.css">\n</head>\n<body>\n  <h1></h1>\n  <p>This is a sample page.</p>\n  <script src="script.js"></script>\n</body>\n</html>` },
     css: { name: 'CSS', icon: <CodeBracketIcon className="w-5 h-5" />, boilerplate: `body {\n  font-family: sans-serif;\n  background-color: #f0f0f0;\n  color: #333;\n}\n\nh1 {\n  color: navy;\n}` },
-    javascript: { name: 'JavaScript', icon: <CodeBracketIcon className="w-5 h-5" />, boilerplate: `console.log("Hello from JavaScript!");\n\nconst heading = document.querySelector('h1');\nif (heading) {\n  heading.textContent = 'Hello Saksham';\n}` },
+    javascript: { name: 'JavaScript', icon: <CodeBracketIcon className="w-5 h-5" />, boilerplate: `console.log("Hello from JavaScript!");\n\nconst heading = document.querySelector('h1');\nif (heading) {\n  heading.textContent = 'Hello Saksham';\n}` }
 };
 
 interface CodingPlaygroundProps {

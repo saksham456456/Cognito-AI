@@ -2,7 +2,7 @@ import React, { useState, useRef, useLayoutEffect, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import type { Message } from '../types';
 import { CognitoLogo } from './Logo';
-import { ClipboardIcon, CheckIcon, Volume2Icon, RefreshIcon, StopIcon } from './icons';
+import { ClipboardIcon, CheckIcon, Volume2Icon, RefreshIcon, StopIcon, UserCircleIcon, PlayIcon, PauseIcon } from './icons';
 import MarkdownRenderer from './MarkdownRenderer';
 
 // --- NEW: Particle Stream Animator for "Cognitive Channeling" ---
@@ -125,6 +125,7 @@ interface MessageProps {
   onRegenerate: () => void; // Function for the regenerate button.
   onStopGeneration: () => void; // Function for the "Stop Generating" button.
   speakingMessageId: string | null; // The ID of the message currently being spoken.
+  isAudioPaused: boolean; // Is the currently playing audio paused?
   ttsLoadingMessageId: string | null; // The ID of the message whose audio is currently loading.
   inputRect: DOMRect | null; // The position of the chat input bar for animations.
   t: (key: string, fallback?: any) => any; // Translation function.
@@ -169,6 +170,7 @@ const MessageComponent: React.FC<MessageProps> = ({
     onRegenerate, 
     onStopGeneration,
     speakingMessageId,
+    isAudioPaused,
     ttsLoadingMessageId,
     inputRect,
     t
@@ -219,8 +221,14 @@ const MessageComponent: React.FC<MessageProps> = ({
       >
         {isTtsLoading ? (
             <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+        ) : isSpeaking ? (
+            isAudioPaused ? (
+                <PlayIcon className="w-4 h-4 text-primary" />
+            ) : (
+                <PauseIcon className="w-4 h-4 text-primary" />
+            )
         ) : (
-            <Volume2Icon className={`w-4 h-4 ${isSpeaking ? 'text-primary' : 'text-text-medium'}`} />
+            <Volume2Icon className="w-4 h-4 text-text-medium" />
         )}
       </button>
       {/* Regenerate button (only shown for the last model message) */}
@@ -255,7 +263,7 @@ const MessageComponent: React.FC<MessageProps> = ({
           <CognitoLogo className="h-6 w-6" />
         </div>
       )}
-      <div className="flex flex-col items-start gap-2">
+      <div className={`flex flex-col gap-2 ${isUser ? 'items-end' : 'items-start'}`}>
         {/* Message bubble */}
         <div className={bubbleClasses}>
           {isTyping ? (
@@ -271,6 +279,12 @@ const MessageComponent: React.FC<MessageProps> = ({
         {!isUser && !isTyping && message.content && <MessageActions />}
         {isLastMessage && isAiLoading && <StopButton />}
       </div>
+       {/* NEW: Show the user icon with the user's message. */}
+       {isUser && (
+        <div className="flex-shrink-0 h-8 w-8 rounded-full bg-input flex items-center justify-center border border-input-border">
+          <UserCircleIcon className="h-6 w-6 text-accent1" />
+        </div>
+      )}
     </div>
   );
 };

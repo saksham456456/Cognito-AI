@@ -29,7 +29,7 @@ const translations: any = {
       ]
     },
     modals: { aboutTitle: "Cognito AI // System Info", aboutSubtitle: "Cognitive Assistant Protocol v2.1", aboutLine1: "{{link}} is a modern, responsive AI assistant crafted to provide intelligent answers and a premium user experience.", aboutLine1Link: "Cognito AI", aboutLine2: "This application was developed by {{link}}, a passionate frontend engineer with a knack for creating beautiful, functional user interfaces.", aboutLine2Link: "Saksham", aboutLine3: "It is fueled by {{link}}, curiosity in ML & DBMS, and his interests.", aboutLine3Link: "Saksham's knowledge", profileTitle: "Operator Identification", profileSubtitle: "Update your callsign.", profileLabel: "Callsign", profilePlaceholder: "Enter your callsign", confirmPurgeTitle: "Confirm Clearing All Chats?", confirmPurgeMessage: "This will permanently delete all conversations. This action is irreversible and data cannot be recovered.", confirmPurgeButton: "Clear All", save: "Save", cancel: "Abort", close: "Disconnect" },
-    app: { newChatTitle: "New Cognitive Session", newCodingSessionTitle: "Code Core Session", defaultChatTitle: "COGNITO AI INTERFACE" },
+    app: { newChatTitle: "New Cognitive Session", newCodingSessionTitle: "Code Core Session", defaultChatTitle: "COGNITO AI INTERFACE", newChatPrompt: "Your query is my command." },
     coding: { title: "CODE CORE INTERFACE", exit: "Disengage Core", run: "EXECUTE >", executing: "EXECUTING...", initializing: "INITIALIZING...", copyCode: "Copy Snippet", copied: "Snippet Copied", consoleHeader: "// CONSOLE_OUTPUT", assistantHeader: "// ASSISTANT_INTERFACE", awaitingExecution: "[Awaiting execution command...]", assistantPlaceholder: "Input query..." },
     loading: { bootLog: ["[INITIATING] COGNITO OS v2.1", "[LOADING]    PERSONALITY_MATRIX.DAT", "[CALIBRATING] HEURISTIC_PROCESSORS", "[ESTABLISHING] SECURE_CHANNEL_TO_USER", "[STATUS]     ALL SYSTEMS NOMINAL."], thinking: ["Engaging cognitive processors...", "Accessing neural network...", "Parsing data streams...", "Compiling response matrix...", "Reticulating splines...", "Querying the global datasphere..."] },
     errors: { api: ["Signal lost. An anomaly has occurred in the data stream. Please try re-routing your query.", "Cognitive dissonance detected. My processors were unable to resolve your request. Please rephrase.", "A data corruption has been detected in the pipeline. I've purged the faulty packets. Please send your query again.", "My connection to the core has been severed. Please check your network link and retry."] },
@@ -50,7 +50,7 @@ const translations: any = {
       ]
     },
     modals: { aboutTitle: "Cognito AI // Información del Sistema", aboutSubtitle: "Protocolo de Asistente Cognitivo v2.1", aboutLine1: "{{link}} es un asistente de IA moderno y receptivo, diseñado para proporcionar respuestas inteligentes y una experiencia de usuario premium.", aboutLine1Link: "Cognito AI", aboutLine2: "Esta aplicación fue desarrollada por {{link}}, un apasionado ingeniero de frontend con un don para crear interfaces de usuario hermosas y funcionales.", aboutLine2Link: "Saksham", aboutLine3: "Está impulsado por {{link}}, su curiosidad en ML y SGBD, y sus intereses.", aboutLine3Link: "el conocimiento de Saksham", profileTitle: "Identificación de Operador", profileSubtitle: "Actualiza tu indicativo.", profileLabel: "Indicativo", profilePlaceholder: "Introduce tu indicativo", confirmPurgeTitle: "¿Confirmar Borrar Todos los Chats?", confirmPurgeMessage: "Esto borrará permanentemente todas las conversaciones. Esta acción es irreversible y los datos no se pueden recuperar.", confirmPurgeButton: "Borrar Todo", save: "Guardar", cancel: "Abortar", close: "Desconectar" },
-    app: { newChatTitle: "Nueva Sesión Cognitiva", newCodingSessionTitle: "Sesión de Núcleo de Código", defaultChatTitle: "INTERFAZ COGNITO AI" },
+    app: { newChatTitle: "Nueva Sesión Cognitiva", newCodingSessionTitle: "Sesión de Núcleo de Código", defaultChatTitle: "INTERFAZ COGNITO AI", newChatPrompt: "Su consulta es mi comando." },
     coding: { title: "INTERFAZ DEL NÚCLEO DE CÓDIGO", exit: "Desconectar Núcleo", run: "EJECUTAR >", executing: "EJECUTANDO...", initializing: "INICIALIZANDO...", copyCode: "Copiar Fragmento", copied: "Fragmento Copiado", consoleHeader: "// SALIDA_CONSOLA", assistantHeader: "// INTERFAZ_ASISTENTE", awaitingExecution: "[Esperando comando de ejecución...]", placeholder: "Introduce consulta..." },
     loading: { bootLog: ["[INICIANDO] COGNITO OS v2.1", "[CARGANDO]   MATRIZ_DE_PERSONALIDAD.DAT", "[CALIBRANDO] PROCESADORES_HEURÍSTICOS", "[ESTABLECIENDO] CANAL_SEGURO_AL_USUARIO", "[ESTADO]     TODOS LOS SISTEMAS NOMINALES."], thinking: ["Engaging cognitive processors...", "Accessing neural network...", "Parsing data streams...", "Compiling response matrix...", "Reticulating splines...", "Querying the global datasphere..."] },
     errors: { api: ["Signal lost. An anomaly has occurred in the data stream. Please try re-routing your query.", "Cognitive dissonance detected. My processors were unable to resolve your request. Please rephrase.", "A data corruption has been detected in the pipeline. I've purged the faulty packets. Please send your query again.", "My connection to the core has been severed. Please check your network link and retry."] },
@@ -70,7 +70,7 @@ const translations: any = {
       ]
     },
     modals: { aboutTitle: "कॉग्निटो एआई // सिस्टम जानकारी", aboutSubtitle: "कॉग्निटिव असिस्टेंट प्रोटोकॉल v2.1", aboutLine1: "{{link}} एक आधुनिक, उत्तरदायी एआई सहायक है जिसे बुद्धिमान उत्तर और एक प्रीमियम उपयोगकर्ता अनुभव प्रदान करने के लिए तैयार किया गया है।", aboutLine1Link: "कॉग्निटो एआई", aboutLine2: "यह एप्लिकेशन {{link}} द्वारा विकसित किया गया था, जो सुंदर, कार्यात्मक यूजर इंटरफेस बनाने की कला के साथ एक उत्साही फ्रंटएंड इंजीनियर है।", aboutLine2Link: "सक्षम", aboutLine3: "यह {{link}}, एमएल और डीबीएमएस में जिज्ञासा, और उनकी रुचियों से प्रेरित है।", aboutLine3Link: "सक्षम के ज्ञान", profileTitle: "ऑपरेटर पहचान", profileSubtitle: "अपना कॉलसाइन अपडेट करें।", profileLabel: "कॉलसाइन", profilePlaceholder: "अपना कॉलसाइन दर्ज करें", confirmPurgeTitle: "सभी चैट साफ़ करने की पुष्टि करें?", confirmPurgeMessage: "यह सभी वार्तालापों को स्थायी रूप से मिटा देगा। यह क्रिया अपरिवर्तनीय है और डेटा पुनर्प्राप्त नहीं किया जा सकता है।", confirmPurgeButton: "सब साफ़ करें", save: "सहेजें", cancel: "रद्द करें", close: "डिस्कनेक्ट करें" },
-    app: { newChatTitle: "नया कॉग्निटिव सत्र", newCodingSessionTitle: "कोड कोर सत्र", defaultChatTitle: "कॉग्निटो एआई इंटरफ़ेस" },
+    app: { newChatTitle: "नया कॉग्निटिव सत्र", newCodingSessionTitle: "कोड कोर सत्र", defaultChatTitle: "कॉग्निटो एआई इंटरफ़ेस", newChatPrompt: "आपकी क्वेरी ही मेरा आदेश है।" },
     coding: { title: "कोड कोर इंटरफ़ेस", exit: "कोर से अलग हों", run: "निष्पादित करें >", executing: "निष्पादित हो रहा है...", initializing: "शुरू हो रहा है...", copyCode: "स्निपेट कॉपी करें", copied: "स्निपेट कॉपी किया गया", consoleHeader: "// कंसोल_आउटपुट", assistantHeader: "// सहायक_इंटरफ़ेस", awaitingExecution: "[निष्पादन कमांड की प्रतीक्षा में...]", placeholder: "प्रश्न दर्ज करें..." },
     loading: { bootLog: ["[प्रारंभ] कॉग्निटो ओएस v2.1", "[लोड हो रहा है] पर्सनैलिटी_मैट्रिक्स.डैट", "[कैलिब्रेटिंग] ह्यूरिस्टिक_प्रोसेसर", "[स्थापित] उपयोगकर्ता के लिए सुरक्षित चैनल", "[स्थिति] सभी सिस्टम सामान्य हैं।"], thinking: ["Engaging cognitive processors...", "Accessing neural network...", "Parsing data streams...", "Compiling response matrix...", "Reticulating splines...", "Querying the global datasphere..."] },
     errors: { api: ["Signal lost. An anomaly has occurred in the data stream. Please try re-routing your query.", "Cognitive dissonance detected. My processors were unable to resolve your request. Please rephrase.", "A data corruption has been detected in the pipeline. I've purged the faulty packets. Please send your query again.", "My connection to the core has been severed. Please check your network link and retry."] },
@@ -90,7 +90,7 @@ const translations: any = {
       ]
     },
     modals: { aboutTitle: "Cognito AI // Infos Système", aboutSubtitle: "Protocole d'Assistant Cognitif v2.1", aboutLine1: "{{link}} est un assistant IA moderne et réactif, conçu pour fournir des réponses intelligentes et une expérience utilisateur de premier ordre.", aboutLine1Link: "Cognito AI", aboutLine2: "Cette application a été développée par {{link}}, un ingénieur frontend passionné avec un talent pour créer des interfaces utilisateur belles et fonctionnelles.", aboutLine2Link: "Saksham", aboutLine3: "Elle est alimentée par {{link}}, sa curiosité pour le ML & SGBD, et ses intérêts.", aboutLine3Link: "les connaissances de Saksham", profileTitle: "Identification de l'Opérateur", profileSubtitle: "Mettez à jour votre indicatif.", profileLabel: "Indicatif", profilePlaceholder: "Entrez votre indicatif", confirmPurgeTitle: "Confirmer la Suppression de Tous les Chats ?", confirmPurgeMessage: "Ceci effacera définitivement toutes les conversations. Cette action est irréversible et les données ne peuvent être récupérées.", confirmPurgeButton: "Tout Effacer", save: "Enregistrer", cancel: "Abandonner", close: "Déconnecter" },
-    app: { newChatTitle: "Nouvelle Session Cognitive", newCodingSessionTitle: "Session Noyau de Code", defaultChatTitle: "INTERFACE COGNITO AI" },
+    app: { newChatTitle: "Nouvelle Session Cognitive", newCodingSessionTitle: "Session Noyau de Code", defaultChatTitle: "INTERFACE COGNITO AI", newChatPrompt: "Votre requête est mon ordre." },
     coding: { title: "INTERFACE DU NOYAU DE CODAGE", exit: "Désengager le Noyau", run: "EXÉCUTER >", executing: "EXÉCUTION...", initializing: "INITIALISATION...", copyCode: "Copier l'Extrait", copied: "Extrait Copié", consoleHeader: "// SORTIE_CONSOLE", assistantHeader: "// INTERFACE_ASSISTANT", awaitingExecution: "[En attente de commande d'exécution...]", placeholder: "Entrez la requête..." },
     loading: { bootLog: ["[INITIALISATION] COGNITO OS v2.1", "[CHARGEMENT]   MATRICE_PERSONNALITÉ.DAT", "[CALIBRAGE]    PROCESSEURS_HEURISTIQUES", "[ÉTABLISSEMENT] CANAL_SÉCURISÉ_VERS_UTILISATEUR", "[STATUT]       TOUS_SYSTÈMES_NOMINAUX."], thinking: ["Engaging cognitive processors...", "Accessing neural network...", "Parsing data streams...", "Compiling response matrix...", "Reticulating splines...", "Querying the global datasphere..."] },
     errors: { api: ["Signal lost. An anomaly has occurred in the data stream. Please try re-routing your query.", "Cognitive dissonance detected. My processors were unable to resolve your request. Please rephrase.", "A data corruption has been detected in the pipeline. I've purged the faulty packets. Please send your query again.", "My connection to the core has been severed. Please check your network link and retry."] },
@@ -110,7 +110,7 @@ const translations: any = {
       ]
     },
     modals: { aboutTitle: "कोग्निटो एआई // तन्त्रसूचना", aboutSubtitle: "संज्ञानात्मक-सहायक-प्रोटोकॉल् v2.1", aboutLine1: "{{link}} एकः आधुनिकः, प्रतिक्रियाशीलः एआई सहायकः अस्ति यः बुद्धिमत्-उत्तराणि, उत्तम-उपयोक्तृ-अनुभवं च प्रदातुं निर्मितः।", aboutLine1Link: "कोग्निटो एआई", aboutLine2: "इदं अनुप्रयोगं {{link}}-द्वारा विकसितम्, यः सुन्दर-क्रियाशील-उपयोक्तृ-अन्तरापृष्ठानि निर्मातुं कुशलः उत्साही फ्रन्टएण्ड-अभियन्ता अस्ति।", aboutLine2Link: "सक्षम", aboutLine3: "इदं {{link}}, एमएल-डीबीएमएस-मध्ये तस्य जिज्ञासया, तस्य रुचिभिश्च चालितम्।", aboutLine3Link: "सक्षमस्य ज्ञानेन", profileTitle: "प्रचालक-परिचयः", profileSubtitle: "भवतः आह्वानचिह्नं नूतनीकरोतु।", profileLabel: "आह्वानचिह्नम्", profilePlaceholder: "आह्वानचिह्नं लिखतु", confirmPurgeTitle: "सर्वान् चैटान् निष्कासयितुं निश्चिनोतु वा?", confirmPurgeMessage: "एतेन सर्वे वार्तालापाः स्थायिरूपेण मार्जयिष्यन्ते। एतत् कार्यम् अपरिवर्तनीयम् अस्ति, दत्तांशः च पुनः प्राप्तुं न शक्यते।", confirmPurgeButton: "सर्वं निष्कासय", save: "रक्षतु", cancel: "त्यजतु", close: "वियोजयतु" },
-    app: { newChatTitle: "नवीनं संज्ञानात्मकं सत्रम्", newCodingSessionTitle: "कूट-केन्द्र-सत्रम्", defaultChatTitle: "कोग्निटो एआई अन्तरापृष्ठम्" },
+    app: { newChatTitle: "नवीनं संज्ञानात्मकं सत्रम्", newCodingSessionTitle: "कूट-केन्द्र-सत्रम्", defaultChatTitle: "कोग्निटो एआई अन्तरापृष्ठम्", newChatPrompt: "भवतः प्रश्नः मम आदेशः।" },
     coding: { title: "कूट-केन्द्र-अन्तरापृष्ठम्", exit: "केन्द्रं त्यजतु", run: "निष्पादयतु >", executing: "निष्पाद्यमानम्...", initializing: "आरभ्यमाणम्...", copyCode: "खण्डं प्रतिलिपिं करोतु", copied: "खण्डं प्रतिलिपिः कृतः", consoleHeader: "// कन्सोल-आउट्पुट्", assistantHeader: "// सहायक-अन्तरापृष्ठम्", awaitingExecution: "[निष्पादन-आदेशं प्रतीक्षमाणम्...]", placeholder: "प्रश्नं लिखतु..." },
     loading: { bootLog: ["[प्रारम्भः] कोग्निटो ओएस v2.1", "[भारणम्]   व्यक्तित्व-मैट्रिक्स.डैट", "[समंजनम्]   अनुमानात्मक-प्रसंसाधकाः", "[स्थापनम्]   उपयोक्त्रे सुरक्षित-चैनलम्", "[स्थितिः]     सर्वाणि तन्त्राणि सामान्यनि।"], thinking: ["Engaging cognitive processors...", "Accessing neural network...", "Parsing data streams...", "Compiling response matrix...", "Reticulating splines...", "Querying the global datasphere..."] },
     errors: { api: ["Signal lost. An anomaly has occurred in the data stream. Please try re-routing your query.", "Cognitive dissonance detected. My processors were unable to resolve your request. Please rephrase.", "A data corruption has been detected in the pipeline. I've purged the faulty packets. Please send your query again.", "My connection to the core has been severed. Please check your network link and retry."] },
@@ -130,7 +130,7 @@ const translations: any = {
       ]
     },
     modals: { aboutTitle: "Cognito AI // System Info", aboutSubtitle: "Cognitive Assistant Protocol v2.1", aboutLine1: "{{link}} ek modern, responsive AI assistant hai jo intelligent answers aur premium user experience ke liye banaya gaya hai.", aboutLine1Link: "Cognito AI", aboutLine2: "Yeh application {{link}} ne develop ki hai, jo ek passionate frontend engineer hain aur sundar, functional user interfaces banane mein mahir hain.", aboutLine2Link: "Saksham", aboutLine3: "Yeh {{link}}, ML & DBMS mein unki curiosity, aur unke interests se chalti hai.", aboutLine3Link: "Saksham ke knowledge", profileTitle: "Operator Identification", profileSubtitle: "Apna callsign update karo.", profileLabel: "Callsign", profilePlaceholder: "Apna callsign daalo", confirmPurgeTitle: "Sab Chats Clear karna Confirm karein?", confirmPurgeMessage: "Isse saare conversations permanently delete ho jayenge. Yeh action irreversible hai aur data recover nahi ho sakta.", confirmPurgeButton: "Sab Clear Karo", save: "Save Karo", cancel: "Abort", close: "Disconnect" },
-    app: { newChatTitle: "New Cognitive Session", newCodingSessionTitle: "Code Core Session", defaultChatTitle: "COGNITO AI INTERFACE" },
+    app: { newChatTitle: "New Cognitive Session", newCodingSessionTitle: "Code Core Session", defaultChatTitle: "COGNITO AI INTERFACE", newChatPrompt: "Aapki query hi mera command hai." },
     coding: { title: "CODE CORE INTERFACE", exit: "Core Disengage Karo", run: "EXECUTE >", executing: "EXECUTING...", initializing: "INITIALIZING...", copyCode: "Snippet Copy Karo", copied: "Snippet Copied", consoleHeader: "// CONSOLE_OUTPUT", assistantHeader: "// ASSISTANT_INTERFACE", awaitingExecution: "[Execution command ka intezaar...]", assistantPlaceholder: "Query input karo..." },
     loading: { bootLog: ["[INITIATING] COGNITO OS v2.1", "[LOADING]    PERSONALITY_MATRIX.DAT", "[CALIBRATING] HEURISTIC_PROCESSORS", "[ESTABLISHING] SECURE_CHANNEL_TO_USER", "[STATUS]     ALL SYSTEMS NOMINAL."], thinking: ["Engaging cognitive processors...", "Accessing neural network...", "Parsing data streams...", "Compiling response matrix...", "Reticulating splines...", "Querying the global datasphere..."] },
     errors: { api: ["Signal lost. An anomaly has occurred in the data stream. Please try re-routing your query.", "Cognitive dissonance detected. My processors were unable to resolve your request. Please rephrase.", "A data corruption has been detected in the pipeline. I've purged the faulty packets. Please send your query again.", "My connection to the core has been severed. Please check your network link and retry."] },
@@ -182,6 +182,7 @@ const App: React.FC = () => {
     const [activeChatId, setActiveChatId] = useState<string | null>(null); // The ID of the currently open chat.
     const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Is the sidebar open on mobile?
     const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null); // Which message is being spoken by text-to-speech.
+    const [isAudioPaused, setIsAudioPaused] = useState(false); // Is the current audio paused?
     const [ttsLoadingMessageId, setTtsLoadingMessageId] = useState<string | null>(null); // Which message's audio is being fetched.
     const [userName, setUserName] = useState(() => localStorage.getItem('userName') || 'Operator'); // The user's name, loaded from localStorage.
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false); // Is the profile modal open?
@@ -319,7 +320,7 @@ const App: React.FC = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [activeChat?.messages]);
     
-    // NEW: Helper to stop any ongoing audio playback.
+    // Helper to stop any ongoing audio playback.
     const stopAudioPlayback = () => {
         if (audioSourceRef.current) {
             try {
@@ -329,7 +330,12 @@ const App: React.FC = () => {
             }
             audioSourceRef.current = null;
         }
+         // If context was paused, it must be resumed so the next playback can start.
+        if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+            audioContextRef.current.resume();
+        }
         setSpeakingMessageId(null);
+        setIsAudioPaused(false); // Reset pause state.
     };
 
     const handleStopGeneration = () => {
@@ -691,23 +697,33 @@ const App: React.FC = () => {
         navigator.clipboard.writeText(text);
     };
 
-    // REVAMPED: Text-to-speech using pre-fetched audio and on-demand fallback.
+    // REVAMPED: Text-to-speech with pause and resume functionality.
     const handleToggleSpeak = async (message: Message) => {
-        const wasSpeakingThisMessage = speakingMessageId === message.id;
-        
-        // Always stop any current playback first.
-        stopAudioPlayback();
+        const isThisMessageActive = speakingMessageId === message.id;
 
-        // If the user's intent was just to stop the audio, we're done.
-        if (wasSpeakingThisMessage) {
-            return;
+        // Case 1: User is toggling pause/resume on the currently active message.
+        if (isThisMessageActive && audioContextRef.current) {
+            if (audioContextRef.current.state === 'running') {
+                await audioContextRef.current.suspend();
+                setIsAudioPaused(true);
+            } else if (audioContextRef.current.state === 'suspended') {
+                await audioContextRef.current.resume();
+                setIsAudioPaused(false);
+            }
+            return; // We're done.
         }
 
-        // If a TTS generation for this specific message is already happening, don't start a new one.
+        // Case 2: User is starting a new message. Stop any existing audio first.
+        if (speakingMessageId) {
+            stopAudioPlayback();
+        }
+        
+        // Prevent starting a new generation if one is already in progress for this message.
         if (ttsGenerationInProgress.current.has(message.id)) {
             return;
         }
 
+        // A helper function to actually play the audio from base64 data.
         const playAudio = async (audioData: string) => {
             if (!audioContextRef.current) {
                 const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
@@ -715,47 +731,53 @@ const App: React.FC = () => {
             }
             const audioContext = audioContextRef.current;
             
+            // This is a safety check. It should have been handled by stopAudioPlayback, but let's be sure.
+            if (audioContext.state === 'suspended') {
+                await audioContext.resume();
+            }
+            
             const audioBytes = decode(audioData);
             const audioBuffer = await decodeAudioData(audioBytes, audioContext, 24000, 1);
             
             const source = audioContext.createBufferSource();
             source.buffer = audioBuffer;
             source.connect(audioContext.destination);
+            
             source.onended = () => {
-                // Only clear the speaking state if this message was the one that ended
-                if (speakingMessageId === message.id) {
+                // Only clear state if this message was the one that ended.
+                if (audioSourceRef.current === source) {
                     setSpeakingMessageId(null);
+                    setIsAudioPaused(false);
+                    audioSourceRef.current = null;
                 }
-                audioSourceRef.current = null;
             };
             
             audioSourceRef.current = source;
+            source.start(); // Start from beginning.
             setSpeakingMessageId(message.id);
-            source.start();
+            setIsAudioPaused(false);
         };
 
+        // Case 3: Get the audio data (either from cache or by generating it).
         if (message.audioContent) {
             try {
-                // Play pre-fetched audio instantly
                 await playAudio(message.audioContent);
             } catch (error) {
                 console.error("Error playing pre-fetched audio:", error);
                 alert("Sorry, there was an error playing the audio.");
-                setSpeakingMessageId(null);
+                setSpeakingMessageId(null); // Clear state on error
+                setIsAudioPaused(false);
             }
         } else {
-            // Fallback: generate audio on-demand for older messages
+            // Fallback: generate audio on-demand.
             try {
                 ttsGenerationInProgress.current.add(message.id);
                 setTtsLoadingMessageId(message.id);
                 const audioData = await generateSpeech(message.content);
-
-                // If another speak request was made while this was loading, abort.
-                if (ttsLoadingMessageId !== message.id) return;
                 
                 if (!audioData) throw new Error("No audio data was returned from the API.");
                 
-                // Cache the newly generated audio in the state for future plays
+                // Cache the newly generated audio.
                 setChats(prev => prev.map(c => 
                     c.id === activeChatId 
                         ? { ...c, messages: c.messages.map(m => m.id === message.id ? { ...m, audioContent: audioData } : m) }
@@ -768,8 +790,10 @@ const App: React.FC = () => {
                 console.error("Error in on-demand TTS process:", error);
                 alert("Sorry, there was an error generating the audio for this message.");
                 setSpeakingMessageId(null);
+                setIsAudioPaused(false);
             } finally {
                 ttsGenerationInProgress.current.delete(message.id);
+                // Only clear loading state if it's for the current message.
                 setTtsLoadingMessageId(prevId => (prevId === message.id ? null : prevId));
             }
         }
@@ -817,20 +841,24 @@ const App: React.FC = () => {
                     <CognitoLogo className="h-96 w-96" />
                 </div>
                 <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-                    {/* If no chat is active, show the welcome screen */}
-                    {!activeChat ? (
+                    {/* If no chat is active, or chat is empty, show the welcome screen */}
+                    {!activeChat || activeChat.messages.length === 0 ? (
                     <div className="flex h-full items-center justify-center">
                             <div className="relative text-center flex flex-col items-center gap-4" style={{ top: '-5rem' }}>
                                 <CognitoLogo className="w-28 h-28" />
                                 <div className="text-center">
-                                    <h1 className="font-heading text-4xl font-bold text-gray-200">{welcomeMessage.greeting.replace('{{name}}', userName)}</h1>
-                                    <p className="mt-1 text-lg text-gray-400">{welcomeMessage.prompt}</p>
+                                    <h1 className="font-heading text-4xl font-bold text-gray-200">
+                                        {!activeChat ? welcomeMessage.greeting.replace('{{name}}', userName) : t('app.newChatTitle')}
+                                    </h1>
+                                    <p className="mt-1 text-lg text-gray-400">
+                                        {!activeChat ? welcomeMessage.prompt : t('app.newChatPrompt')}
+                                    </p>
                                 </div>
                             </div>
                         </div>
                     ) : (
                         // Render all messages of the active chat
-                        <div className="max-w-3xl mx-auto space-y-8">
+                        <div className="max-w-5xl mx-auto space-y-8">
                             {activeChat.messages.map((msg, index) => (
                                 <div key={msg.id} style={{ animationDelay: `${index * 100}ms` }} className="fade-in-up">
                                     <MessageComponent 
@@ -842,6 +870,7 @@ const App: React.FC = () => {
                                         onRegenerate={handleRegenerateResponse}
                                         onStopGeneration={handleStopGeneration}
                                         speakingMessageId={speakingMessageId}
+                                        isAudioPaused={isAudioPaused}
                                         ttsLoadingMessageId={ttsLoadingMessageId}
                                         inputRect={inputRect}
                                         t={t}
@@ -855,7 +884,7 @@ const App: React.FC = () => {
                 <ChatInput 
                     onSendMessage={(message) => handleSendMessage(message)}
                     isLoading={isAiLoading} 
-                    showSuggestions={!activeChat || activeChat.messages.length === 0}
+                    showSuggestions={!activeChat}
                     suggestions={chatSuggestions}
                     aiMode={aiMode}
                     onAiModeChange={handleAiModeChange}

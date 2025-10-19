@@ -72,7 +72,7 @@ const CoreLoadingScreen: React.FC<{ show: boolean, t: (key: string, fallback?: a
         if (!show) {
             setVisibleLogLines(0);
             return;
-        };
+        }
 
         const timers: number[] = [];
         // Start showing log lines after an initial delay
