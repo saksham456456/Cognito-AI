@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect } from 'react';
 
 // Props interface
@@ -527,7 +528,7 @@ class MatrixAnimation extends Animation {
     }
 }
 
-// --- 7. TORNADO STORM (TERRIFYING EDITION) ---
+// --- 7. TORNADO STORM (WARZONE EDITION) ---
 
 // Represents a chunk of the ground ripped up by the storm
 class GroundDebris {
@@ -597,30 +598,236 @@ class GroundDebris {
     }
 }
 
-// Represents a lightning strike from the sky to the ground
+enum WeaponState { IDLE, CHARGING, FIRING }
+
+class RobotDebris {
+    x: number; y: number; z: number;
+    vx: number; vy: number; vz: number;
+    angle: number;
+    rotation: number;
+    rotationSpeed: number;
+    size: number;
+    life: number = 1;
+    isDamaged: boolean;
+    weaponCharge: number;
+    target: RobotDebris | null = null;
+    fireCooldown: number;
+    weaponState: WeaponState = WeaponState.IDLE;
+    chargeTime: number = 0;
+    maxChargeTime: number = 20; // 20 frames to charge
+    private themeColors: { [key: string]: string };
+
+    constructor(width: number, height: number, themeColors: { [key: string]: string }) {
+        this.x = Math.random() * width;
+        this.y = height * (0.8 + Math.random() * 0.2);
+        this.z = Math.random();
+        this.vx = 0; this.vy = 0; this.vz = 0;
+        this.angle = Math.random() * Math.PI * 2;
+        this.rotation = 0;
+        this.rotationSpeed = (Math.random() - 0.5) * 0.05;
+        this.size = (1 + this.z) * 6;
+        this.isDamaged = false;
+        this.weaponCharge = 0;
+        this.fireCooldown = Math.random() * 100 + 50;
+        this.themeColors = themeColors;
+    }
+
+    takeDamage() {
+        this.isDamaged = true;
+        // Could add more logic like reduced life, etc.
+    }
+
+    update(centerX: number, height: number, otherRobots: RobotDebris[], createLaserBolt: (from: RobotDebris, to: RobotDebris) => void) {
+        const climb = this.y / height;
+        const funnelRadius = (1 - climb) * (centerX * 0.3);
+        const targetX = centerX + Math.cos(this.angle) * funnelRadius;
+        
+        this.vx += (targetX - this.x) * 0.004;
+        this.vy += -2.5;
+        
+        this.vx *= 0.96; this.vy *= 0.96;
+
+        this.x += this.vx;
+        this.y += this.vy;
+        this.angle += 0.04;
+        this.rotation += this.rotationSpeed;
+
+        this.fireCooldown--;
+
+        if ((!this.target || this.target.life <= 0) && otherRobots.length > 0) {
+            this.target = otherRobots[Math.floor(Math.random() * otherRobots.length)];
+        }
+
+        // --- FIRING STATE MACHINE ---
+        if (this.weaponState === WeaponState.IDLE && this.fireCooldown <= 0 && this.target && this.target.life > 0) {
+            this.weaponState = WeaponState.CHARGING;
+            this.chargeTime = 0;
+        }
+
+        if (this.weaponState === WeaponState.CHARGING) {
+            if (!this.target || this.target.life <= 0) { // Abort if target is lost
+                this.weaponState = WeaponState.IDLE;
+                this.weaponCharge = 0;
+                this.chargeTime = 0;
+            } else {
+                this.chargeTime++;
+                this.weaponCharge = this.chargeTime / this.maxChargeTime;
+                if (this.chargeTime >= this.maxChargeTime) {
+                    this.weaponState = WeaponState.FIRING;
+                }
+            }
+        }
+
+        if (this.weaponState === WeaponState.FIRING) {
+            if (this.target && this.target.life > 0) {
+                createLaserBolt(this, this.target);
+            }
+            this.weaponState = WeaponState.IDLE;
+            this.weaponCharge = 0;
+            this.chargeTime = 0;
+            this.fireCooldown = Math.random() * 80 + 80;
+        }
+        // --- END STATE MACHINE ---
+
+        if (this.y < 0) this.life = 0;
+    }
+
+    draw(ctx: CanvasRenderingContext2D) {
+        const scale = 0.2 + this.z * 0.8;
+        const currentSize = this.size * scale;
+        if (currentSize < 1) return;
+
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation);
+
+        ctx.fillStyle = this.isDamaged ? `hsl(20, 10%, ${15 + this.z * 10}%)` : `hsl(220, 10%, ${30 + this.z * 20}%)`;
+        ctx.strokeStyle = this.isDamaged ? 'hsl(0, 50%, 40%)' : this.themeColors.accent1;
+        ctx.lineWidth = 0.5;
+        ctx.globalAlpha = 0.9 * scale;
+
+        const bodyW = currentSize * 1.5;
+        const bodyH = currentSize * 2;
+        ctx.fillRect(-bodyW / 2, -bodyH / 2, bodyW, bodyH);
+        ctx.strokeRect(-bodyW / 2, -bodyH / 2, bodyW, bodyH);
+
+        ctx.fillStyle = this.isDamaged ? 'hsl(20, 100%, 30%)' : 'hsl(0, 100%, 50%)';
+        ctx.shadowBlur = 5; ctx.shadowColor = 'hsl(0, 100%, 50%)';
+        ctx.beginPath();
+        ctx.arc(0, -bodyH * 0.2, currentSize * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        const armY = -bodyH * 0.1, armLength = bodyW * 0.8, gunLength = currentSize;
+        ctx.beginPath();
+        ctx.moveTo(-bodyW / 2, armY); ctx.lineTo(-bodyW / 2 - armLength, armY - currentSize * 0.2);
+        ctx.moveTo(bodyW / 2, armY); ctx.lineTo(bodyW / 2 + armLength, armY - currentSize * 0.2);
+        ctx.stroke();
+
+        ctx.fillStyle = `hsl(220, 10%, ${40 + this.z * 20}%)`;
+        ctx.fillRect(-bodyW / 2 - armLength - gunLength, armY - currentSize * 0.2 - currentSize * 0.3, gunLength, currentSize * 0.6);
+        ctx.fillRect(bodyW / 2 + armLength, armY - currentSize * 0.2 - currentSize * 0.3, gunLength, currentSize * 0.6);
+
+        if (this.weaponCharge > 0) {
+            ctx.fillStyle = this.themeColors.primary;
+            ctx.shadowBlur = 10; ctx.shadowColor = this.themeColors.primary;
+            ctx.globalAlpha = this.weaponCharge;
+            ctx.beginPath(); ctx.arc(-bodyW / 2 - armLength - gunLength, armY - currentSize * 0.2, currentSize * 0.4, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(bodyW / 2 + armLength + gunLength, armY - currentSize * 0.2, currentSize * 0.4, 0, Math.PI * 2); ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+
+        ctx.restore();
+    }
+}
+
+class LaserBolt {
+    x: number; y: number;
+    from: RobotDebris;
+    to: RobotDebris;
+    speed: number = 25;
+    length: number = 20;
+    vx: number; vy: number;
+
+    constructor(from: RobotDebris, to: RobotDebris) {
+        this.from = from;
+        this.to = to;
+        this.x = from.x;
+        this.y = from.y;
+        const angle = Math.atan2(to.y - from.y, to.x - from.x);
+        this.vx = Math.cos(angle) * this.speed;
+        this.vy = Math.sin(angle) * this.speed;
+    }
+
+    update(): boolean {
+        this.x += this.vx; this.y += this.vy;
+        return Math.hypot(this.x - this.to.x, this.y - this.to.y) < this.speed;
+    }
+
+    draw(ctx: CanvasRenderingContext2D) {
+        ctx.save();
+        const angle = Math.atan2(this.vy, this.vx);
+        ctx.beginPath();
+        ctx.moveTo(this.x - Math.cos(angle) * this.length, this.y - Math.sin(angle) * this.length);
+        ctx.lineTo(this.x, this.y);
+        
+        ctx.strokeStyle = 'hsl(48, 100%, 70%)'; ctx.lineWidth = 3;
+        ctx.shadowBlur = 15; ctx.shadowColor = 'hsl(48, 100%, 55%)';
+        ctx.stroke();
+        
+        ctx.strokeStyle = 'white'; ctx.lineWidth = 1;
+        ctx.shadowBlur = 0;
+        ctx.stroke();
+
+        ctx.restore();
+    }
+}
+
+class Explosion {
+    x: number; y: number;
+    radius: number = 0;
+    maxRadius: number = 30;
+    life: number = 1.0;
+    
+    constructor(x: number, y: number) { this.x = x; this.y = y; }
+
+    update() {
+        this.life -= 0.05;
+        this.radius = (1 - this.life) * this.maxRadius;
+    }
+
+    draw(ctx: CanvasRenderingContext2D) {
+        if (this.life <= 0) return;
+        ctx.save();
+        const opacity = this.life * this.life;
+        const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
+        grad.addColorStop(0, `hsla(60, 100%, 90%, ${opacity})`);
+        grad.addColorStop(0.5, `hsla(48, 100%, 55%, ${opacity * 0.8})`);
+        grad.addColorStop(1, `hsla(30, 100%, 50%, 0)`);
+
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    }
+}
+
 class SkyLightning {
     x: number; y: number;
     segments: { x: number; y: number }[];
     life: number = 1.0;
-    impacted: boolean = false;
-    // FIX: Add themeColors property to hold theme colors.
     private themeColors: { [key: string]: string };
     
     constructor(startX: number, endY: number, themeColors: { [key: string]: string }) {
-        this.x = startX;
-        this.y = endY;
-        // FIX: Store themeColors passed from the animation class.
-        this.themeColors = themeColors;
+        this.x = startX; this.y = endY; this.themeColors = themeColors;
         this.segments = [{ x: startX, y: 0 }];
-        
-        let currentY = 0;
-        let currentX = startX;
+        let currentY = 0, currentX = startX;
         while(currentY < endY) {
             const nextY = currentY + Math.random() * 30 + 10;
             const nextX = currentX + (Math.random() - 0.5) * 30;
             this.segments.push({x: nextX, y: nextY});
-            currentY = nextY;
-            currentX = nextX;
+            currentY = nextY; currentX = nextX;
         }
         this.segments.push({x: currentX, y: endY});
     }
@@ -631,22 +838,16 @@ class SkyLightning {
         if (this.life <= 0) return;
         ctx.save();
         ctx.globalAlpha = this.life > 0.5 ? 1 : this.life * 2;
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = 'white';
-        ctx.shadowBlur = 20;
-        ctx.shadowColor = this.themeColors.primary;
-        
+        ctx.lineWidth = 3; ctx.strokeStyle = 'white';
+        ctx.shadowBlur = 20; ctx.shadowColor = this.themeColors.primary;
         ctx.beginPath();
         ctx.moveTo(this.segments[0].x, this.segments[0].y);
-        for(let i=1; i < this.segments.length; i++) {
-            ctx.lineTo(this.segments[i].x, this.segments[i].y);
-        }
+        for(let i=1; i < this.segments.length; i++) ctx.lineTo(this.segments[i].x, this.segments[i].y);
         ctx.stroke();
         ctx.restore();
     }
 }
 
-// Represents the shockwave on the ground after an impact
 class ImpactCrater {
     x: number; y: number;
     radius: number = 0;
@@ -654,9 +855,7 @@ class ImpactCrater {
     life: number = 1.0;
 
     constructor(x: number, y: number, maxRadius: number) {
-        this.x = x;
-        this.y = y;
-        this.maxRadius = maxRadius;
+        this.x = x; this.y = y; this.maxRadius = maxRadius;
     }
 
     update() {
@@ -677,6 +876,9 @@ class ImpactCrater {
 
 class TornadoStormAnimation extends Animation {
     private particles: GroundDebris[] = [];
+    private robots: RobotDebris[] = [];
+    private laserBolts: LaserBolt[] = [];
+    private explosions: Explosion[] = [];
     private lightning: SkyLightning[] = [];
     private impacts: ImpactCrater[] = [];
     private eyeState = { y: 0, radius: 0, pulse: 0 };
@@ -684,131 +886,98 @@ class TornadoStormAnimation extends Animation {
     private rageFlash: number = 0;
     
     init() {
-        this.particles = [];
-        this.lightning = [];
-        this.impacts = [];
-        
+        this.particles = []; this.robots = []; this.laserBolts = []; this.explosions = []; this.lightning = []; this.impacts = [];
         const particleCount = this.canvas.width < 768 ? 100 : 200;
-        for (let i = 0; i < particleCount; i++) {
-            this.particles.push(new GroundDebris(this.canvas.width, this.canvas.height));
-        }
+        for (let i = 0; i < particleCount; i++) this.particles.push(new GroundDebris(this.canvas.width, this.canvas.height));
+        const robotCount = this.canvas.width < 768 ? 8 : 15;
+        for (let i = 0; i < robotCount; i++) this.robots.push(new RobotDebris(this.canvas.width, this.canvas.height, this.themeColors));
     }
     
     private triggerStrike() {
         const strikeX = this.canvas.width * (0.1 + Math.random() * 0.8);
         const strikeY = this.canvas.height * (0.6 + Math.random() * 0.3);
-        // FIX: Pass this.themeColors to the SkyLightning constructor.
         this.lightning.push(new SkyLightning(strikeX, strikeY, this.themeColors));
         this.impacts.push(new ImpactCrater(strikeX, strikeY, 150));
-        this.cameraShake.intensity = 15;
-        this.rageFlash = 0.4;
+        this.cameraShake.intensity = 15; this.rageFlash = 0.4;
     }
 
+    private addLaserBolt = (from: RobotDebris, to: RobotDebris) => this.laserBolts.push(new LaserBolt(from, to));
+    private addExplosion = (x: number, y: number, hitRobot: RobotDebris) => {
+        this.explosions.push(new Explosion(x, y));
+        hitRobot.takeDamage();
+    };
+
     private drawGroundGrid(ctx: CanvasRenderingContext2D, horizonY: number, perspective: number) {
-        ctx.strokeStyle = "hsla(220, 100%, 65%, 0.1)";
-        ctx.lineWidth = 1;
+        ctx.strokeStyle = "hsla(220, 100%, 65%, 0.1)"; ctx.lineWidth = 1;
         for (let i = 0; i <= 20; i++) {
             const y = horizonY + Math.pow(i / 20, 2) * (this.canvas.height - horizonY);
-            ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(this.canvas.width, y);
-            ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(this.canvas.width, y); ctx.stroke();
         }
         for (let i = -10; i <= 10; i++) {
-            const x1 = this.canvas.width / 2 + i * 20;
-            const x2 = this.canvas.width / 2 + (i * 20) * perspective;
-            ctx.beginPath();
-            ctx.moveTo(x1, horizonY);
-            ctx.lineTo(x2, this.canvas.height);
-            ctx.stroke();
+            const x1 = this.canvas.width / 2 + i * 20; const x2 = this.canvas.width / 2 + (i * 20) * perspective;
+            ctx.beginPath(); ctx.moveTo(x1, horizonY); ctx.lineTo(x2, this.canvas.height); ctx.stroke();
         }
     }
     
     animate(timestamp: number) {
-        // --- UPDATE ---
-        this.eyeState.pulse = timestamp * 0.005;
-
-        if (Math.random() > 0.985 && this.lightning.length < 3) {
-            this.triggerStrike();
-        }
+        if (Math.random() > 0.985 && this.lightning.length < 3) this.triggerStrike();
 
         this.particles.forEach(p => p.update(this.canvas.width / 2, this.canvas.height));
         this.particles = this.particles.filter(p => p.life > 0);
-        if(this.particles.length < 200) {
-             this.particles.push(new GroundDebris(this.canvas.width, this.canvas.height));
-        }
+        if(this.particles.length < 200) this.particles.push(new GroundDebris(this.canvas.width, this.canvas.height));
 
-        this.lightning.forEach(l => l.update());
-        this.lightning = this.lightning.filter(l => l.life > 0);
+        const aliveRobots = this.robots.filter(r => r.life > 0);
+        aliveRobots.forEach(robot => {
+            const potentialTargets = aliveRobots.filter(r => r !== robot);
+            robot.update(this.canvas.width / 2, this.canvas.height, potentialTargets, this.addLaserBolt);
+        });
+        this.robots = this.robots.filter(r => r.life > 0);
+        if (this.robots.length < (this.canvas.width < 768 ? 8 : 15)) this.robots.push(new RobotDebris(this.canvas.width, this.canvas.height, this.themeColors));
 
-        this.impacts.forEach(i => i.update());
-        this.impacts = this.impacts.filter(i => i.life > 0);
+        this.laserBolts = this.laserBolts.filter(bolt => {
+            if (bolt.update()) { 
+                this.addExplosion(bolt.to.x, bolt.to.y, bolt.to); 
+                return false; 
+            }
+            return true;
+        });
+        
+        this.explosions.forEach(e => e.update()); this.explosions = this.explosions.filter(e => e.life > 0);
+        this.lightning.forEach(l => l.update()); this.lightning = this.lightning.filter(l => l.life > 0);
+        this.impacts.forEach(i => i.update()); this.impacts = this.impacts.filter(i => i.life > 0);
 
         if (this.cameraShake.intensity > 0) {
             this.cameraShake.x = (Math.random() - 0.5) * this.cameraShake.intensity;
             this.cameraShake.y = (Math.random() - 0.5) * this.cameraShake.intensity;
             this.cameraShake.intensity *= 0.9;
         }
-
-        if (this.rageFlash > 0) {
-            this.rageFlash -= 0.02;
-        }
+        if (this.rageFlash > 0) this.rageFlash -= 0.02;
         
-        // --- DRAW ---
         this.ctx.save();
         this.ctx.translate(this.cameraShake.x, this.cameraShake.y);
-
-        // Background
         this.ctx.fillStyle = this.themeColors.bgDark;
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
-        // Rage Flash
+        this.ctx.fillRect(-this.cameraShake.intensity, -this.cameraShake.intensity, this.canvas.width + this.cameraShake.intensity * 2, this.canvas.height + this.cameraShake.intensity * 2);
         if (this.rageFlash > 0) {
             this.ctx.fillStyle = `hsla(0, 100%, 50%, ${this.rageFlash})`;
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         }
 
-        // Sky Fracture
-        if (Math.random() > 0.95) {
-            this.ctx.font = '12px "Roboto Mono", monospace';
-            this.ctx.fillStyle = `hsla(220, 100%, 75%, ${Math.random() * 0.5})`;
-            this.ctx.fillText(btoa(String(timestamp)), Math.random() * this.canvas.width, Math.random() * 50);
-        }
-
-        // Ground
-        const horizonY = this.canvas.height * 0.6;
-        this.drawGroundGrid(this.ctx, horizonY, 2);
-        
-        // Impacts
+        this.drawGroundGrid(this.ctx, this.canvas.height * 0.6, 2);
         this.impacts.forEach(i => i.draw(this.ctx));
         
-        // Tornado
         this.ctx.globalCompositeOperation = 'lighter';
-        this.particles.sort((a, b) => a.z - b.z);
-        this.particles.forEach(p => p.draw(this.ctx));
-        
-        // Eye of the Storm
-        this.eyeState.y = this.canvas.height * 0.4;
-        this.eyeState.radius = this.canvas.width * 0.05 + Math.sin(this.eyeState.pulse) * 5;
+        const allDebris = [...this.particles, ...this.robots].sort((a, b) => a.z - b.z);
+        allDebris.forEach(d => d.draw(this.ctx));
+        this.laserBolts.forEach(b => b.draw(this.ctx));
+        this.explosions.forEach(e => e.draw(this.ctx));
+
+        this.eyeState = { y: this.canvas.height * 0.4, radius: this.canvas.width * 0.05 + Math.sin(timestamp * 0.005) * 5, pulse: timestamp * 0.005 };
         const eyeGrad = this.ctx.createRadialGradient(this.canvas.width / 2, this.eyeState.y, 0, this.canvas.width / 2, this.eyeState.y, this.eyeState.radius);
-        eyeGrad.addColorStop(0, 'hsla(0, 100%, 50%, 0.8)');
-        eyeGrad.addColorStop(0.5, 'hsla(0, 100%, 50%, 0.3)');
-        eyeGrad.addColorStop(1, 'hsla(0, 100%, 50%, 0)');
-        this.ctx.fillStyle = eyeGrad;
-        this.ctx.beginPath();
-        this.ctx.arc(this.canvas.width / 2, this.eyeState.y, this.eyeState.radius, 0, Math.PI * 2);
-        this.ctx.fill();
+        eyeGrad.addColorStop(0, 'hsla(0, 100%, 50%, 0.8)'); eyeGrad.addColorStop(1, 'hsla(0, 100%, 50%, 0)');
+        this.ctx.fillStyle = eyeGrad; this.ctx.beginPath(); this.ctx.arc(this.canvas.width / 2, this.eyeState.y, this.eyeState.radius, 0, Math.PI * 2); this.ctx.fill();
         
-        this.ctx.fillStyle = 'hsla(0, 100%, 20%, 0.9)';
-        this.ctx.beginPath();
-        this.ctx.arc(this.canvas.width / 2, this.eyeState.y, this.eyeState.radius * 0.2, 0, Math.PI * 2);
-        this.ctx.fill();
-
         this.ctx.globalCompositeOperation = 'source-over';
-        
-        // Lightning
         this.lightning.forEach(l => l.draw(this.ctx));
-
         this.ctx.restore();
     }
 }
