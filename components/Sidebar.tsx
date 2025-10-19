@@ -219,7 +219,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                       >
                           <option value="particles">Plexus</option>
                           <option value="lightning">Arc Lightning</option>
-                          <option value="security">Security Matrix</option>
+                          <option value="matrix">Matrix Rain</option>
                           <option value="hexagons">Hex Grid</option>
                           <option value="circuits">Circuits</option>
                       </select>

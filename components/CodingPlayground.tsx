@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import type { Message, Chat } from '../types';
 import { MenuIcon, CodeBracketIcon, PythonLogoIcon, SendIcon, ClipboardIcon, CheckIcon } from './icons';
@@ -27,37 +28,23 @@ const languageInfo: Record<Language, { name: string, boilerplate: string, icon: 
     python: { 
         name: 'Python', 
         icon: <PythonLogoIcon className="w-5 h-5" />, 
-        boilerplate: `# A simple calculator function
-def calculate(num1, operator, num2):
-  """Performs a basic arithmetic operation."""
-  if operator == '+':
-    return num1 + num2
-  elif operator == '-':
-    return num1 - num2
-  elif operator == '*':
-    return num1 * num2
-  elif operator == '/':
-    if num2 == 0:
-      return "Error: Division by zero is not allowed."
-    return num1 / num2
-  else:
-    return "Error: Invalid operator. Please use +, -, *, or /."
+        boilerplate: `a = 42.0
+b = 8.0
+op = '*'
 
-# --- Example Usage ---
-# Change the values below to perform a different calculation
-number1 = 15
-operator_symbol = '*'
-number2 = 4
+if op == '+':
+    result = a + b
+elif op == '-':
+    result = a - b
+elif op == '*':
+    result = a * b
+elif op == '/':
+    result = a / b if b != 0 else "Error: Division by zero"
+else:
+    result = "Invalid operation"
 
-result = calculate(number1, operator_symbol, number2)
-
-# Print the final result to the console
-print(f"Calculation: {number1} {operator_symbol} {number2}")
-print(f"Result: {result}")
-
-# Another example
-print("\\n--- Another Example ---")
-print(f"Result of 100 / 5 is: {calculate(100, '/', 5)}")`
+print(result)
+`
     },
     html: { name: 'HTML', icon: <CodeBracketIcon className="w-5 h-5" />, boilerplate: `<!DOCTYPE html>\n<html>\n<head>\n  <title>My Page</title>\n  <link rel="stylesheet" href="style.css">\n</head>\n<body>\n  <h1></h1>\n  <p>This is a sample page.</p>\n  <script src="script.js"></script>\n</body>\n</html>` },
     css: { name: 'CSS', icon: <CodeBracketIcon className="w-5 h-5" />, boilerplate: `body {\n  font-family: sans-serif;\n  background-color: #f0f0f0;\n  color: #333;\n}\n\nh1 {\n  color: navy;\n}` },

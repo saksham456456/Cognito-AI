@@ -70,9 +70,13 @@ export async function loadChats(): Promise<Chat[]> {
     const store = transaction.objectStore(CHATS_STORE_NAME);
     const request = store.getAll(); // Get all records.
     request.onsuccess = () => {
-        // Create a shallow copy of the result from IndexedDB before sorting.
-        // Directly modifying the original result array can cause an "Illegal invocation" error in some browsers.
-        const chats = [...request.result];
+        // The result from IndexedDB can sometimes be a read-only or "live" collection.
+        // Directly sorting it can cause an "Illegal invocation" error in some browsers.
+        // To fix this, we create a deep copy of the results to ensure we have a plain
+        // JavaScript array of objects that can be safely manipulated. A shallow copy ([...request.result])
+        // is not enough as the objects inside are still references.
+        const chats = JSON.parse(JSON.stringify(request.result));
+        
         // Sort chats in descending order by ID (newest first).
         chats.sort((a, b) => parseInt(b.id) - parseInt(a.id));
         resolve(chats);
