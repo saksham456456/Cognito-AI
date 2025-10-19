@@ -527,116 +527,289 @@ class MatrixAnimation extends Animation {
     }
 }
 
-// --- 7. TORNADO STORM ---
-class TornadoParticle {
-    x: number; y: number; z: number;
-    angle: number;
-    radius: number;
-    climb: number;
-    color: string;
-    speed: number;
+// --- 7. TORNADO STORM (TERRIFYING EDITION) ---
 
-    constructor(x: number, height: number, color: string) {
-        this.x = x;
-        this.y = Math.random() * height;
+// Represents a chunk of the ground ripped up by the storm
+class GroundDebris {
+    x: number; y: number; z: number;
+    vx: number; vy: number; vz: number;
+    angle: number;
+    rotation: number;
+    rotationSpeed: number;
+    size: number;
+    life: number = 1;
+
+    constructor(width: number, height: number) {
+        this.x = Math.random() * width;
+        this.y = height * (0.8 + Math.random() * 0.2);
         this.z = Math.random();
+        this.vx = 0;
+        this.vy = 0;
+        this.vz = 0;
         this.angle = Math.random() * Math.PI * 2;
-        this.radius = 0;
-        this.climb = 0;
-        this.color = color;
-        this.speed = (Math.random() * 0.02 + 0.01) * (1 + this.z);
+        this.rotation = 0;
+        this.rotationSpeed = (Math.random() - 0.5) * 0.1;
+        this.size = (1 + this.z) * 4;
     }
 
-    update(height: number, width: number) {
-        this.angle += this.speed;
-        this.climb = this.y / height;
+    update(centerX: number, height: number) {
+        const climb = this.y / height;
+        const funnelRadius = (1 - climb) * (centerX * 0.3);
+        const targetX = centerX + Math.cos(this.angle) * funnelRadius;
+        
+        // Attraction towards funnel center
+        this.vx += (targetX - this.x) * 0.005;
+        this.vy += -2.5; // Updraft
+        
+        this.vx *= 0.95; // Damping
+        this.vy *= 0.95;
 
-        this.radius = (1 - this.climb) * (width * 0.2) + (this.climb * (width * 0.01));
-        this.radius *= (1 + Math.sin(this.y * 0.01 + this.angle) * 0.1);
+        this.x += this.vx;
+        this.y += this.vy;
+        this.angle += 0.05;
+        this.rotation += this.rotationSpeed;
 
-        this.y -= (1.5 + this.z * 1.5);
-        if (this.y < 0) {
-            this.y = height;
-            this.z = Math.random();
-            this.speed = (Math.random() * 0.02 + 0.01) * (1 + this.z);
+        if (this.y < 0) this.life = 0;
+    }
+
+    draw(ctx: CanvasRenderingContext2D) {
+        const scale = 0.2 + this.z * 0.8;
+        const currentSize = this.size * scale;
+        
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation);
+        
+        ctx.fillStyle = `hsl(20, 10%, ${20 + this.z * 20}%)`;
+        ctx.strokeStyle = 'hsl(48, 100%, 55%)';
+        ctx.lineWidth = 0.5;
+        ctx.globalAlpha = 0.8 * scale;
+        
+        ctx.beginPath();
+        ctx.moveTo(-currentSize, -currentSize);
+        ctx.lineTo(currentSize, -currentSize / 2);
+        ctx.lineTo(currentSize / 2, currentSize);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        
+        ctx.restore();
+    }
+}
+
+// Represents a lightning strike from the sky to the ground
+class SkyLightning {
+    x: number; y: number;
+    segments: { x: number; y: number }[];
+    life: number = 1.0;
+    impacted: boolean = false;
+    // FIX: Add themeColors property to hold theme colors.
+    private themeColors: { [key: string]: string };
+    
+    constructor(startX: number, endY: number, themeColors: { [key: string]: string }) {
+        this.x = startX;
+        this.y = endY;
+        // FIX: Store themeColors passed from the animation class.
+        this.themeColors = themeColors;
+        this.segments = [{ x: startX, y: 0 }];
+        
+        let currentY = 0;
+        let currentX = startX;
+        while(currentY < endY) {
+            const nextY = currentY + Math.random() * 30 + 10;
+            const nextX = currentX + (Math.random() - 0.5) * 30;
+            this.segments.push({x: nextX, y: nextY});
+            currentY = nextY;
+            currentX = nextX;
         }
+        this.segments.push({x: currentX, y: endY});
+    }
+
+    update() { this.life -= 0.08; }
+
+    draw(ctx: CanvasRenderingContext2D) {
+        if (this.life <= 0) return;
+        ctx.save();
+        ctx.globalAlpha = this.life > 0.5 ? 1 : this.life * 2;
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = 'white';
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = this.themeColors.primary;
+        
+        ctx.beginPath();
+        ctx.moveTo(this.segments[0].x, this.segments[0].y);
+        for(let i=1; i < this.segments.length; i++) {
+            ctx.lineTo(this.segments[i].x, this.segments[i].y);
+        }
+        ctx.stroke();
+        ctx.restore();
+    }
+}
+
+// Represents the shockwave on the ground after an impact
+class ImpactCrater {
+    x: number; y: number;
+    radius: number = 0;
+    maxRadius: number;
+    life: number = 1.0;
+
+    constructor(x: number, y: number, maxRadius: number) {
+        this.x = x;
+        this.y = y;
+        this.maxRadius = maxRadius;
+    }
+
+    update() {
+        this.life -= 0.04;
+        this.radius = (1 - (this.life * this.life)) * this.maxRadius;
+    }
+
+    draw(ctx: CanvasRenderingContext2D) {
+        if (this.life <= 0) return;
+        const opacity = this.life * this.life;
+        ctx.strokeStyle = `hsla(60, 100%, 80%, ${opacity * 0.8})`;
+        ctx.lineWidth = 3 * this.life;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.stroke();
     }
 }
 
 class TornadoStormAnimation extends Animation {
-    private particles: TornadoParticle[] = [];
-    private debris: {x: number, y: number, z: number, l: number}[] = [];
-
+    private particles: GroundDebris[] = [];
+    private lightning: SkyLightning[] = [];
+    private impacts: ImpactCrater[] = [];
+    private eyeState = { y: 0, radius: 0, pulse: 0 };
+    private cameraShake = { x: 0, y: 0, intensity: 0 };
+    private rageFlash: number = 0;
+    
     init() {
         this.particles = [];
-        this.debris = [];
-        const particleCount = this.canvas.width < 768 ? 400 : 800;
-        const debrisCount = this.canvas.width < 768 ? 50 : 100;
-
+        this.lightning = [];
+        this.impacts = [];
+        
+        const particleCount = this.canvas.width < 768 ? 100 : 200;
         for (let i = 0; i < particleCount; i++) {
-            const color = Math.random() > 0.2 ? this.themeColors.accent1 : this.themeColors.primary;
-            this.particles.push(new TornadoParticle(this.canvas.width / 2, this.canvas.height, color));
-        }
-
-        for (let i = 0; i < debrisCount; i++) {
-            this.debris.push({
-                x: Math.random() * this.canvas.width,
-                y: Math.random() * this.canvas.height,
-                z: Math.random(),
-                l: Math.random()
-            });
+            this.particles.push(new GroundDebris(this.canvas.width, this.canvas.height));
         }
     }
+    
+    private triggerStrike() {
+        const strikeX = this.canvas.width * (0.1 + Math.random() * 0.8);
+        const strikeY = this.canvas.height * (0.6 + Math.random() * 0.3);
+        // FIX: Pass this.themeColors to the SkyLightning constructor.
+        this.lightning.push(new SkyLightning(strikeX, strikeY, this.themeColors));
+        this.impacts.push(new ImpactCrater(strikeX, strikeY, 150));
+        this.cameraShake.intensity = 15;
+        this.rageFlash = 0.4;
+    }
 
-    animate() {
-        this.ctx.fillStyle = `rgba(10, 10, 14, 0.2)`;
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.globalCompositeOperation = 'lighter';
-        
-        // Draw debris
-        this.ctx.strokeStyle = 'rgba(180, 180, 180, 0.2)';
-        this.ctx.lineWidth = 1;
-        this.debris.forEach(d => {
-            d.x -= (1 + d.z) * 5;
-            if (d.x < 0) d.x = this.canvas.width;
-            
-            this.ctx.beginPath();
-            this.ctx.moveTo(d.x, d.y);
-            this.ctx.lineTo(d.x + (1 + d.z) * d.l * 5, d.y);
-            this.ctx.stroke();
-        });
-
-
-        const centerX = this.canvas.width / 2;
-        this.particles.sort((a, b) => a.z - b.z);
-
-        this.particles.forEach(p => {
-            p.update(this.canvas.height, this.canvas.width);
-            
-            const px = centerX + Math.cos(p.angle) * p.radius;
-            const py = p.y;
-            const size = (1 + p.z) * 1.5;
-            
-            this.ctx.beginPath();
-            this.ctx.arc(px, py, size * (1-p.climb), 0, Math.PI * 2);
-            this.ctx.fillStyle = p.color;
-            this.ctx.globalAlpha = 0.5 + p.z * 0.5;
-            this.ctx.fill();
-        });
-        
-        this.ctx.globalCompositeOperation = 'source-over';
-        this.ctx.globalAlpha = 1;
-
-        // Digital Glitch effect
-        if (Math.random() > 0.98) {
-            this.ctx.fillStyle = `hsla(48, 100%, 55%, ${Math.random() * 0.1})`;
-            this.ctx.fillRect(
-                Math.random() * this.canvas.width,
-                Math.random() * this.canvas.height,
-                Math.random() * 200,
-                Math.random() * 5
-            );
+    private drawGroundGrid(ctx: CanvasRenderingContext2D, horizonY: number, perspective: number) {
+        ctx.strokeStyle = "hsla(220, 100%, 65%, 0.1)";
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 20; i++) {
+            const y = horizonY + Math.pow(i / 20, 2) * (this.canvas.height - horizonY);
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(this.canvas.width, y);
+            ctx.stroke();
         }
+        for (let i = -10; i <= 10; i++) {
+            const x1 = this.canvas.width / 2 + i * 20;
+            const x2 = this.canvas.width / 2 + (i * 20) * perspective;
+            ctx.beginPath();
+            ctx.moveTo(x1, horizonY);
+            ctx.lineTo(x2, this.canvas.height);
+            ctx.stroke();
+        }
+    }
+    
+    animate(timestamp: number) {
+        // --- UPDATE ---
+        this.eyeState.pulse = timestamp * 0.005;
+
+        if (Math.random() > 0.985 && this.lightning.length < 3) {
+            this.triggerStrike();
+        }
+
+        this.particles.forEach(p => p.update(this.canvas.width / 2, this.canvas.height));
+        this.particles = this.particles.filter(p => p.life > 0);
+        if(this.particles.length < 200) {
+             this.particles.push(new GroundDebris(this.canvas.width, this.canvas.height));
+        }
+
+        this.lightning.forEach(l => l.update());
+        this.lightning = this.lightning.filter(l => l.life > 0);
+
+        this.impacts.forEach(i => i.update());
+        this.impacts = this.impacts.filter(i => i.life > 0);
+
+        if (this.cameraShake.intensity > 0) {
+            this.cameraShake.x = (Math.random() - 0.5) * this.cameraShake.intensity;
+            this.cameraShake.y = (Math.random() - 0.5) * this.cameraShake.intensity;
+            this.cameraShake.intensity *= 0.9;
+        }
+
+        if (this.rageFlash > 0) {
+            this.rageFlash -= 0.02;
+        }
+        
+        // --- DRAW ---
+        this.ctx.save();
+        this.ctx.translate(this.cameraShake.x, this.cameraShake.y);
+
+        // Background
+        this.ctx.fillStyle = this.themeColors.bgDark;
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Rage Flash
+        if (this.rageFlash > 0) {
+            this.ctx.fillStyle = `hsla(0, 100%, 50%, ${this.rageFlash})`;
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        }
+
+        // Sky Fracture
+        if (Math.random() > 0.95) {
+            this.ctx.font = '12px "Roboto Mono", monospace';
+            this.ctx.fillStyle = `hsla(220, 100%, 75%, ${Math.random() * 0.5})`;
+            this.ctx.fillText(btoa(String(timestamp)), Math.random() * this.canvas.width, Math.random() * 50);
+        }
+
+        // Ground
+        const horizonY = this.canvas.height * 0.6;
+        this.drawGroundGrid(this.ctx, horizonY, 2);
+        
+        // Impacts
+        this.impacts.forEach(i => i.draw(this.ctx));
+        
+        // Tornado
+        this.ctx.globalCompositeOperation = 'lighter';
+        this.particles.sort((a, b) => a.z - b.z);
+        this.particles.forEach(p => p.draw(this.ctx));
+        
+        // Eye of the Storm
+        this.eyeState.y = this.canvas.height * 0.4;
+        this.eyeState.radius = this.canvas.width * 0.05 + Math.sin(this.eyeState.pulse) * 5;
+        const eyeGrad = this.ctx.createRadialGradient(this.canvas.width / 2, this.eyeState.y, 0, this.canvas.width / 2, this.eyeState.y, this.eyeState.radius);
+        eyeGrad.addColorStop(0, 'hsla(0, 100%, 50%, 0.8)');
+        eyeGrad.addColorStop(0.5, 'hsla(0, 100%, 50%, 0.3)');
+        eyeGrad.addColorStop(1, 'hsla(0, 100%, 50%, 0)');
+        this.ctx.fillStyle = eyeGrad;
+        this.ctx.beginPath();
+        this.ctx.arc(this.canvas.width / 2, this.eyeState.y, this.eyeState.radius, 0, Math.PI * 2);
+        this.ctx.fill();
+        
+        this.ctx.fillStyle = 'hsla(0, 100%, 20%, 0.9)';
+        this.ctx.beginPath();
+        this.ctx.arc(this.canvas.width / 2, this.eyeState.y, this.eyeState.radius * 0.2, 0, Math.PI * 2);
+        this.ctx.fill();
+
+        this.ctx.globalCompositeOperation = 'source-over';
+        
+        // Lightning
+        this.lightning.forEach(l => l.draw(this.ctx));
+
+        this.ctx.restore();
     }
 }
 
