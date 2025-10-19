@@ -128,6 +128,7 @@ interface MessageProps {
   isAudioPaused: boolean; // Is the currently playing audio paused?
   ttsLoadingMessageId: string | null; // The ID of the message whose audio is currently loading.
   inputRect: DOMRect | null; // The position of the chat input bar for animations.
+  reportRect: (rect: DOMRect | null) => void; // NEW: Callback to report this component's position.
   t: (key: string, fallback?: any) => any; // Translation function.
 }
 
@@ -173,6 +174,7 @@ const MessageComponent: React.FC<MessageProps> = ({
     isAudioPaused,
     ttsLoadingMessageId,
     inputRect,
+    reportRect,
     t
 }) => {
   const [isCopied, setIsCopied] = useState(false); // State for whether the text has been copied.
@@ -183,6 +185,21 @@ const MessageComponent: React.FC<MessageProps> = ({
 
   const messageRef = useRef<HTMLDivElement>(null);
   const isNewUserMessage = isLastMessage && isUser && !isAiLoading;
+  const isNewAiMessage = isLastMessage && !isUser && isAiLoading;
+
+  // NEW: Effect to report the AI message bubble's position for the synapse animation.
+  useLayoutEffect(() => {
+    if (isNewAiMessage && messageRef.current) {
+        reportRect(messageRef.current.getBoundingClientRect());
+    }
+    // Clean up when it's no longer the new AI message.
+    return () => {
+        if (isNewAiMessage) {
+            reportRect(null);
+        }
+    };
+  }, [isNewAiMessage, reportRect, message.content.length]); // Re-run if content length changes, as this can move the box.
+
 
   // Classes for conditional styling.
   const containerClasses = `flex items-start gap-3 w-full group relative ${isUser ? 'justify-end' : 'justify-start'}`;
@@ -216,8 +233,7 @@ const MessageComponent: React.FC<MessageProps> = ({
       <button 
         onClick={() => onSpeak(message)} 
         title="Speak" 
-        className="p-1.5 rounded-full bg-input hover:bg-input-border transition-colors border border-card-border disabled:opacity-50 disabled:cursor-not-allowed"
-        disabled={!!ttsLoadingMessageId && !isTtsLoading}
+        className="p-1.5 rounded-full bg-input hover:bg-input-border transition-colors border border-card-border"
       >
         {isTtsLoading ? (
             <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>

@@ -189,9 +189,17 @@ const App: React.FC = () => {
     const [isAboutModalOpen, setIsAboutModalOpen] = useState(false); // Is the about modal open?
     const [isConfirmDeleteAllOpen, setIsConfirmDeleteAllOpen] = useState(false); // Is the "Delete all" confirmation modal open?
     const [isDbLoading, setIsDbLoading] = useState(true); // Are chats being loaded from the database?
-    const [backgroundAnimation, setBackgroundAnimation] = useState<string>(() => localStorage.getItem('backgroundAnimation') || 'particles'); // Background animation type.
+    const [backgroundAnimation, setBackgroundAnimation] = useState<string>(() => {
+        let saved = localStorage.getItem('backgroundAnimation');
+        // Migrate old/removed animation names to the new default
+        if (['hexagons', 'neural_scape', 'cognitive_flow', 'cognitive_convergence', 'data_storm'].includes(saved || '')) {
+            saved = 'particles';
+        }
+        return saved || 'particles';
+    });
     const [aiMode, setAiMode] = useState<AiMode>('cognito'); // Current AI mode.
     const [inputRect, setInputRect] = useState<DOMRect | null>(null); // Position of the input bar.
+    const [aiMessageRect, setAiMessageRect] = useState<DOMRect | null>(null); // Position of the AI message bubble.
     const [locale, setLocale] = useState<string>(() => localStorage.getItem('locale') || 'en');
     
     // App view management states
@@ -206,7 +214,8 @@ const App: React.FC = () => {
     const stopGenerationRef = useRef(false); // Flag to stop the AI response stream.
     const audioContextRef = useRef<AudioContext | null>(null); // Ref for the Web Audio API context.
     const audioSourceRef = useRef<AudioBufferSourceNode | null>(null); // Ref for the current audio source.
-    const ttsGenerationInProgress = useRef(new Set<string>()); // NEW: Tracks in-flight TTS generation requests.
+    const ttsGenerationInProgress = useRef(new Set<string>()); // Tracks in-flight TTS generation requests.
+    
     chatsRef.current = chats;
 
     // Finding the active chat from the chats array.
@@ -319,7 +328,7 @@ const App: React.FC = () => {
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [activeChat?.messages]);
-    
+
     // Helper to stop any ongoing audio playback.
     const stopAudioPlayback = () => {
         if (audioSourceRef.current) {
@@ -826,7 +835,7 @@ const App: React.FC = () => {
     
     const renderChatView = () => (
         <>
-            <header className="flex-shrink-0 flex items-center justify-center p-4 border-b border-card-border glassmorphism relative">
+            <header className="flex-shrink-0 flex items-center justify-center p-4 border-b border-card-border glassmorphism relative z-10">
                 {/* Menu button for mobile */}
                 <button onClick={() => setIsSidebarOpen(true)} className="p-1 rounded-md border border-transparent hover:border-card-border absolute left-4 top-1/2 -translate-y-1/2 md:hidden">
                     <MenuIcon className="h-6 w-6" />
@@ -835,7 +844,7 @@ const App: React.FC = () => {
                     {activeChat ? activeChat.title : t('app.defaultChatTitle')}
                 </h1>
             </header>
-            <div className="flex-1 flex flex-col relative overflow-hidden min-h-0">
+            <div className="flex-1 flex flex-col relative overflow-hidden min-h-0 z-10">
                  {/* Faint logo in the background (watermark) */}
                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none watermark">
                     <CognitoLogo className="h-96 w-96" />
@@ -873,6 +882,7 @@ const App: React.FC = () => {
                                         isAudioPaused={isAudioPaused}
                                         ttsLoadingMessageId={ttsLoadingMessageId}
                                         inputRect={inputRect}
+                                        reportRect={setAiMessageRect}
                                         t={t}
                                     />
                                 </div>
@@ -921,8 +931,7 @@ const App: React.FC = () => {
 
     // The main JSX structure of the component.
     return (
-        <div className="bg-transparent h-screen grid md:grid-cols-[auto_1fr] text-card-foreground overflow-hidden">
-            <BackgroundCanvas animationType={backgroundAnimation} />
+        <div className="bg-background h-screen grid md:grid-cols-[auto_1fr] text-card-foreground overflow-hidden">
             <Sidebar 
                 chats={chats}
                 activeChatId={activeChatId}
@@ -946,6 +955,7 @@ const App: React.FC = () => {
              {isSidebarOpen && <div onClick={() => setIsSidebarOpen(false)} className="fixed inset-0 bg-black/50 z-10 md:hidden"></div>}
             
             <main className="flex flex-col relative overflow-hidden">
+                <BackgroundCanvas animationType={backgroundAnimation} />
                 {renderCurrentView()}
             </main>
 

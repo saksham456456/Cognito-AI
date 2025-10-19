@@ -51,8 +51,11 @@ abstract class Animation {
   
   // Common resize handler
   public resize() {
-    this.canvas.width = window.innerWidth;
-    this.canvas.height = window.innerHeight;
+    // We now size based on the parent element, not the window.
+    if (this.canvas.parentElement) {
+      this.canvas.width = this.canvas.parentElement.clientWidth;
+      this.canvas.height = this.canvas.parentElement.clientHeight;
+    }
     this.getThemeColors();
     this.init(); // Re-initialize on resize
   }
@@ -384,70 +387,6 @@ class ArcLightningAnimation extends Animation {
 }
 
 
-// --- 4. HEX GRID ---
-class Hexagon {
-    x: number; y: number;
-    size: number;
-    life: number = 0;
-    maxLife: number;
-    color: string;
-
-    constructor(x: number, y: number, size: number, color: string) {
-        this.x = x;
-        this.y = y;
-        this.size = size;
-        this.maxLife = Math.random() * 200 + 100;
-        this.color = color;
-    }
-
-    updateAndDraw(ctx: CanvasRenderingContext2D) {
-        this.life++;
-        if (this.life > this.maxLife) this.life = 0;
-
-        const opacity = Math.sin((this.life / this.maxLife) * Math.PI);
-
-        ctx.beginPath();
-        for (let i = 0; i < 6; i++) {
-            const angle = (Math.PI / 3) * i;
-            const x_i = this.x + this.size * Math.cos(angle);
-            const y_i = this.y + this.size * Math.sin(angle);
-            if (i === 0) ctx.moveTo(x_i, y_i);
-            else ctx.lineTo(x_i, y_i);
-        }
-        ctx.closePath();
-        ctx.strokeStyle = this.color;
-        ctx.lineWidth = 1;
-        ctx.globalAlpha = opacity * 0.5;
-        ctx.stroke();
-        ctx.globalAlpha = 1;
-    }
-}
-
-class HexGridAnimation extends Animation {
-    private hexagons: Hexagon[] = [];
-    private hexSize: number = 30;
-
-    init() {
-        this.hexagons = [];
-        const hexWidth = this.hexSize * 2;
-        const hexHeight = Math.sqrt(3) * this.hexSize;
-        const color = this.themeColors.accent1;
-
-        for (let y = 0, i = 0; y < this.canvas.height + hexHeight; y += hexHeight / 2) {
-            for (let x = 0; x < this.canvas.width + hexWidth; x += hexWidth * 0.75) {
-                const hexX = (i % 2 === 0) ? x : x - (hexWidth * 0.75 / 2);
-                this.hexagons.push(new Hexagon(hexX, y, this.hexSize, color));
-            }
-            i++;
-        }
-    }
-
-    animate() {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.hexagons.forEach(hex => hex.updateAndDraw(this.ctx));
-    }
-}
-
 // --- 5. CIRCUITS ---
 class CircuitNode {
     x: number; y: number;
@@ -588,21 +527,134 @@ class MatrixAnimation extends Animation {
     }
 }
 
+// --- 7. TORNADO STORM ---
+class TornadoParticle {
+    x: number; y: number; z: number;
+    angle: number;
+    radius: number;
+    climb: number;
+    color: string;
+    speed: number;
 
-// Main React Component
+    constructor(x: number, height: number, color: string) {
+        this.x = x;
+        this.y = Math.random() * height;
+        this.z = Math.random();
+        this.angle = Math.random() * Math.PI * 2;
+        this.radius = 0;
+        this.climb = 0;
+        this.color = color;
+        this.speed = (Math.random() * 0.02 + 0.01) * (1 + this.z);
+    }
+
+    update(height: number, width: number) {
+        this.angle += this.speed;
+        this.climb = this.y / height;
+
+        this.radius = (1 - this.climb) * (width * 0.2) + (this.climb * (width * 0.01));
+        this.radius *= (1 + Math.sin(this.y * 0.01 + this.angle) * 0.1);
+
+        this.y -= (1.5 + this.z * 1.5);
+        if (this.y < 0) {
+            this.y = height;
+            this.z = Math.random();
+            this.speed = (Math.random() * 0.02 + 0.01) * (1 + this.z);
+        }
+    }
+}
+
+class TornadoStormAnimation extends Animation {
+    private particles: TornadoParticle[] = [];
+    private debris: {x: number, y: number, z: number, l: number}[] = [];
+
+    init() {
+        this.particles = [];
+        this.debris = [];
+        const particleCount = this.canvas.width < 768 ? 400 : 800;
+        const debrisCount = this.canvas.width < 768 ? 50 : 100;
+
+        for (let i = 0; i < particleCount; i++) {
+            const color = Math.random() > 0.2 ? this.themeColors.accent1 : this.themeColors.primary;
+            this.particles.push(new TornadoParticle(this.canvas.width / 2, this.canvas.height, color));
+        }
+
+        for (let i = 0; i < debrisCount; i++) {
+            this.debris.push({
+                x: Math.random() * this.canvas.width,
+                y: Math.random() * this.canvas.height,
+                z: Math.random(),
+                l: Math.random()
+            });
+        }
+    }
+
+    animate() {
+        this.ctx.fillStyle = `rgba(10, 10, 14, 0.2)`;
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.globalCompositeOperation = 'lighter';
+        
+        // Draw debris
+        this.ctx.strokeStyle = 'rgba(180, 180, 180, 0.2)';
+        this.ctx.lineWidth = 1;
+        this.debris.forEach(d => {
+            d.x -= (1 + d.z) * 5;
+            if (d.x < 0) d.x = this.canvas.width;
+            
+            this.ctx.beginPath();
+            this.ctx.moveTo(d.x, d.y);
+            this.ctx.lineTo(d.x + (1 + d.z) * d.l * 5, d.y);
+            this.ctx.stroke();
+        });
+
+
+        const centerX = this.canvas.width / 2;
+        this.particles.sort((a, b) => a.z - b.z);
+
+        this.particles.forEach(p => {
+            p.update(this.canvas.height, this.canvas.width);
+            
+            const px = centerX + Math.cos(p.angle) * p.radius;
+            const py = p.y;
+            const size = (1 + p.z) * 1.5;
+            
+            this.ctx.beginPath();
+            this.ctx.arc(px, py, size * (1-p.climb), 0, Math.PI * 2);
+            this.ctx.fillStyle = p.color;
+            this.ctx.globalAlpha = 0.5 + p.z * 0.5;
+            this.ctx.fill();
+        });
+        
+        this.ctx.globalCompositeOperation = 'source-over';
+        this.ctx.globalAlpha = 1;
+
+        // Digital Glitch effect
+        if (Math.random() > 0.98) {
+            this.ctx.fillStyle = `hsla(48, 100%, 55%, ${Math.random() * 0.1})`;
+            this.ctx.fillRect(
+                Math.random() * this.canvas.width,
+                Math.random() * this.canvas.height,
+                Math.random() * 200,
+                Math.random() * 5
+            );
+        }
+    }
+}
+
+
 const BackgroundCanvas: React.FC<BackgroundCanvasProps> = ({ animationType }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<Animation | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas || !canvas.parentElement) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    // Size canvas to its parent container
+    canvas.width = canvas.parentElement.clientWidth;
+    canvas.height = canvas.parentElement.clientHeight;
 
     if (animationRef.current) {
       animationRef.current.stop();
@@ -618,11 +670,11 @@ const BackgroundCanvas: React.FC<BackgroundCanvasProps> = ({ animationType }) =>
       case 'matrix':
         animationRef.current = new MatrixAnimation(canvas, ctx);
         break;
-      case 'hexagons':
-        animationRef.current = new HexGridAnimation(canvas, ctx);
-        break;
       case 'circuits':
         animationRef.current = new CircuitsAnimation(canvas, ctx);
+        break;
+      case 'tornado':
+        animationRef.current = new TornadoStormAnimation(canvas, ctx);
         break;
       default:
         animationRef.current = new ParticlePlexusAnimation(canvas, ctx);
@@ -630,23 +682,24 @@ const BackgroundCanvas: React.FC<BackgroundCanvasProps> = ({ animationType }) =>
     
     animationRef.current.start();
 
-    const handleResize = () => {
+    // Use ResizeObserver for more reliable parent-based resizing
+    const resizeObserver = new ResizeObserver(() => {
         if (animationRef.current) {
             animationRef.current.resize();
         }
-    };
-    
-    window.addEventListener('resize', handleResize);
+    });
+    resizeObserver.observe(canvas.parentElement);
 
     return () => {
-      window.removeEventListener('resize', handleResize);
+      resizeObserver.disconnect();
       if (animationRef.current) {
         animationRef.current.stop();
       }
     };
   }, [animationType]);
 
-  return <canvas ref={canvasRef} className="fixed inset-0 -z-10" />;
+  // The canvas is now absolutely positioned to fill its parent <main> element.
+  return <canvas ref={canvasRef} className="absolute inset-0 z-0" />;
 };
 
 export default BackgroundCanvas;
