@@ -941,6 +941,7 @@ const App: React.FC = () => {
                 onDeleteChat={handleDeleteChat}
                 onDeleteAllChats={handleDeleteAllChats}
                 isSidebarOpen={isSidebarOpen}
+                onClose={() => setIsSidebarOpen(false)}
                 onExportChat={handleExportChat}
                 userName={userName}
                 onProfileClick={() => setIsProfileModalOpen(true)}

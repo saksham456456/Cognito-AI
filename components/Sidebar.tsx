@@ -13,6 +13,7 @@ interface SidebarProps {
   onDeleteChat: (id: string) => void;
   onDeleteAllChats: () => void;
   isSidebarOpen: boolean;
+  onClose: () => void;
   onExportChat: () => void;
   userName: string;
   onProfileClick: () => void;
@@ -33,6 +34,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   onDeleteChat,
   onDeleteAllChats,
   isSidebarOpen,
+  onClose,
   onExportChat,
   userName,
   onProfileClick,
@@ -97,6 +99,10 @@ const Sidebar: React.FC<SidebarProps> = ({
           <CognitoLogo className="h-8 w-8" />
           <h1 className="font-heading text-xl font-bold text-primary tracking-widest uppercase text-glow-primary">{t('sidebar.title')}</h1>
         </div>
+        {/* Close button for mobile */}
+        <button onClick={onClose} className="p-1 rounded-md border border-transparent hover:border-card-border md:hidden" aria-label="Close sidebar">
+            <XIcon className="w-6 h-6 text-text-medium" />
+        </button>
       </div>
 
       <div className="p-4 flex flex-col gap-4 border-b border-card-border">
