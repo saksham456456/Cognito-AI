@@ -116,10 +116,12 @@ export async function generateSpeech(text: string): Promise<string | null> {
             model: "gemini-2.5-flash-preview-tts",
             contents: [{ parts: [{ text: sanitizedText }] }],
             config: {
+                // NEW: System instruction to improve Hindi/Hinglish pronunciation.
+                systemInstruction: "You are a text-to-speech voice model. Your primary goal is to provide natural-sounding speech. You have a special instruction for pronunciation: When you encounter words from Hindi or Hinglish (a mix of Hindi and English) written in the Roman alphabet, you MUST pronounce them with an authentic Indian accent and correct Hindi pronunciation. Do not use a Western or anglicized pronunciation for these words. For example, the word 'acha' should be pronounced closer to 'uch-ha', and 'pyaar' should be pronounced with a clear 'py-aar' sound.",
                 responseModalities: [Modality.AUDIO],
                 speechConfig: {
                     voiceConfig: {
-                        // Using 'Kore' for a clear, young Indian male voice as requested.
+                        // Reverting to 'Kore' for the user-preferred voice.
                         prebuiltVoiceConfig: { voiceName: 'Kore' },
                     },
                 },

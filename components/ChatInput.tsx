@@ -173,7 +173,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, showSug
                 </div>
             )}
             {/* Main form containing the textarea and send button */}
-            <form ref={formRef} onSubmit={handleSubmit} className={`relative flex items-end gap-2 p-2 bg-input rounded-xl border transition-all duration-300 ${isFocused ? 'glow-border-active border-primary' : 'border-input-border'} ${isSending ? 'input-is-sending' : ''}`}>
+            <form ref={formRef} onSubmit={handleSubmit} className={`relative flex items-center gap-2 p-2 bg-input rounded-xl border transition-all duration-300 ${isFocused ? 'glow-border-active border-primary' : 'border-input-border'} ${isSending ? 'input-is-sending' : ''}`}>
                 {/* Buttons and textarea now sit above the SVG layer */}
                 <button
                     type="button"
@@ -205,7 +205,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, showSug
                     onBlur={() => setIsFocused(false)}
                     placeholder={aiMode === 'cognito' ? t('chatInput.placeholderCognito') : t('chatInput.placeholderCode')}
                     rows={1}
-                    className="flex-grow bg-transparent text-text-light placeholder-text-dark resize-none focus:outline-none p-2 max-h-48 custom-scrollbar z-10"
+                    className="flex-grow bg-transparent text-text-light placeholder:text-text-medium resize-none focus:outline-none p-2 max-h-48 custom-scrollbar z-10"
                     disabled={isLoading}
                 />
                 {/* Send/Submit button */}
