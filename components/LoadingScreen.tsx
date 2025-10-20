@@ -74,8 +74,8 @@ const LoadingScreen = ({ t }: { t: (key: string, fallback?: any) => any }) => {
             <div className="splash-grid-bg"></div>
             <div className="relative flex flex-col items-center justify-center z-10">
                 <AnimatedCognitoLogo />
-                <h1 className="font-heading text-4xl font-bold tracking-[0.3em] text-primary mt-4 opacity-0 fade-in-up" style={{ animationDelay: '2.4s' }}>
-                    COGNITO
+                <h1 className="font-heading text-5xl font-bold tracking-[0.2em] text-primary mt-4 opacity-0 animate-neon-flicker" style={{ animationDelay: '2.4s' }}>
+                    Cognito AI
                 </h1>
                 <div className="font-code text-sm text-text-medium mt-8 w-96 h-28 p-2 text-left">
                     {Array.isArray(bootLogMessages) && bootLogMessages.map((msg, i) => (

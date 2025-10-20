@@ -126,7 +126,7 @@ interface MessageProps {
   onStopGeneration: () => void; // Function for the "Stop Generating" button.
   speakingMessageId: string | null; // The ID of the message currently being spoken.
   isAudioPaused: boolean; // Is the currently playing audio paused?
-  ttsLoadingMessageId: string | null; // The ID of the message whose audio is currently loading.
+  isTtsLoading: boolean; // Is this message's audio currently loading?
   inputRect: DOMRect | null; // The position of the chat input bar for animations.
   t: (key: string, fallback?: any) => any; // Translation function.
 }
@@ -171,7 +171,7 @@ const MessageComponent: React.FC<MessageProps> = ({
     onStopGeneration,
     speakingMessageId,
     isAudioPaused,
-    ttsLoadingMessageId,
+    isTtsLoading,
     inputRect,
     t
 }) => {
@@ -179,7 +179,6 @@ const MessageComponent: React.FC<MessageProps> = ({
   const isUser = message.role === 'user'; // Checking if the message is from the user or the model.
   const isTyping = message.role === 'model' && !message.content && isAiLoading; // Checking if the AI is currently typing.
   const isSpeaking = speakingMessageId === message.id; // Checking if this message is being spoken.
-  const isTtsLoading = ttsLoadingMessageId === message.id; // Checking if this message's audio is loading.
 
   const messageRef = useRef<HTMLDivElement>(null);
   const isNewUserMessage = isLastMessage && isUser && !isAiLoading;

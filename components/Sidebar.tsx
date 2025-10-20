@@ -97,7 +97,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       <div className="p-4 border-b border-card-border flex items-center justify-between">
         <div className="flex items-center gap-3">
           <CognitoLogo className="h-8 w-8" />
-          <h1 className="font-heading text-xl font-bold text-primary tracking-widest uppercase text-glow-primary">{t('sidebar.title')}</h1>
+          <h1 className="font-heading text-2xl font-bold text-primary tracking-wider text-glow-primary">{t('sidebar.title')}</h1>
         </div>
         {/* Close button for mobile */}
         <button onClick={onClose} className="p-1 rounded-md border border-transparent hover:border-card-border md:hidden" aria-label="Close sidebar">

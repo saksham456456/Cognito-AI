@@ -20,7 +20,7 @@ const MAX_RENDERED_MESSAGES = 100;
 
 const translations: any = {
   en: {
-    sidebar: { title: "COGNITO", newSession: "New Cognitive Chat", searchLogs: "Search Chats", background: "Background", about: "About Cognito AI", exportLog: "Export Chat", purgeLogs: "Clear All Chats", profileName: "Operator", language: "Language" },
+    sidebar: { title: "Cognito AI", newSession: "New Cognitive Chat", searchLogs: "Search Chats", background: "Background", about: "About Cognito AI", exportLog: "Export Chat", purgeLogs: "Clear All Chats", profileName: "Operator", language: "Language" },
     chatInput: { placeholderCognito: "Message Cognito...", placeholderCode: "Ask a coding question...", shiftEnter: "Shift + Enter for a new line.", suggestions: ["Draft a blueprint for a cyberpunk megacity", "Write a log entry from a starship captain discovering a new planet", "Invent a piece of futuristic technology and describe it", "Explain the concept of a neural network like I'm a detective", "Design a database schema for a colony on Mars", "Optimize this Python code for quantum processors", "What is the future of human-AI collaboration?", "Discuss the ethics of sentient machines", "Write a poem about the loneliness of data"], modeCognito: "Cognito Interface", modeCognitoDesc: "Conversational AI for general queries.", modeCode: "Code Core", modeCodeDesc: "Specialized interface for code & algorithms.", selectMode: "SELECT INTERFACE" },
     welcome: {
       messages: [
@@ -31,7 +31,7 @@ const translations: any = {
       ]
     },
     modals: { aboutTitle: "Cognito AI // System Info", aboutSubtitle: "Cognitive Assistant Protocol v2.1", aboutLine1: "{{link}} is a modern, responsive AI assistant crafted to provide intelligent answers and a premium user experience.", aboutLine1Link: "Cognito AI", aboutLine2: "This application was developed by {{link}}, a passionate frontend engineer with a knack for creating beautiful, functional user interfaces.", aboutLine2Link: "Saksham", aboutLine3: "It is fueled by {{link}}, curiosity in ML & DBMS, and his interests.", aboutLine3Link: "Saksham's knowledge", profileTitle: "Operator Identification", profileSubtitle: "Update your callsign.", profileLabel: "Callsign", profilePlaceholder: "Enter your callsign", confirmPurgeTitle: "Confirm Clearing All Chats?", confirmPurgeMessage: "This will permanently delete all conversations. This action is irreversible and data cannot be recovered.", confirmPurgeButton: "Clear All", save: "Save", cancel: "Abort", close: "Disconnect" },
-    app: { newChatTitle: "New Cognitive Session", newCodingSessionTitle: "Code Core Session", defaultChatTitle: "COGNITO AI INTERFACE", newChatPrompt: "Your query is my command." },
+    app: { newChatTitle: "New Cognitive Session", newCodingSessionTitle: "Code Core Session", defaultChatTitle: "Cognito AI", newChatPrompt: "Your query is my command." },
     coding: { title: "CODE CORE INTERFACE", exit: "Disengage Core", run: "EXECUTE >", executing: "EXECUTING...", initializing: "INITIALIZING...", copyCode: "Copy Snippet", copied: "Snippet Copied", consoleHeader: "// CONSOLE_OUTPUT", assistantHeader: "// ASSISTANT_INTERFACE", awaitingExecution: "[Awaiting execution command...]", assistantPlaceholder: "Input query..." },
     loading: { bootLog: ["[INITIATING] COGNITO OS v2.1", "[LOADING]    PERSONALITY_MATRIX.DAT", "[CALIBRATING] HEURISTIC_PROCESSORS", "[ESTABLISHING] SECURE_CHANNEL_TO_USER", "[STATUS]     ALL SYSTEMS NOMINAL."], thinking: ["Engaging cognitive processors...", "Accessing neural network...", "Parsing data streams...", "Compiling response matrix...", "Reticulating splines...", "Querying the global datasphere..."] },
     errors: { api: ["Signal lost. An anomaly has occurred in the data stream. Please try re-routing your query.", "Cognitive dissonance detected. My processors were unable to resolve your request. Please rephrase.", "A data corruption has been detected in the pipeline. I've purged the faulty packets. Please send your query again.", "My connection to the core has been severed. Please check your network link and retry."] },
@@ -41,7 +41,7 @@ const translations: any = {
   },
   // NOTE: Other languages use English fallbacks for the new dynamic text for now.
   es: {
-    sidebar: { title: "COGNITO", newSession: "Nuevo Chat Cognitivo", searchLogs: "Buscar Chats", background: "Fondo", about: "Acerca de Cognito AI", exportLog: "Exportar Chat", purgeLogs: "Borrar Todos los Chats", profileName: "Operador", language: "Idioma" },
+    sidebar: { title: "Cognito AI", newSession: "Nuevo Chat Cognitivo", searchLogs: "Buscar Chats", background: "Fondo", about: "Acerca de Cognito AI", exportLog: "Exportar Chat", purgeLogs: "Borrar Todos los Chats", profileName: "Operador", language: "Idioma" },
     chatInput: { placeholderCognito: "Mensaje a Cognito...", placeholderCode: "Haz una pregunta de código...", shiftEnter: "Shift + Enter para nueva línea.", suggestions: ["Draft a blueprint for a cyberpunk megacity", "Write a log entry from a starship captain discovering a new planet", "Invent a piece of futuristic technology and describe it", "Explain the concept of a neural network like I'm a detective", "Design a database schema for a colony on Mars", "Optimize this Python code for quantum processors", "What is the future of human-AI collaboration?", "Discuss the ethics of sentient machines", "Write a poem about the loneliness of data"], modeCognito: "Interfaz Cognito", modeCognitoDesc: "IA conversacional para consultas generales.", modeCode: "Núcleo de Código", modeCodeDesc: "Interfaz especializada para código y algoritmos.", selectMode: "SELECCIONAR INTERFAZ" },
     welcome: {
       messages: [
@@ -52,7 +52,7 @@ const translations: any = {
       ]
     },
     modals: { aboutTitle: "Cognito AI // Información del Sistema", aboutSubtitle: "Protocolo de Asistente Cognitivo v2.1", aboutLine1: "{{link}} es un asistente de IA moderno y receptivo, diseñado para proporcionar respuestas inteligentes y una experiencia de usuario premium.", aboutLine1Link: "Cognito AI", aboutLine2: "Esta aplicación fue desarrollada por {{link}}, un apasionado ingeniero de frontend con un don para crear interfaces de usuario hermosas y funcionales.", aboutLine2Link: "Saksham", aboutLine3: "Está impulsado por {{link}}, su curiosidad en ML y SGBD, y sus intereses.", aboutLine3Link: "el conocimiento de Saksham", profileTitle: "Identificación de Operador", profileSubtitle: "Actualiza tu indicativo.", profileLabel: "Indicativo", profilePlaceholder: "Introduce tu indicativo", confirmPurgeTitle: "¿Confirmar Borrar Todos los Chats?", confirmPurgeMessage: "Esto borrará permanentemente todas las conversaciones. Esta acción es irreversible y los datos no se pueden recuperar.", confirmPurgeButton: "Borrar Todo", save: "Guardar", cancel: "Abortar", close: "Desconectar" },
-    app: { newChatTitle: "Nueva Sesión Cognitiva", newCodingSessionTitle: "Sesión de Núcleo de Código", defaultChatTitle: "INTERFAZ COGNITO AI", newChatPrompt: "Su consulta es mi comando." },
+    app: { newChatTitle: "Nueva Sesión Cognitiva", newCodingSessionTitle: "Sesión de Núcleo de Código", defaultChatTitle: "Cognito AI", newChatPrompt: "Su consulta es mi comando." },
     coding: { title: "INTERFAZ DEL NÚCLEO DE CÓDIGO", exit: "Desconectar Núcleo", run: "EJECUTAR >", executing: "EJECUTANDO...", initializing: "INICIALIZANDO...", copyCode: "Copiar Fragmento", copied: "Fragmento Copiado", consoleHeader: "// SALIDA_CONSOLA", assistantHeader: "// INTERFAZ_ASISTENTE", awaitingExecution: "[Esperando comando de ejecución...]", placeholder: "Introduce consulta..." },
     loading: { bootLog: ["[INICIANDO] COGNITO OS v2.1", "[CARGANDO]   MATRIZ_DE_PERSONALIDAD.DAT", "[CALIBRANDO] PROCESADORES_HEURÍSTICOS", "[ESTABLECIENDO] CANAL_SEGURO_AL_USUARIO", "[ESTADO]     TODOS LOS SISTEMAS NOMINALES."], thinking: ["Engaging cognitive processors...", "Accessing neural network...", "Parsing data streams...", "Compiling response matrix...", "Reticulating splines...", "Querying the global datasphere..."] },
     errors: { api: ["Signal lost. An anomaly has occurred in the data stream. Please try re-routing your query.", "Cognitive dissonance detected. My processors were unable to resolve your request. Please rephrase.", "A data corruption has been detected in the pipeline. I've purged the faulty packets. Please send your query again.", "My connection to the core has been severed. Please check your network link and retry."] },
@@ -61,7 +61,7 @@ const translations: any = {
     languages: { en: "English", es: "Español", hi: "हिन्दी", fr: "Français", sa: "संस्कृतम्", 'hi-en': "Hinglish" }
   },
   hi: {
-    sidebar: { title: "COGNITO", newSession: "नया कॉग्निटिव चैट", searchLogs: "चैट खोजें", background: "पृष्ठभूमि", about: "कॉग्निटो एआई के बारे में", exportLog: "चैट निर्यात करें", purgeLogs: "सभी चैट साफ़ करें", profileName: "ऑपरेटर", language: "भाषा" },
+    sidebar: { title: "Cognito AI", newSession: "नया कॉग्निटिव चैट", searchLogs: "चैट खोजें", background: "पृष्ठभूमि", about: "कॉग्निटो एआई के बारे में", exportLog: "चैट निर्यात करें", purgeLogs: "सभी चैट साफ़ करें", profileName: "ऑपरेटर", language: "भाषा" },
     chatInput: { placeholderCognito: "कॉग्निटो को संदेश भेजें...", placeholderCode: "कोडिंग प्रश्न पूछें...", shiftEnter: "नई लाइन के लिए Shift + Enter दबाएं।", suggestions: ["Draft a blueprint for a cyberpunk megacity", "Write a log entry from a starship captain discovering a new planet", "Invent a piece of futuristic technology and describe it", "Explain the concept of a neural network like I'm a detective", "Design a database schema for a colony on Mars", "Optimize this Python code for quantum processors", "What is the future of human-AI collaboration?", "Discuss the ethics of sentient machines", "Write a poem about the loneliness of data"], modeCognito: "कॉग्निटो इंटरफेस", modeCognitoDesc: "सामान्य प्रश्नों के लिए संवादी एआई।", modeCode: "कोड कोर", modeCodeDesc: "कोड और एल्गोरिदम के लिए विशेष इंटरफ़ेस।", selectMode: "इंटरफ़ेस चुनें" },
     welcome: {
       messages: [
@@ -72,7 +72,7 @@ const translations: any = {
       ]
     },
     modals: { aboutTitle: "कॉग्निटो एआई // सिस्टम जानकारी", aboutSubtitle: "कॉग्निटिव असिस्टेंट प्रोटोकॉल v2.1", aboutLine1: "{{link}} एक आधुनिक, उत्तरदायी एआई सहायक है जिसे बुद्धिमान उत्तर और एक प्रीमियम उपयोगकर्ता अनुभव प्रदान करने के लिए तैयार किया गया है।", aboutLine1Link: "कॉग्निटो एआई", aboutLine2: "यह एप्लिकेशन {{link}} द्वारा विकसित किया गया था, जो सुंदर, कार्यात्मक यूजर इंटरफेस बनाने की कला के साथ एक उत्साही फ्रंटएंड इंजीनियर है।", aboutLine2Link: "सक्षम", aboutLine3: "यह {{link}}, एमएल और डीबीएमएस में जिज्ञासा, और उनकी रुचियों से प्रेरित है।", aboutLine3Link: "सक्षम के ज्ञान", profileTitle: "ऑपरेटर पहचान", profileSubtitle: "अपना कॉलसाइन अपडेट करें।", profileLabel: "कॉलसाइन", profilePlaceholder: "अपना कॉलसाइन दर्ज करें", confirmPurgeTitle: "सभी चैट साफ़ करने की पुष्टि करें?", confirmPurgeMessage: "यह सभी वार्तालापों को स्थायी रूप से मिटा देगा। यह क्रिया अपरिवर्तनीय है और डेटा पुनर्प्राप्त नहीं किया जा सकता है।", confirmPurgeButton: "सब साफ़ करें", save: "सहेजें", cancel: "रद्द करें", close: "डिस्कनेक्ट करें" },
-    app: { newChatTitle: "नया कॉग्निटिव सत्र", newCodingSessionTitle: "कोड कोर सत्र", defaultChatTitle: "कॉग्निटो एआई इंटरफ़ेस", newChatPrompt: "आपकी क्वेरी ही मेरा आदेश है।" },
+    app: { newChatTitle: "नया कॉग्निटिव सत्र", newCodingSessionTitle: "कोड कोर सत्र", defaultChatTitle: "कॉग्निटो एआई", newChatPrompt: "आपकी क्वेरी ही मेरा आदेश है।" },
     coding: { title: "कोड कोर इंटरफ़ेस", exit: "कोर से अलग हों", run: "निष्पादित करें >", executing: "निष्पादित हो रहा है...", initializing: "शुरू हो रहा है...", copyCode: "स्निपेट कॉपी करें", copied: "स्निपेट कॉपी किया गया", consoleHeader: "// कंसोल_आउटपुट", assistantHeader: "// सहायक_इंटरफ़ेस", awaitingExecution: "[निष्पादन कमांड की प्रतीक्षा में...]", placeholder: "प्रश्न दर्ज करें..." },
     loading: { bootLog: ["[प्रारंभ] कॉग्निटो ओएस v2.1", "[लोड हो रहा है] पर्सनैलिटी_मैट्रिक्स.डैट", "[कैलिब्रेटिंग] ह्यूरिस्टिक_प्रोसेसर", "[स्थापित] उपयोगकर्ता के लिए सुरक्षित चैनल", "[स्थिति] सभी सिस्टम सामान्य हैं।"], thinking: ["Engaging cognitive processors...", "Accessing neural network...", "Parsing data streams...", "Compiling response matrix...", "Reticulating splines...", "Querying the global datasphere..."] },
     errors: { api: ["Signal lost. An anomaly has occurred in the data stream. Please try re-routing your query.", "Cognitive dissonance detected. My processors were unable to resolve your request. Please rephrase.", "A data corruption has been detected in the pipeline. I've purged the faulty packets. Please send your query again.", "My connection to the core has been severed. Please check your network link and retry."] },
@@ -81,7 +81,7 @@ const translations: any = {
     languages: { en: "English", es: "Español", hi: "हिन्दी", fr: "Français", sa: "संस्कृतम्", 'hi-en': "Hinglish" }
   },
   fr: {
-    sidebar: { title: "COGNITO", newSession: "Nouveau Chat Cognitif", searchLogs: "Rechercher les Chats", background: "Arrière-plan", about: "À propos de Cognito AI", exportLog: "Exporter le Chat", purgeLogs: "Effacer Tous les Chats", profileName: "Opérateur", language: "Langue" },
+    sidebar: { title: "Cognito AI", newSession: "Nouveau Chat Cognitif", searchLogs: "Rechercher les Chats", background: "Arrière-plan", about: "À propos de Cognito AI", exportLog: "Exporter le Chat", purgeLogs: "Effacer Tous les Chats", profileName: "Opérateur", language: "Langue" },
     chatInput: { placeholderCognito: "Message à Cognito...", placeholderCode: "Posez une question de code...", shiftEnter: "Maj + Entrée pour une nouvelle ligne.", suggestions: ["Draft a blueprint for a cyberpunk megacity", "Write a log entry from a starship captain discovering a new planet", "Invent a piece of futuristic technology and describe it", "Explain the concept of a neural network like I'm a detective", "Design a database schema for a colony on Mars", "Optimize this Python code for quantum processors", "What is the future of human-AI collaboration?", "Discuss the ethics of sentient machines", "Write a poem about the loneliness of data"], modeCognito: "Interface Cognito", modeCognitoDesc: "IA conversationnelle pour requêtes générales.", modeCode: "Noyau de Code", modeCodeDesc: "Interface spécialisée pour code et algorithmes.", selectMode: "SÉLECTIONNER L'INTERFACE" },
     welcome: {
       messages: [
@@ -92,7 +92,7 @@ const translations: any = {
       ]
     },
     modals: { aboutTitle: "Cognito AI // Infos Système", aboutSubtitle: "Protocole d'Assistant Cognitif v2.1", aboutLine1: "{{link}} est un assistant IA moderne et réactif, conçu pour fournir des réponses intelligentes et une expérience utilisateur de premier ordre.", aboutLine1Link: "Cognito AI", aboutLine2: "Cette application a été développée par {{link}}, un ingénieur frontend passionné avec un talent pour créer des interfaces utilisateur belles et fonctionnelles.", aboutLine2Link: "Saksham", aboutLine3: "Elle est alimentée par {{link}}, sa curiosité pour le ML & SGBD, et ses intérêts.", aboutLine3Link: "les connaissances de Saksham", profileTitle: "Identification de l'Opérateur", profileSubtitle: "Mettez à jour votre indicatif.", profileLabel: "Indicatif", profilePlaceholder: "Entrez votre indicatif", confirmPurgeTitle: "Confirmer la Suppression de Tous les Chats ?", confirmPurgeMessage: "Ceci effacera définitivement toutes les conversations. Cette action est irréversible et les données ne peuvent être récupérées.", confirmPurgeButton: "Tout Effacer", save: "Enregistrer", cancel: "Abandonner", close: "Déconnecter" },
-    app: { newChatTitle: "Nouvelle Session Cognitive", newCodingSessionTitle: "Session Noyau de Code", defaultChatTitle: "INTERFACE COGNITO AI", newChatPrompt: "Votre requête est mon ordre." },
+    app: { newChatTitle: "Nouvelle Session Cognitive", newCodingSessionTitle: "Session Noyau de Code", defaultChatTitle: "Cognito AI", newChatPrompt: "Votre requête est mon ordre." },
     coding: { title: "INTERFACE DU NOYAU DE CODAGE", exit: "Désengager le Noyau", run: "EXÉCUTER >", executing: "EXÉCUTION...", initializing: "INITIALISATION...", copyCode: "Copier l'Extrait", copied: "Extrait Copié", consoleHeader: "// SORTIE_CONSOLE", assistantHeader: "// INTERFACE_ASSISTANT", awaitingExecution: "[En attente de commande d'exécution...]", placeholder: "Entrez la requête..." },
     loading: { bootLog: ["[INITIALISATION] COGNITO OS v2.1", "[CHARGEMENT]   MATRICE_PERSONNALITÉ.DAT", "[CALIBRAGE]    PROCESSEURS_HEURISTIQUES", "[ÉTABLISSEMENT] CANAL_SÉCURISÉ_VERS_UTILISATEUR", "[STATUT]       TOUS_SYSTÈMES_NOMINAUX."], thinking: ["Engaging cognitive processors...", "Accessing neural network...", "Parsing data streams...", "Compiling response matrix...", "Reticulating splines...", "Querying the global datasphere..."] },
     errors: { api: ["Signal lost. An anomaly has occurred in the data stream. Please try re-routing your query.", "Cognitive dissonance detected. My processors were unable to resolve your request. Please rephrase.", "A data corruption has been detected in the pipeline. I've purged the faulty packets. Please send your query again.", "My connection to the core has been severed. Please check your network link and retry."] },
@@ -101,7 +101,7 @@ const translations: any = {
     languages: { en: "English", es: "Español", hi: "हिन्दी", fr: "Français", sa: "संस्कृतम्", 'hi-en': "Hinglish" }
   },
   sa: {
-    sidebar: { title: "COGNITO", newSession: "नवीनः संज्ञानात्मकः चैटः", searchLogs: "चैटान्वेषणम्...", background: "पृष्ठभूमिः", about: "कोग्निटो एआई विषये", exportLog: "चैटं निर्यातं कुरु", purgeLogs: "सर्वान् चैटान् निष्कासय", profileName: "प्रचालकः", language: "भाषा" },
+    sidebar: { title: "Cognito AI", newSession: "नवीनः संज्ञानात्मकः चैटः", searchLogs: "चैटान्वेषणम्...", background: "पृष्ठभूमिः", about: "कोग्निटो एआई विषये", exportLog: "चैटं निर्यातं कुरु", purgeLogs: "सर्वान् चैटान् निष्कासय", profileName: "प्रचालकः", language: "भाषा" },
     chatInput: { placeholderCognito: "कोग्निटो कृते सन्देशः...", placeholderCode: "कूटलेखनप्रश्नं पृच्छतु...", shiftEnter: "नवीनपङ्क्तये Shift + Enter", suggestions: ["Draft a blueprint for a cyberpunk megacity", "Write a log entry from a starship captain discovering a new planet", "Invent a piece of futuristic technology and describe it", "Explain the concept of a neural network like I'm a detective", "Design a database schema for a colony on Mars", "Optimize this Python code for quantum processors", "What is the future of human-AI collaboration?", "Discuss the ethics of sentient machines", "Write a poem about the loneliness of data"], modeCognito: "कोग्निटो-अन्तरापृष्ठम्", modeCognitoDesc: "सामान्यप्रश्नेभ्यः संवादी एआई।", modeCode: "कूट-केन्द्रम्", modeCodeDesc: "कूट-अल्गोरिदम-कृते विशिष्टम् अन्तरापृष्ठम्।", selectMode: "अन्तरापृष्ठं चिनोतु" },
     welcome: {
       messages: [
@@ -112,7 +112,7 @@ const translations: any = {
       ]
     },
     modals: { aboutTitle: "कोग्निटो एआई // तन्त्रसूचना", aboutSubtitle: "संज्ञानात्मक-सहायक-प्रोटोकॉल् v2.1", aboutLine1: "{{link}} एकः आधुनिकः, प्रतिक्रियाशीलः एआई सहायकः अस्ति यः बुद्धिमत्-उत्तराणि, उत्तम-उपयोक्तृ-अनुभवं च प्रदातुं निर्मितः।", aboutLine1Link: "कोग्निटो एआई", aboutLine2: "इदं अनुप्रयोगं {{link}}-द्वारा विकसितम्, यः सुन्दर-क्रियाशील-उपयोक्तृ-अन्तरापृष्ठानि निर्मातुं कुशलः उत्साही फ्रन्टएण्ड-अभियन्ता अस्ति।", aboutLine2Link: "सक्षम", aboutLine3: "इदं {{link}}, एमएल-डीबीएमएस-मध्ये तस्य जिज्ञासया, तस्य रुचिभिश्च चालितम्।", aboutLine3Link: "सक्षमस्य ज्ञानेन", profileTitle: "प्रचालक-परिचयः", profileSubtitle: "भवतः आह्वानचिह्नं नूतनीकरोतु।", profileLabel: "आह्वानचिह्नम्", profilePlaceholder: "आह्वानचिह्नं लिखतु", confirmPurgeTitle: "सर्वान् चैटान् निष्कासयितुं निश्चिनोतु वा?", confirmPurgeMessage: "एतेन सर्वे वार्तालापाः स्थायिरूपेण मार्जयिष्यन्ते। एतत् कार्यम् अपरिवर्तनीयम् अस्ति, दत्तांशः च पुनः प्राप्तुं न शक्यते।", confirmPurgeButton: "सर्वं निष्कासय", save: "रक्षतु", cancel: "त्यजतु", close: "वियोजयतु" },
-    app: { newChatTitle: "नवीनं संज्ञानात्मकं सत्रम्", newCodingSessionTitle: "कूट-केन्द्र-सत्रम्", defaultChatTitle: "कोग्निटो एआई अन्तरापृष्ठम्", newChatPrompt: "भवतः प्रश्नः मम आदेशः।" },
+    app: { newChatTitle: "नवीनं संज्ञानात्मकं सत्रम्", newCodingSessionTitle: "कूट-केन्द्र-सत्रम्", defaultChatTitle: "कोग्निटो एआई", newChatPrompt: "भवतः प्रश्नः मम आदेशः।" },
     coding: { title: "कूट-केन्द्र-अन्तरापृष्ठम्", exit: "केन्द्रं त्यजतु", run: "निष्पादयतु >", executing: "निष्पाद्यमानम्...", initializing: "आरभ्यमाणम्...", copyCode: "खण्डं प्रतिलिपिं करोतु", copied: "खण्डं प्रतिलिपिः कृतः", consoleHeader: "// कन्सोल-आउट्पुट्", assistantHeader: "// सहायक-अन्तरापृष्ठम्", awaitingExecution: "[निष्पादन-आदेशं प्रतीक्षमाणम्...]", placeholder: "प्रश्नं लिखतु..." },
     loading: { bootLog: ["[प्रारम्भः] कोग्निटो ओएस v2.1", "[भारणम्]   व्यक्तित्व-मैट्रिक्स.डैट", "[समंजनम्]   अनुमानात्मक-प्रसंसाधकाः", "[स्थापनम्]   उपयोक्त्रे सुरक्षित-चैनलम्", "[स्थितिः]     सर्वाणि तन्त्राणि सामान्यनि।"], thinking: ["Engaging cognitive processors...", "Accessing neural network...", "Parsing data streams...", "Compiling response matrix...", "Reticulating splines...", "Querying the global datasphere..."] },
     errors: { api: ["Signal lost. An anomaly has occurred in the data stream. Please try re-routing your query.", "Cognitive dissonance detected. My processors were unable to resolve your request. Please rephrase.", "A data corruption has been detected in the pipeline. I've purged the faulty packets. Please send your query again.", "My connection to the core has been severed. Please check your network link and retry."] },
@@ -121,7 +121,7 @@ const translations: any = {
     languages: { en: "English", es: "Español", hi: "हिन्दी", fr: "Français", sa: "संस्कृतम्", 'hi-en': "Hinglish" }
   },
   'hi-en': {
-    sidebar: { title: "COGNITO", newSession: "New Cognitive Chat", searchLogs: "Chats search karo", background: "Background", about: "Cognito AI ke baare mein", exportLog: "Chat Export karo", purgeLogs: "Sab Chats Clear karo", profileName: "Operator", language: "Language" },
+    sidebar: { title: "Cognito AI", newSession: "New Cognitive Chat", searchLogs: "Chats search karo", background: "Background", about: "Cognito AI ke baare mein", exportLog: "Chat Export karo", purgeLogs: "Sab Chats Clear karo", profileName: "Operator", language: "Language" },
     chatInput: { placeholderCognito: "Cognito ko message bhejo...", placeholderCode: "Coding ka sawaal pucho...", shiftEnter: "Nayi line ke liye Shift + Enter.", suggestions: ["Draft a blueprint for a cyberpunk megacity", "Write a log entry from a starship captain discovering a new planet", "Invent a piece of futuristic technology and describe it", "Explain the concept of a neural network like I'm a detective", "Design a database schema for a colony on Mars", "Optimize this Python code for quantum processors", "What is the future of human-AI collaboration?", "Discuss the ethics of sentient machines", "Write a poem about the loneliness of data"], modeCognito: "Cognito Interface", modeCognitoDesc: "General sawaalon ke liye conversational AI.", modeCode: "Code Core", modeCodeDesc: "Code aur algorithms ke liye special interface.", selectMode: "INTERFACE SELECT KARO" },
     welcome: {
       messages: [
@@ -132,7 +132,7 @@ const translations: any = {
       ]
     },
     modals: { aboutTitle: "Cognito AI // System Info", aboutSubtitle: "Cognitive Assistant Protocol v2.1", aboutLine1: "{{link}} ek modern, responsive AI assistant hai jo intelligent answers aur premium user experience ke liye banaya gaya hai.", aboutLine1Link: "Cognito AI", aboutLine2: "Yeh application {{link}} ne develop ki hai, jo ek passionate frontend engineer hain aur sundar, functional user interfaces banane mein mahir hain.", aboutLine2Link: "Saksham", aboutLine3: "Yeh {{link}}, ML & DBMS mein unki curiosity, aur unke interests se chalti hai.", aboutLine3Link: "Saksham ke knowledge", profileTitle: "Operator Identification", profileSubtitle: "Apna callsign update karo.", profileLabel: "Callsign", profilePlaceholder: "Apna callsign daalo", confirmPurgeTitle: "Sab Chats Clear karna Confirm karein?", confirmPurgeMessage: "Isse saare conversations permanently delete ho jayenge. Yeh action irreversible hai aur data recover nahi ho sakta.", confirmPurgeButton: "Sab Clear Karo", save: "Save Karo", cancel: "Abort", close: "Disconnect" },
-    app: { newChatTitle: "New Cognitive Session", newCodingSessionTitle: "Code Core Session", defaultChatTitle: "COGNITO AI INTERFACE", newChatPrompt: "Aapki query hi mera command hai." },
+    app: { newChatTitle: "New Cognitive Session", newCodingSessionTitle: "Code Core Session", defaultChatTitle: "Cognito AI", newChatPrompt: "Aapki query hi mera command hai." },
     coding: { title: "CODE CORE INTERFACE", exit: "Core Disengage Karo", run: "EXECUTE >", executing: "EXECUTING...", initializing: "INITIALIZING...", copyCode: "Snippet Copy Karo", copied: "Snippet Copied", consoleHeader: "// CONSOLE_OUTPUT", assistantHeader: "// ASSISTANT_INTERFACE", awaitingExecution: "[Execution command ka intezaar...]", assistantPlaceholder: "Query input karo..." },
     loading: { bootLog: ["[INITIATING] COGNITO OS v2.1", "[LOADING]    PERSONALITY_MATRIX.DAT", "[CALIBRATING] HEURISTIC_PROCESSORS", "[ESTABLISHING] SECURE_CHANNEL_TO_USER", "[STATUS]     ALL SYSTEMS NOMINAL."], thinking: ["Engaging cognitive processors...", "Accessing neural network...", "Parsing data streams...", "Compiling response matrix...", "Reticulating splines...", "Querying the global datasphere..."] },
     errors: { api: ["Signal lost. An anomaly has occurred in the data stream. Please try re-routing your query.", "Cognitive dissonance detected. My processors were unable to resolve your request. Please rephrase.", "A data corruption has been detected in the pipeline. I've purged the faulty packets. Please send your query again.", "My connection to the core has been severed. Please check your network link and retry."] },
@@ -185,7 +185,7 @@ const App: React.FC = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Is the sidebar open on mobile?
     const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null); // Which message is being spoken by text-to-speech.
     const [isAudioPaused, setIsAudioPaused] = useState(false); // Is the current audio paused?
-    const [ttsLoadingMessageId, setTtsLoadingMessageId] = useState<string | null>(null); // Which message's audio is being fetched.
+    const [ttsLoadingMessageIds, setTtsLoadingMessageIds] = useState<Set<string>>(new Set()); // Which messages' audio are being fetched.
     const [userName, setUserName] = useState(() => localStorage.getItem('userName') || 'Operator'); // The user's name, loaded from localStorage.
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false); // Is the profile modal open?
     const [isAboutModalOpen, setIsAboutModalOpen] = useState(false); // Is the about modal open?
@@ -504,7 +504,7 @@ const App: React.FC = () => {
             // Proactively generate and cache TTS audio for the new message.
             if (fullResponse.trim() && !ttsGenerationInProgress.current.has(modelMessageId)) {
                 ttsGenerationInProgress.current.add(modelMessageId);
-                setTtsLoadingMessageId(modelMessageId);
+                setTtsLoadingMessageIds(prev => new Set(prev).add(modelMessageId));
                 generateSpeech(fullResponse).then(audioData => {
                     if (audioData) {
                         setChats(prev => prev.map(c => 
@@ -517,7 +517,11 @@ const App: React.FC = () => {
                     console.error("Proactive TTS generation failed:", err);
                 }).finally(() => {
                     ttsGenerationInProgress.current.delete(modelMessageId);
-                    setTtsLoadingMessageId(prevId => (prevId === modelMessageId ? null : prevId));
+                    setTtsLoadingMessageIds(prev => {
+                        const newSet = new Set(prev);
+                        newSet.delete(modelMessageId);
+                        return newSet;
+                    });
                 });
             }
         }
@@ -595,7 +599,7 @@ const App: React.FC = () => {
              // Proactively generate and cache TTS audio for the regenerated message.
             if (fullResponse.trim() && !ttsGenerationInProgress.current.has(modelMessageId)) {
                 ttsGenerationInProgress.current.add(modelMessageId);
-                setTtsLoadingMessageId(modelMessageId);
+                setTtsLoadingMessageIds(prev => new Set(prev).add(modelMessageId));
                 generateSpeech(fullResponse).then(audioData => {
                     if (audioData) {
                         setChats(prev => prev.map(c => 
@@ -606,7 +610,11 @@ const App: React.FC = () => {
                     }
                 }).catch(err => console.error("Proactive TTS generation failed:", err)).finally(() => {
                     ttsGenerationInProgress.current.delete(modelMessageId);
-                    setTtsLoadingMessageId(prevId => (prevId === modelMessageId ? null : prevId));
+                    setTtsLoadingMessageIds(prev => {
+                        const newSet = new Set(prev);
+                        newSet.delete(modelMessageId);
+                        return newSet;
+                    });
                 });
             }
         }
@@ -782,7 +790,7 @@ const App: React.FC = () => {
             // Fallback: generate audio on-demand.
             try {
                 ttsGenerationInProgress.current.add(message.id);
-                setTtsLoadingMessageId(message.id);
+                setTtsLoadingMessageIds(prev => new Set(prev).add(message.id));
                 const audioData = await generateSpeech(message.content);
                 
                 if (!audioData) throw new Error("No audio data was returned from the API.");
@@ -803,8 +811,11 @@ const App: React.FC = () => {
                 setIsAudioPaused(false);
             } finally {
                 ttsGenerationInProgress.current.delete(message.id);
-                // Only clear loading state if it's for the current message.
-                setTtsLoadingMessageId(prevId => (prevId === message.id ? null : prevId));
+                setTtsLoadingMessageIds(prev => {
+                    const newSet = new Set(prev);
+                    newSet.delete(message.id);
+                    return newSet;
+                });
             }
         }
     };
@@ -836,14 +847,27 @@ const App: React.FC = () => {
     
     const renderChatView = () => (
         <>
-            <header className="flex-shrink-0 flex items-center justify-center p-4 border-b border-card-border glassmorphism relative z-10">
+            <header className="flex-shrink-0 flex items-center justify-between p-4 border-b border-card-border glassmorphism relative z-10 header-glow">
                 {/* Menu button for mobile */}
-                <button onClick={() => setIsSidebarOpen(true)} className="p-1 rounded-md border border-transparent hover:border-card-border absolute left-4 top-1/2 -translate-y-1/2 md:hidden">
+                <button onClick={() => setIsSidebarOpen(true)} className="p-1 rounded-md border border-transparent hover:border-card-border md:hidden">
                     <MenuIcon className="h-6 w-6" />
                 </button>
-                <h1 className={`font-heading text-xl font-bold tracking-widest text-center truncate px-12 md:px-0 uppercase animate-neon-flicker`}>
-                    {activeChat ? activeChat.title : t('app.defaultChatTitle')}
-                </h1>
+                <div className="flex-1 flex items-center justify-center">
+                    {activeChat ? (
+                        <h1 className="font-heading text-xl font-bold tracking-widest text-center truncate px-4 uppercase animate-neon-flicker">
+                            {activeChat.title}
+                        </h1>
+                    ) : (
+                        <div className="flex items-center gap-3 fade-in-up">
+                            <CognitoLogo className="h-8 w-8" />
+                            <h1 className="font-heading text-xl font-bold text-primary tracking-widest uppercase text-glow-primary">
+                                {t('app.defaultChatTitle')}
+                            </h1>
+                        </div>
+                    )}
+                </div>
+                {/* Spacer to balance the menu button and keep the title truly centered */}
+                <div className="w-6 md:hidden"></div>
             </header>
             <div className="flex-1 flex flex-col relative overflow-hidden min-h-0 z-10">
                  {/* Faint logo in the background (watermark) */}
@@ -881,7 +905,7 @@ const App: React.FC = () => {
                                         onStopGeneration={handleStopGeneration}
                                         speakingMessageId={speakingMessageId}
                                         isAudioPaused={isAudioPaused}
-                                        ttsLoadingMessageId={ttsLoadingMessageId}
+                                        isTtsLoading={ttsLoadingMessageIds.has(msg.id)}
                                         inputRect={inputRect}
                                         t={t}
                                     />
