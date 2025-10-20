@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { startChat, getTitleForChat, generateSpeech } from './services/geminiService';
 import { saveChat, loadChats, deleteChat, deleteAllChats } from './services/dbService';
 import type { Message, Chat, AiMode, AppView } from './types';
@@ -15,6 +15,8 @@ import BackgroundCanvas from './components/BackgroundCanvas';
 import CoreLoadingScreen from './components/CoreLoadingScreen';
 import CodingPlayground from './components/CodingPlayground';
 import CoreDisintegrationScreen from './components/CoreDisintegrationScreen';
+
+const MAX_RENDERED_MESSAGES = 100;
 
 const translations: any = {
   en: {
@@ -199,7 +201,6 @@ const App: React.FC = () => {
     });
     const [aiMode, setAiMode] = useState<AiMode>('cognito'); // Current AI mode.
     const [inputRect, setInputRect] = useState<DOMRect | null>(null); // Position of the input bar.
-    const [aiMessageRect, setAiMessageRect] = useState<DOMRect | null>(null); // Position of the AI message bubble.
     const [locale, setLocale] = useState<string>(() => localStorage.getItem('locale') || 'en');
     
     // App view management states
@@ -702,9 +703,9 @@ const App: React.FC = () => {
     };
 
     // To copy text to the clipboard.
-    const handleCopyText = (text: string) => {
+    const handleCopyText = useCallback((text: string) => {
         navigator.clipboard.writeText(text);
-    };
+    }, []);
 
     // REVAMPED: Text-to-speech with pause and resume functionality.
     const handleToggleSpeak = async (message: Message) => {
@@ -868,11 +869,11 @@ const App: React.FC = () => {
                     ) : (
                         // Render all messages of the active chat
                         <div className="max-w-5xl mx-auto space-y-8">
-                            {activeChat.messages.map((msg, index) => (
+                            {activeChat.messages.slice(-MAX_RENDERED_MESSAGES).map((msg, index) => (
                                 <div key={msg.id} style={{ animationDelay: `${index * 100}ms` }} className="fade-in-up">
                                     <MessageComponent 
                                         message={msg}
-                                        isLastMessage={index === activeChat.messages.length - 1}
+                                        isLastMessage={index === activeChat.messages.slice(-MAX_RENDERED_MESSAGES).length - 1}
                                         isAiLoading={isAiLoading}
                                         onCopy={handleCopyText}
                                         onSpeak={handleToggleSpeak}
@@ -882,7 +883,6 @@ const App: React.FC = () => {
                                         isAudioPaused={isAudioPaused}
                                         ttsLoadingMessageId={ttsLoadingMessageId}
                                         inputRect={inputRect}
-                                        reportRect={setAiMessageRect}
                                         t={t}
                                     />
                                 </div>

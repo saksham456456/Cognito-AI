@@ -145,17 +145,22 @@ class ParticlePlexusAnimation extends Animation {
 }
 
 
-// --- 2. ARC LIGHTNING --- (OPTIMIZED)
+// --- 2. ARC LIGHTNING --- (OPTIMIZED WITH OBJECT POOLING)
 class LightningBolt {
     segments: { x: number, y: number }[] = [];
     life: number = 1.0;
-    color: string;
-    lineWidth: number;
+    color: string = '';
+    lineWidth: number = 1;
     children: LightningBolt[] = [];
-    intensity: number;
+    intensity: number = 1.0;
+    isBranch: boolean = false;
 
-    constructor(x: number, y: number, endY: number, color: string, isBranch: boolean = false, particleCallback: (x: number, y: number, color: string) => void, intensity: number = 1.0) {
+    reset(x: number, y: number, endY: number, color: string, isBranch: boolean = false, particleCallback: (x: number, y: number, color: string) => void, intensity: number = 1.0) {
+        this.segments.length = 0;
+        this.children.length = 0;
+        this.life = 1.0;
         this.color = color;
+        this.isBranch = isBranch;
         this.intensity = isBranch ? intensity * 0.7 : intensity;
         this.lineWidth = (isBranch ? Math.random() * 1.5 + 0.5 : Math.random() * 2.5 + 1) * this.intensity;
         
@@ -176,36 +181,27 @@ class LightningBolt {
             if (!isBranch && Math.random() > 0.98) {
                 particleCallback(newSeg.x, newSeg.y, color);
             }
-
-            // Reduced branching for performance
-            if (this.children.length < 3 && Math.random() > (isBranch ? 0.99 : 0.97)) {
-                this.children.push(new LightningBolt(newSeg.x, newSeg.y, newSeg.y + Math.random() * (endY - newSeg.y), color, true, particleCallback, this.intensity));
-            }
-            
             lastSeg = newSeg;
         }
+        return this;
     }
 
     update() {
         this.life -= 0.04 / (1 + (this.intensity - 1) * 0.2);
-        this.children.forEach(child => child.update());
     }
 
     draw(ctx: CanvasRenderingContext2D) {
         if (this.life <= 0) return;
-        
         const alpha = Math.min(1.0, Math.pow(this.life, 2.0) * this.intensity);
         if (alpha <= 0) return;
         
         ctx.save();
-        
         ctx.beginPath();
         ctx.moveTo(this.segments[0].x, this.segments[0].y);
         for (let i = 1; i < this.segments.length; i++) {
             ctx.lineTo(this.segments[i].x, this.segments[i].y);
         }
 
-        // Main glow stroke - reduced shadowBlur
         ctx.strokeStyle = this.color;
         ctx.lineWidth = this.lineWidth;
         ctx.globalAlpha = alpha * 0.8;
@@ -213,7 +209,6 @@ class LightningBolt {
         ctx.shadowColor = this.color;
         ctx.stroke();
 
-        // Bright core stroke
         ctx.strokeStyle = 'hsla(0, 0%, 100%, 0.8)';
         ctx.lineWidth = this.lineWidth * 0.5;
         ctx.globalAlpha = alpha;
@@ -221,25 +216,25 @@ class LightningBolt {
         ctx.stroke();
         
         ctx.restore();
-
-        this.children.forEach(child => child.draw(ctx));
     }
 }
 
 class EnergizedParticle {
-    x: number; y: number;
-    vx: number; vy: number;
+    x: number = 0; y: number = 0;
+    vx: number = 0; vy: number = 0;
     life: number = 1.0;
-    size: number;
-    color: string;
+    size: number = 1;
+    color: string = '';
 
-    constructor(x: number, y: number, color: string) {
+    reset(x: number, y: number, color: string) {
         this.x = x;
         this.y = y;
         this.vx = (Math.random() - 0.5) * 1;
         this.vy = (Math.random() - 0.5) * 1;
         this.size = Math.random() * 1.5 + 0.5;
         this.color = color;
+        this.life = 1.0;
+        return this;
     }
 
     update() {
@@ -261,8 +256,8 @@ class EnergizedParticle {
 }
 
 class ArcLightningAnimation extends Animation {
-    private bolts: LightningBolt[] = [];
-    private particles: EnergizedParticle[] = [];
+    private boltPool: { active: LightningBolt[], inactive: LightningBolt[] } = { active: [], inactive: [] };
+    private particlePool: { active: EnergizedParticle[], inactive: EnergizedParticle[] } = { active: [], inactive: [] };
     private spawnCooldown: number = 0;
     private flashOpacity: number = 0;
     private sheetOpacity: number = 0;
@@ -271,18 +266,20 @@ class ArcLightningAnimation extends Animation {
     private needsInitialBlast: boolean = false;
 
     init() { 
-        this.bolts = [];
-        this.particles = [];
+        this.boltPool = { active: [], inactive: [] };
+        for(let i=0; i<50; i++) this.boltPool.inactive.push(new LightningBolt());
+        
+        this.particlePool = { active: [], inactive: [] };
+        for(let i=0; i<200; i++) this.particlePool.inactive.push(new EnergizedParticle());
+        
         this.lastTimestamp = performance.now();
-        this.needsInitialBlast = true; // Flag for one-time blast
+        this.needsInitialBlast = true;
     }
 
     private triggerGlitchEffect(duration: number) {
         const mainContent = document.querySelector('main');
         if (mainContent) {
-            if (this.glitchTimeoutId) {
-                clearTimeout(this.glitchTimeoutId);
-            }
+            if (this.glitchTimeoutId) clearTimeout(this.glitchTimeoutId);
             mainContent.classList.add('glitch-surge-effect');
             this.glitchTimeoutId = window.setTimeout(() => {
                 mainContent.classList.remove('glitch-surge-effect');
@@ -294,11 +291,14 @@ class ArcLightningAnimation extends Animation {
     private executeInitialBlast() {
         const numBolts = Math.floor(Math.random() * 4) + 5;
         for (let i = 0; i < numBolts; i++) {
-            const intensity = Math.random() * 0.8 + 1.2;
-            const startX = Math.random() * this.canvas.width;
-            const endY = this.canvas.height;
-            const color = Math.random() > 0.1 ? this.themeColors.accent1 : this.themeColors.primary;
-            this.bolts.push(new LightningBolt(startX, 0, endY, color, false, this.addParticle, intensity));
+            if (this.boltPool.inactive.length > 0) {
+                const intensity = Math.random() * 0.8 + 1.2;
+                const startX = Math.random() * this.canvas.width;
+                const endY = this.canvas.height;
+                const color = Math.random() > 0.1 ? this.themeColors.accent1 : this.themeColors.primary;
+                const bolt = this.boltPool.inactive.pop()!.reset(startX, 0, endY, color, false, this.addParticle, intensity);
+                this.boltPool.active.push(bolt);
+            }
         }
         this.flashOpacity = 0.8;
         this.triggerGlitchEffect(500);
@@ -308,7 +308,10 @@ class ArcLightningAnimation extends Animation {
     addParticle = (x: number, y: number, color: string) => {
         const count = Math.floor(Math.random() * 5 + 3);
         for(let i=0; i < count; i++) {
-            this.particles.push(new EnergizedParticle(x, y, color));
+            if (this.particlePool.inactive.length > 0) {
+                const p = this.particlePool.inactive.pop()!.reset(x, y, color);
+                this.particlePool.active.push(p);
+            }
         }
     }
 
@@ -325,7 +328,6 @@ class ArcLightningAnimation extends Animation {
         this.ctx.fillStyle = this.themeColors.bgDark;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Ambient Sheet Lightning
         this.sheetCooldown -= delta;
         if(this.sheetCooldown <= 0) {
             this.sheetCooldown = Math.random() * 6000 + 2000;
@@ -337,7 +339,6 @@ class ArcLightningAnimation extends Animation {
             this.sheetOpacity = Math.max(0, this.sheetOpacity - 0.02);
         }
 
-        // Main Strike Flash
         if (this.flashOpacity > 0) {
             this.ctx.fillStyle = `rgba(200, 220, 255, ${this.flashOpacity})`;
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -345,40 +346,45 @@ class ArcLightningAnimation extends Animation {
         }
 
         this.spawnCooldown -= delta;
-        if (this.spawnCooldown <= 0) {
-            // Adapt spawn rate to screen size for performance
+        if (this.spawnCooldown <= 0 && this.boltPool.inactive.length > 0) {
             const screenArea = this.canvas.width * this.canvas.height;
-            const baseArea = 1280 * 720; // Reference area
+            const baseArea = 1280 * 720;
             const performanceFactor = Math.max(1, screenArea / baseArea);
-            
-            const maxCooldown = 3000 * performanceFactor;
-            const minCooldown = 800 * performanceFactor;
-            this.spawnCooldown = Math.random() * (maxCooldown - minCooldown) + minCooldown;
+            this.spawnCooldown = Math.random() * (3000 - 800) * performanceFactor + (800 * performanceFactor);
             
             const color = Math.random() > 0.1 ? this.themeColors.accent1 : this.themeColors.primary;
             const startX = Math.random() * this.canvas.width;
             const endY = this.canvas.height;
             const intensity = Math.random() * 1.0 + 0.5;
             
-            this.bolts.push(new LightningBolt(startX, 0, endY, color, false, this.addParticle, intensity));
+            const bolt = this.boltPool.inactive.pop()!.reset(startX, 0, endY, color, false, this.addParticle, intensity);
+            this.boltPool.active.push(bolt);
             
             this.flashOpacity = Math.min(0.8, (Math.random() * 0.3 + 0.3) * intensity);
             this.triggerGlitchEffect(300);
         }
         
         this.ctx.globalCompositeOperation = 'lighter';
-
-        this.bolts = this.bolts.filter(b => {
-            b.update();
-            return b.life > 0;
-        });
-        this.bolts.forEach(b => b.draw(this.ctx));
         
-        this.particles = this.particles.filter(p => {
+        for(let i = this.boltPool.active.length - 1; i >= 0; i--) {
+            const b = this.boltPool.active[i];
+            b.update();
+            b.draw(this.ctx);
+            if (b.life <= 0) {
+                this.boltPool.inactive.push(b);
+                this.boltPool.active.splice(i, 1);
+            }
+        }
+        
+        for(let i = this.particlePool.active.length - 1; i >= 0; i--) {
+            const p = this.particlePool.active[i];
             p.update();
-            return p.life > 0;
-        });
-        this.particles.forEach(p => p.draw(this.ctx));
+            p.draw(this.ctx);
+            if (p.life <= 0) {
+                this.particlePool.inactive.push(p);
+                this.particlePool.active.splice(i, 1);
+            }
+        }
 
         this.ctx.globalAlpha = 1;
         this.ctx.shadowBlur = 0;
@@ -544,25 +550,25 @@ class MatrixAnimation extends Animation {
 
 // Represents a chunk of the ground ripped up by the storm
 class GroundDebris {
-    x: number; y: number; z: number;
-    vx: number; vy: number; vz: number;
-    angle: number;
-    rotation: number;
-    rotationSpeed: number;
-    size: number;
+    x: number=0; y: number=0; z: number=0;
+    vx: number=0; vy: number=0; vz: number=0;
+    angle: number=0;
+    rotation: number=0;
+    rotationSpeed: number=0;
+    size: number=0;
     life: number = 1;
 
-    constructor(width: number, height: number) {
+    reset(width: number, height: number) {
         this.x = Math.random() * width;
         this.y = height * (0.8 + Math.random() * 0.2);
         this.z = Math.random();
-        this.vx = 0;
-        this.vy = 0;
-        this.vz = 0;
+        this.vx = 0; this.vy = 0; this.vz = 0;
         this.angle = Math.random() * Math.PI * 2;
         this.rotation = 0;
         this.rotationSpeed = (Math.random() - 0.5) * 0.1;
         this.size = (1 + this.z) * 4;
+        this.life = 1;
+        return this;
     }
 
     update(centerX: number, height: number) {
@@ -570,11 +576,10 @@ class GroundDebris {
         const funnelRadius = (1 - climb) * (centerX * 0.3);
         const targetX = centerX + Math.cos(this.angle) * funnelRadius;
         
-        // Attraction towards funnel center
         this.vx += (targetX - this.x) * 0.005;
-        this.vy += -0.5; // BUG FIX: Weaker updraft
+        this.vy += -0.5;
         
-        this.vx *= 0.95; // Damping
+        this.vx *= 0.95;
         this.vy *= 0.95;
 
         this.x += this.vx;
@@ -613,23 +618,27 @@ class GroundDebris {
 enum WeaponState { IDLE, CHARGING, FIRING }
 
 class RobotDebris {
-    x: number; y: number; z: number;
-    vx: number; vy: number; vz: number;
-    angle: number;
-    rotation: number;
-    rotationSpeed: number;
-    size: number;
+    x: number=0; y: number=0; z: number=0;
+    vx: number=0; vy: number=0; vz: number=0;
+    angle: number=0;
+    rotation: number=0;
+    rotationSpeed: number=0;
+    size: number=0;
     life: number = 1;
-    isDamaged: boolean;
-    weaponCharge: number;
+    isDamaged: boolean=false;
+    weaponCharge: number=0;
     target: RobotDebris | null = null;
-    fireCooldown: number;
+    fireCooldown: number=0;
     weaponState: WeaponState = WeaponState.IDLE;
     chargeTime: number = 0;
-    maxChargeTime: number = 20; // 20 frames to charge
+    maxChargeTime: number = 20;
     private themeColors: { [key: string]: string };
 
-    constructor(width: number, height: number, themeColors: { [key: string]: string }) {
+    constructor(themeColors: { [key: string]: string }) {
+        this.themeColors = themeColors;
+    }
+    
+    reset(width: number, height: number) {
         this.x = Math.random() * width;
         this.y = height * (0.8 + Math.random() * 0.2);
         this.z = Math.random();
@@ -638,15 +647,19 @@ class RobotDebris {
         this.rotation = 0;
         this.rotationSpeed = (Math.random() - 0.5) * 0.05;
         this.size = (1 + this.z) * 6;
+        this.life = 1;
         this.isDamaged = false;
         this.weaponCharge = 0;
-        this.fireCooldown = Math.random() * 60 + 30; // BUG FIX: Reduced cooldown
-        this.themeColors = themeColors;
+        this.target = null;
+        this.fireCooldown = Math.random() * 60 + 30;
+        this.weaponState = WeaponState.IDLE;
+        this.chargeTime = 0;
+        return this;
     }
 
     takeDamage() {
         this.isDamaged = true;
-        this.life -= 0.5; // BUG FIX: Take damage, 2 hits to kill
+        this.life -= 0.5;
     }
 
     update(centerX: number, height: number, otherRobots: RobotDebris[], createLaserBolt: (from: RobotDebris, to: RobotDebris) => void) {
@@ -655,7 +668,7 @@ class RobotDebris {
         const targetX = centerX + Math.cos(this.angle) * funnelRadius;
         
         this.vx += (targetX - this.x) * 0.004;
-        this.vy += -0.5; // BUG FIX: Weaker updraft
+        this.vy += -0.5;
         
         this.vx *= 0.96; this.vy *= 0.96;
 
@@ -752,14 +765,15 @@ class RobotDebris {
 }
 
 class LaserBolt {
-    x: number; y: number;
-    from: RobotDebris;
-    to: RobotDebris;
+    x: number=0; y: number=0;
+    from: RobotDebris | null = null;
+    to: RobotDebris | null = null;
     speed: number = 25;
     length: number = 20;
-    vx: number; vy: number;
+    vx: number=0; vy: number=0;
+    life: number = 1;
 
-    constructor(from: RobotDebris, to: RobotDebris) {
+    reset(from: RobotDebris, to: RobotDebris) {
         this.from = from;
         this.to = to;
         this.x = from.x;
@@ -767,11 +781,19 @@ class LaserBolt {
         const angle = Math.atan2(to.y - from.y, to.x - from.x);
         this.vx = Math.cos(angle) * this.speed;
         this.vy = Math.sin(angle) * this.speed;
+        this.life = 1;
+        return this;
     }
 
     update(): boolean {
         this.x += this.vx; this.y += this.vy;
-        return Math.hypot(this.x - this.to.x, this.y - this.to.y) < this.speed;
+        if (!this.to) {
+            this.life = 0;
+            return false;
+        }
+        const hasHit = Math.hypot(this.x - this.to.x, this.y - this.to.y) < this.speed;
+        if(hasHit) this.life = 0;
+        return hasHit;
     }
 
     draw(ctx: CanvasRenderingContext2D) {
@@ -794,12 +816,12 @@ class LaserBolt {
 }
 
 class Explosion {
-    x: number; y: number;
+    x: number=0; y: number=0;
     radius: number = 0;
     maxRadius: number = 30;
     life: number = 1.0;
     
-    constructor(x: number, y: number) { this.x = x; this.y = y; }
+    reset(x: number, y: number) { this.x = x; this.y = y; this.life = 1.0; this.radius = 0; return this; }
 
     update() {
         this.life -= 0.05;
@@ -823,97 +845,44 @@ class Explosion {
     }
 }
 
-class SkyLightning {
-    x: number; y: number;
-    segments: { x: number; y: number }[];
-    life: number = 1.0;
-    private themeColors: { [key: string]: string };
-    
-    constructor(startX: number, endY: number, themeColors: { [key: string]: string }) {
-        this.x = startX; this.y = endY; this.themeColors = themeColors;
-        this.segments = [{ x: startX, y: 0 }];
-        let currentY = 0, currentX = startX;
-        while(currentY < endY) {
-            const nextY = currentY + Math.random() * 30 + 10;
-            const nextX = currentX + (Math.random() - 0.5) * 30;
-            this.segments.push({x: nextX, y: nextY});
-            currentY = nextY; currentX = nextX;
-        }
-        this.segments.push({x: currentX, y: endY});
-    }
-
-    update() { this.life -= 0.08; }
-
-    draw(ctx: CanvasRenderingContext2D) {
-        if (this.life <= 0) return;
-        ctx.save();
-        ctx.globalAlpha = this.life > 0.5 ? 1 : this.life * 2;
-        ctx.lineWidth = 3; ctx.strokeStyle = 'white';
-        ctx.shadowBlur = 20; ctx.shadowColor = this.themeColors.primary;
-        ctx.beginPath();
-        ctx.moveTo(this.segments[0].x, this.segments[0].y);
-        for(let i=1; i < this.segments.length; i++) ctx.lineTo(this.segments[i].x, this.segments[i].y);
-        ctx.stroke();
-        ctx.restore();
-    }
-}
-
-class ImpactCrater {
-    x: number; y: number;
-    radius: number = 0;
-    maxRadius: number;
-    life: number = 1.0;
-
-    constructor(x: number, y: number, maxRadius: number) {
-        this.x = x; this.y = y; this.maxRadius = maxRadius;
-    }
-
-    update() {
-        this.life -= 0.04;
-        this.radius = (1 - (this.life * this.life)) * this.maxRadius;
-    }
-
-    draw(ctx: CanvasRenderingContext2D) {
-        if (this.life <= 0) return;
-        const opacity = this.life * this.life;
-        ctx.strokeStyle = `hsla(60, 100%, 80%, ${opacity * 0.8})`;
-        ctx.lineWidth = 3 * this.life;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.stroke();
-    }
-}
-
 class TornadoStormAnimation extends Animation {
-    private particles: GroundDebris[] = [];
-    private robots: RobotDebris[] = [];
-    private laserBolts: LaserBolt[] = [];
-    private explosions: Explosion[] = [];
-    private lightning: SkyLightning[] = [];
-    private impacts: ImpactCrater[] = [];
+    private debrisPool = { active: [] as GroundDebris[], inactive: [] as GroundDebris[] };
+    private robotPool = { active: [] as RobotDebris[], inactive: [] as RobotDebris[] };
+    private laserPool = { active: [] as LaserBolt[], inactive: [] as LaserBolt[] };
+    private explosionPool = { active: [] as Explosion[], inactive: [] as Explosion[] };
+    
     private eyeState = { y: 0, radius: 0, pulse: 0 };
     private cameraShake = { x: 0, y: 0, intensity: 0 };
     private rageFlash: number = 0;
     
     init() {
-        this.particles = []; this.robots = []; this.laserBolts = []; this.explosions = []; this.lightning = []; this.impacts = [];
-        const particleCount = this.canvas.width < 768 ? 100 : 200;
-        for (let i = 0; i < particleCount; i++) this.particles.push(new GroundDebris(this.canvas.width, this.canvas.height));
+        this.debrisPool = { active: [], inactive: [] };
+        this.robotPool = { active: [], inactive: [] };
+        this.laserPool = { active: [], inactive: [] };
+        this.explosionPool = { active: [], inactive: [] };
+
+        const debrisCount = this.canvas.width < 768 ? 100 : 200;
+        for (let i = 0; i < debrisCount; i++) this.debrisPool.inactive.push(new GroundDebris());
+        
         const robotCount = this.canvas.width < 768 ? 8 : 15;
-        for (let i = 0; i < robotCount; i++) this.robots.push(new RobotDebris(this.canvas.width, this.canvas.height, this.themeColors));
-    }
-    
-    private triggerStrike() {
-        const strikeX = this.canvas.width * (0.1 + Math.random() * 0.8);
-        const strikeY = this.canvas.height * (0.6 + Math.random() * 0.3);
-        this.lightning.push(new SkyLightning(strikeX, strikeY, this.themeColors));
-        this.impacts.push(new ImpactCrater(strikeX, strikeY, 150));
-        this.cameraShake.intensity = 15; this.rageFlash = 0.4;
+        for (let i = 0; i < robotCount; i++) this.robotPool.inactive.push(new RobotDebris(this.themeColors));
+        
+        for (let i=0; i<50; i++) this.laserPool.inactive.push(new LaserBolt());
+        for (let i=0; i<30; i++) this.explosionPool.inactive.push(new Explosion());
     }
 
-    private addLaserBolt = (from: RobotDebris, to: RobotDebris) => this.laserBolts.push(new LaserBolt(from, to));
+    private addLaserBolt = (from: RobotDebris, to: RobotDebris) => {
+        if (this.laserPool.inactive.length > 0) {
+            const bolt = this.laserPool.inactive.pop()!.reset(from, to);
+            this.laserPool.active.push(bolt);
+        }
+    };
+    
     private addExplosion = (x: number, y: number, hitRobot: RobotDebris) => {
-        this.explosions.push(new Explosion(x, y));
+        if (this.explosionPool.inactive.length > 0) {
+            const exp = this.explosionPool.inactive.pop()!.reset(x, y);
+            this.explosionPool.active.push(exp);
+        }
         hitRobot.takeDamage();
     };
 
@@ -930,56 +899,78 @@ class TornadoStormAnimation extends Animation {
     }
     
     animate(timestamp: number) {
-        if (Math.random() > 0.985 && this.lightning.length < 3) this.triggerStrike();
-
-        this.particles.forEach(p => p.update(this.canvas.width / 2, this.canvas.height));
-        this.particles = this.particles.filter(p => p.life > 0);
-        if(this.particles.length < 200) this.particles.push(new GroundDebris(this.canvas.width, this.canvas.height));
-
-        const aliveRobots = this.robots.filter(r => r.life > 0);
-        aliveRobots.forEach(robot => {
-            const potentialTargets = aliveRobots.filter(r => r !== robot);
-            robot.update(this.canvas.width / 2, this.canvas.height, potentialTargets, this.addLaserBolt);
-        });
-        this.robots = this.robots.filter(r => r.life > 0);
-        if (this.robots.length < (this.canvas.width < 768 ? 8 : 15)) this.robots.push(new RobotDebris(this.canvas.width, this.canvas.height, this.themeColors));
-
-        this.laserBolts = this.laserBolts.filter(bolt => {
-            if (bolt.update()) { 
-                this.addExplosion(bolt.to.x, bolt.to.y, bolt.to); 
-                return false; 
-            }
-            return true;
-        });
-        
-        this.explosions.forEach(e => e.update()); this.explosions = this.explosions.filter(e => e.life > 0);
-        this.lightning.forEach(l => l.update()); this.lightning = this.lightning.filter(l => l.life > 0);
-        this.impacts.forEach(i => i.update()); this.impacts = this.impacts.filter(i => i.life > 0);
-
-        if (this.cameraShake.intensity > 0) {
-            this.cameraShake.x = (Math.random() - 0.5) * this.cameraShake.intensity;
-            this.cameraShake.y = (Math.random() - 0.5) * this.cameraShake.intensity;
-            this.cameraShake.intensity *= 0.9;
-        }
         if (this.rageFlash > 0) this.rageFlash -= 0.02;
+
+        // Manage debris population
+        const maxDebris = this.canvas.width < 768 ? 100 : 200;
+        while(this.debrisPool.active.length < maxDebris && this.debrisPool.inactive.length > 0) {
+            this.debrisPool.active.push(this.debrisPool.inactive.pop()!.reset(this.canvas.width, this.canvas.height));
+        }
+
+        // Manage robot population
+        const maxRobots = this.canvas.width < 768 ? 8 : 15;
+        while(this.robotPool.active.length < maxRobots && this.robotPool.inactive.length > 0) {
+            this.robotPool.active.push(this.robotPool.inactive.pop()!.reset(this.canvas.width, this.canvas.height));
+        }
+
+        // Update active objects
+        for(let i = this.debrisPool.active.length - 1; i >= 0; i--) {
+            const p = this.debrisPool.active[i];
+            p.update(this.canvas.width / 2, this.canvas.height);
+            if (p.life <= 0) {
+                this.debrisPool.inactive.push(p);
+                this.debrisPool.active.splice(i, 1);
+            }
+        }
         
+        for(let i = this.robotPool.active.length - 1; i >= 0; i--) {
+            const r = this.robotPool.active[i];
+            const potentialTargets = this.robotPool.active.filter(robot => robot !== r);
+            r.update(this.canvas.width / 2, this.canvas.height, potentialTargets, this.addLaserBolt);
+            if (r.life <= 0) {
+                this.addExplosion(r.x, r.y, r);
+                this.robotPool.inactive.push(r);
+                this.robotPool.active.splice(i, 1);
+            }
+        }
+        
+        for(let i = this.laserPool.active.length - 1; i >= 0; i--) {
+            const l = this.laserPool.active[i];
+            if (l.update()) {
+                if (l.to) this.addExplosion(l.to.x, l.to.y, l.to);
+            }
+            if (l.life <= 0) {
+                this.laserPool.inactive.push(l);
+                this.laserPool.active.splice(i, 1);
+            }
+        }
+        
+        for(let i = this.explosionPool.active.length - 1; i >= 0; i--) {
+            const e = this.explosionPool.active[i];
+            e.update();
+            if (e.life <= 0) {
+                this.explosionPool.inactive.push(e);
+                this.explosionPool.active.splice(i, 1);
+            }
+        }
+
+        // Drawing
         this.ctx.save();
         this.ctx.translate(this.cameraShake.x, this.cameraShake.y);
         this.ctx.fillStyle = this.themeColors.bgDark;
-        this.ctx.fillRect(-this.cameraShake.intensity, -this.cameraShake.intensity, this.canvas.width + this.cameraShake.intensity * 2, this.canvas.height + this.cameraShake.intensity * 2);
+        this.ctx.fillRect(0,0, this.canvas.width, this.canvas.height);
         if (this.rageFlash > 0) {
             this.ctx.fillStyle = `hsla(0, 100%, 50%, ${this.rageFlash})`;
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         }
 
         this.drawGroundGrid(this.ctx, this.canvas.height * 0.6, 2);
-        this.impacts.forEach(i => i.draw(this.ctx));
         
         this.ctx.globalCompositeOperation = 'lighter';
-        const allDebris = [...this.particles, ...this.robots].sort((a, b) => a.z - b.z);
+        const allDebris = [...this.debrisPool.active, ...this.robotPool.active].sort((a, b) => a.z - b.z);
         allDebris.forEach(d => d.draw(this.ctx));
-        this.laserBolts.forEach(b => b.draw(this.ctx));
-        this.explosions.forEach(e => e.draw(this.ctx));
+        this.laserPool.active.forEach(b => b.draw(this.ctx));
+        this.explosionPool.active.forEach(e => e.draw(this.ctx));
 
         this.eyeState = { y: this.canvas.height * 0.4, radius: this.canvas.width * 0.05 + Math.sin(timestamp * 0.005) * 5, pulse: timestamp * 0.005 };
         const eyeGrad = this.ctx.createRadialGradient(this.canvas.width / 2, this.eyeState.y, 0, this.canvas.width / 2, this.eyeState.y, this.eyeState.radius);
@@ -988,7 +979,6 @@ class TornadoStormAnimation extends Animation {
         this.ctx.fillStyle = eyeGrad; this.ctx.beginPath(); this.ctx.arc(this.canvas.width / 2, this.eyeState.y, this.eyeState.radius, 0, Math.PI * 2); this.ctx.fill();
         
         this.ctx.globalCompositeOperation = 'source-over';
-        this.lightning.forEach(l => l.draw(this.ctx));
         this.ctx.restore();
     }
 }
