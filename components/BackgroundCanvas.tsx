@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect } from 'react';
 
 // Props interface
@@ -387,86 +386,355 @@ class ArcLightningAnimation extends Animation {
     }
 }
 
-
-// --- 5. CIRCUITS ---
-class CircuitNode {
-    x: number; y: number;
-    constructor(x: number, y: number) { this.x = x; this.y = y; }
+// --- NEW: OVERLOADED CIRCUITS ANIMATION ---
+interface CircuitComponent {
+  x: number; y: number;
+  width: number; height: number;
+  isDamaged: boolean;
+  glow: number;
+  hotspot: number;
+  crackSeed: number;
 }
 
-class CircuitPulse {
-    from: CircuitNode; to: CircuitNode;
-    progress: number = 0;
-    speed: number;
-    color: string;
-    constructor(from: CircuitNode, to: CircuitNode, color: string) {
-        this.from = from;
-        this.to = to;
-        this.speed = Math.random() * 0.01 + 0.005;
-        this.color = color;
+interface CircuitPath {
+  points: { x: number, y: number }[];
+}
+
+class EnergyPulse {
+  path: CircuitPath;
+  progress: number = 0;
+  speed: number;
+
+  constructor(path: CircuitPath) {
+    this.path = path;
+    this.speed = Math.random() * 0.02 + 0.01;
+  }
+
+  update(delta: number): boolean {
+    this.progress += this.speed * delta;
+    return this.progress < 1;
+  }
+
+  draw(ctx: CanvasRenderingContext2D, color: string) {
+      const pIndex = this.progress * (this.path.points.length - 1);
+      const i = Math.floor(pIndex);
+      const j = Math.min(i + 1, this.path.points.length - 1);
+      if (!this.path.points[i] || !this.path.points[j]) return;
+      
+      const t = pIndex - i;
+      const x = this.path.points[i].x * (1-t) + this.path.points[j].x * t;
+      const y = this.path.points[i].y * (1-t) + this.path.points[j].y * t;
+
+      ctx.save();
+      ctx.fillStyle = '#fff';
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 20;
+      ctx.globalAlpha = Math.sin(this.progress * Math.PI) * 1.5;
+      ctx.beginPath();
+      ctx.arc(x, y, 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+  }
+}
+
+class CrawlingArc {
+    segments: {x: number, y: number, vx: number, vy: number}[];
+    life: number = 1.0;
+    spawnSparks: (x:number, y:number) => void;
+
+    constructor(from: {x:number, y:number}, to: {x:number, y:number}, spawnSparksCb: (x:number, y:number) => void) {
+        this.segments = [{...from, vx:0, vy:0}];
+        this.spawnSparks = spawnSparksCb;
+        
+        let current = {...from};
+        const dx = to.x - from.x;
+        const dy = to.y - from.y;
+        const dist = Math.hypot(dx, dy);
+        const step = 15;
+        const steps = Math.max(1, dist / step);
+        
+        for (let i = 0; i < steps; i++) {
+            const next = {
+                x: from.x + dx * (i/steps),
+                y: from.y + dy * (i/steps)
+            };
+            this.segments.push({...next, vx:0, vy:0});
+        }
     }
-    update() {
-        this.progress += this.speed;
-        return this.progress >= 1;
+
+    update(): boolean {
+        this.life -= 0.03;
+        
+        for (let i=1; i < this.segments.length-1; i++) {
+            this.segments[i].vx += (Math.random() - 0.5) * 5;
+            this.segments[i].vy += (Math.random() - 0.5) * 5;
+            this.segments[i].vx *= 0.8;
+            this.segments[i].vy *= 0.8;
+            this.segments[i].x += this.segments[i].vx;
+            this.segments[i].y += this.segments[i].vy;
+        }
+        if(Math.random() > 0.95) this.spawnSparks(this.segments[Math.floor(this.segments.length/2)].x, this.segments[Math.floor(this.segments.length/2)].y);
+        
+        return this.life > 0;
     }
-    draw(ctx: CanvasRenderingContext2D) {
-        const x = this.from.x + (this.to.x - this.from.x) * this.progress;
-        const y = this.from.y + (this.to.y - this.from.y) * this.progress;
+
+    draw(ctx: CanvasRenderingContext2D, color: string) {
+        ctx.save();
+        ctx.globalAlpha = this.life * (0.5 + Math.random() * 0.5);
+        ctx.shadowColor = color; ctx.shadowBlur = 20;
+        
         ctx.beginPath();
-        ctx.arc(x, y, 2, 0, Math.PI * 2);
-        ctx.fillStyle = this.color;
+        ctx.moveTo(this.segments[0].x, this.segments[0].y);
+        for(let i=1; i<this.segments.length; i++) ctx.lineTo(this.segments[i].x, this.segments[i].y);
+        
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
+        ctx.strokeStyle = color; ctx.lineWidth = 3.5; ctx.stroke();
+        ctx.restore();
+    }
+}
+
+class MoltenSpark {
+    x: number; y: number; vx: number; vy: number;
+    life: number = 1.0; size: number;
+    
+    constructor(x:number, y:number) {
+        this.x = x; this.y = y;
+        this.vx = (Math.random() - 0.5) * 8;
+        this.vy = (Math.random() - 0.5) * 8;
+        this.size = Math.random() * 2 + 1;
+    }
+    
+    update(delta: number): boolean {
+        this.x += this.vx * delta;
+        this.y += this.vy * delta;
+        this.vy += 0.1 * delta; // gravity
+        this.life -= 0.02 * delta;
+        return this.life > 0;
+    }
+
+    draw(ctx: CanvasRenderingContext2D, color: string) {
+        ctx.save();
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = color;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    }
+}
+
+
+class SmokeParticle {
+    x: number; y: number; vx: number; vy: number;
+    size: number; maxSize: number; life: number = 1.0;
+    
+    constructor(x: number, y: number) {
+        this.x = x; this.y = y;
+        this.vx = (Math.random() - 0.5) * 0.3;
+        this.vy = (Math.random() - 0.5) * 0.3 - 0.5;
+        this.maxSize = Math.random() * 25 + 15;
+        this.size = 0;
+    }
+    
+    update(delta: number): boolean {
+        this.life -= 0.0005 * delta * this.maxSize;
+        this.x += this.vx * delta; this.y += this.vy * delta;
+        this.size = (1 - this.life) * this.maxSize;
+        return this.life > 0;
+    }
+
+    draw(ctx: CanvasRenderingContext2D) {
+        ctx.fillStyle = 'hsla(0, 0%, 50%, 0.5)';
+        ctx.globalAlpha = Math.sin(this.life * Math.PI) * 0.05;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
         ctx.fill();
     }
 }
 
+
 class CircuitsAnimation extends Animation {
-    private nodes: CircuitNode[] = [];
-    private pulses: CircuitPulse[] = [];
-    private gridSize: number = 50;
+    private components: CircuitComponent[] = [];
+    private paths: CircuitPath[] = [];
+    private pulses: EnergyPulse[] = [];
+    private arcs: CrawlingArc[] = [];
+    private sparks: MoltenSpark[] = [];
+    private smoke: SmokeParticle[] = [];
+    private flashOpacity: number = 0;
+    private cameraShake = { x: 0, y: 0, intensity: 0 };
+    private offscreenCanvas: HTMLCanvasElement;
+    private offscreenCtx: CanvasRenderingContext2D;
 
-    init() {
-        this.nodes = [];
-        const cols = Math.ceil(this.canvas.width / this.gridSize);
-        const rows = Math.ceil(this.canvas.height / this.gridSize);
-
-        for (let i = 0; i < cols; i++) {
-            for (let j = 0; j < rows; j++) {
-                if (Math.random() > 0.5) {
-                    this.nodes.push(new CircuitNode(i * this.gridSize, j * this.gridSize));
-                }
-            }
-        }
+    constructor(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) {
+        super(canvas, ctx);
+        this.offscreenCanvas = document.createElement('canvas');
+        this.offscreenCtx = this.offscreenCanvas.getContext('2d')!;
     }
-
-    animate() {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
-        if (this.pulses.length < 100 && Math.random() > 0.5 && this.nodes.length > 1) {
-            const n1 = this.nodes[Math.floor(Math.random() * this.nodes.length)];
-            const n2 = this.nodes[Math.floor(Math.random() * this.nodes.length)];
-            if (n1 !== n2) {
-                const color = Math.random() > 0.2 ? this.themeColors.accent1 : this.themeColors.primary;
-                this.pulses.push(new CircuitPulse(n1, n2, color));
-            }
+    
+    init() {
+        this.offscreenCanvas.width = this.canvas.width;
+        this.offscreenCanvas.height = this.canvas.height;
+        this.components = []; this.paths = []; this.pulses = [];
+        this.arcs = []; this.sparks = []; this.smoke = [];
+        
+        const componentCount = this.canvas.width < 768 ? 15 : 30;
+        for (let i = 0; i < componentCount; i++) {
+            const isDamaged = Math.random() > 0.8;
+            this.components.push({
+                x: Math.random() * this.canvas.width, y: Math.random() * this.canvas.height,
+                width: 40 + Math.random()*60, height: 40 + Math.random()*60, 
+                isDamaged: isDamaged, glow: 0, hotspot: isDamaged ? 1 : 0, crackSeed: Math.random()
+            });
         }
-
-        this.ctx.strokeStyle = 'hsla(220, 100%, 65%, 0.1)';
-        this.ctx.lineWidth = 0.5;
-        this.nodes.forEach(n1 => {
-            this.nodes.forEach(n2 => {
-                if (n1 === n2) return;
-                const dist = Math.hypot(n1.x - n2.x, n1.y - n2.y);
-                if (dist < this.gridSize * 1.5) {
-                    this.ctx.beginPath();
-                    this.ctx.moveTo(n1.x, n1.y);
-                    this.ctx.lineTo(n2.x, n2.y);
-                    this.ctx.stroke();
+        
+        this.components.forEach(c1 => {
+            let connections = 0;
+            this.components.forEach(c2 => {
+                if (c1 !== c2 && connections < 3 && Math.random() > 0.6) {
+                    const path = this.createPath(c1, c2);
+                    this.paths.push(path);
+                    connections++;
                 }
             });
         });
 
-        this.pulses = this.pulses.filter(p => !p.update());
-        this.pulses.forEach(p => p.draw(this.ctx));
+        this.drawOffscreen();
+    }
+
+    createPath(c1: CircuitComponent, c2: CircuitComponent): CircuitPath {
+        const path: CircuitPath = { points: [{x: c1.x, y: c1.y}] };
+        let current = {x: c1.x, y: c1.y};
+        for(let i=0; i<3; i++) {
+            const next = { x: Math.random() * this.canvas.width, y: Math.random() * this.canvas.height };
+            path.points.push(next);
+            current = next;
+        }
+        path.points.push({x: c2.x, y: c2.y});
+        return path;
+    }
+    
+    drawOffscreen() {
+        this.offscreenCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.offscreenCtx.strokeStyle = this.themeColors.accent1;
+        this.offscreenCtx.lineWidth = 0.5;
+        this.offscreenCtx.globalAlpha = 0.1;
+
+        this.paths.forEach(path => {
+            this.offscreenCtx.beginPath();
+            this.offscreenCtx.moveTo(path.points[0].x, path.points[0].y);
+            for(let i=1; i<path.points.length; i++) this.offscreenCtx.lineTo(path.points[i].x, path.points[i].y);
+            this.offscreenCtx.stroke();
+        });
+    }
+
+    spawnSparks = (x:number, y:number) => {
+        const count = Math.floor(Math.random() * 5 + 3);
+        for(let i=0; i < count; i++) this.sparks.push(new MoltenSpark(x, y));
+    }
+
+    animate(timestamp: number) {
+        if (!this.lastTimestamp) this.lastTimestamp = timestamp;
+        const delta = Math.min(2, (timestamp - this.lastTimestamp) / 16.67);
+        this.lastTimestamp = timestamp;
+
+        if (this.cameraShake.intensity > 0) {
+            this.cameraShake.x = (Math.random() - 0.5) * this.cameraShake.intensity;
+            this.cameraShake.y = (Math.random() - 0.5) * this.cameraShake.intensity;
+            this.cameraShake.intensity *= 0.9;
+        }
+        
+        this.ctx.save();
+        this.ctx.translate(this.cameraShake.x, this.cameraShake.y);
+
+        this.ctx.fillStyle = 'rgba(10, 10, 14, 0.2)';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        if (Math.random() > 0.8 && this.pulses.length < 50) {
+            const path = this.paths[Math.floor(Math.random() * this.paths.length)];
+            if(path) this.pulses.push(new EnergyPulse(path));
+        }
+        
+        if (Math.random() > 0.985 && this.arcs.length < 5) {
+            const c1 = this.components[Math.floor(Math.random() * this.components.length)];
+            const c2 = this.components[Math.floor(Math.random() * this.components.length)];
+            if(c1 && c2 && c1 !== c2) {
+                this.arcs.push(new CrawlingArc({x: c1.x, y: c1.y}, {x: c2.x, y: c2.y}, this.spawnSparks));
+                c1.glow = 1; c2.glow = 1;
+            }
+        }
+        
+        if (Math.random() > 0.995) {
+            this.flashOpacity = 0.8;
+            this.cameraShake.intensity = 10;
+        }
+
+        this.ctx.drawImage(this.offscreenCanvas, 0, 0);
+
+        this.components.forEach(c => {
+            c.glow *= 0.95;
+            c.hotspot = c.isDamaged ? 1 : c.hotspot * 0.98;
+            
+            // Draw hotspot
+            if (c.hotspot > 0.01) {
+                const grad = this.ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, c.width * 1.5);
+                grad.addColorStop(0, `hsla(20, 100%, 50%, ${c.hotspot * 0.4})`);
+                grad.addColorStop(1, 'hsla(20, 100%, 50%, 0)');
+                this.ctx.fillStyle = grad;
+                this.ctx.fillRect(c.x - c.width*1.5, c.y - c.width*1.5, c.width * 3, c.width * 3);
+            }
+            if(c.isDamaged && Math.random() > 0.9) this.smoke.push(new SmokeParticle(c.x, c.y));
+
+            // Draw component body
+            this.ctx.fillStyle = 'hsl(220, 10%, 10%)';
+            this.ctx.fillRect(c.x - c.width/2, c.y - c.height/2, c.width, c.height);
+            this.ctx.strokeStyle = `hsla(220, 10%, 40%, ${0.5 + c.glow})`;
+            this.ctx.strokeRect(c.x - c.width/2, c.y - c.height/2, c.width, c.height);
+
+            // Draw cracks on damaged components
+            if(c.isDamaged) {
+                this.ctx.save();
+                this.ctx.translate(c.x - c.width/2, c.y - c.height/2);
+                const lightBurst = 0.5 + Math.sin(timestamp * 0.01 + c.crackSeed * 10) * 0.5;
+                this.ctx.strokeStyle = `hsla(48, 100%, 70%, ${lightBurst})`;
+                this.ctx.lineWidth = 2;
+                this.ctx.shadowColor = this.themeColors.primary;
+                this.ctx.shadowBlur = lightBurst * 20;
+                
+                this.ctx.beginPath();
+                this.ctx.moveTo(c.width * 0.1, c.height * 0.1);
+                this.ctx.lineTo(c.width * 0.5, c.height * 0.5);
+                this.ctx.lineTo(c.width * 0.4, c.height * 0.9);
+                this.ctx.moveTo(c.width * 0.5, c.height * 0.5);
+                this.ctx.lineTo(c.width * 0.9, c.height * 0.6);
+                this.ctx.stroke();
+                
+                this.ctx.restore();
+            }
+        });
+
+        this.smoke = this.smoke.filter(s => s.update(delta));
+        this.smoke.forEach(s => s.draw(this.ctx));
+        
+        this.ctx.globalCompositeOperation = 'lighter';
+        this.pulses = this.pulses.filter(p => p.update(delta));
+        this.pulses.forEach(p => p.draw(this.ctx, this.themeColors.primary));
+        
+        this.arcs = this.arcs.filter(a => a.update());
+        this.arcs.forEach(a => a.draw(this.ctx, this.themeColors.primary));
+        
+        this.sparks = this.sparks.filter(s => s.update(delta));
+        this.sparks.forEach(s => s.draw(this.ctx, 'hsl(30, 100%, 60%)'));
+        this.ctx.globalCompositeOperation = 'source-over';
+        
+        if (this.flashOpacity > 0) {
+            this.ctx.fillStyle = `hsla(0, 0%, 100%, ${this.flashOpacity})`;
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            this.flashOpacity = Math.max(0, this.flashOpacity - 0.05);
+        }
+
+        this.ctx.restore();
     }
 }
 
@@ -528,7 +796,7 @@ class MatrixAnimation extends Animation {
     }
 }
 
-// --- 7. TORNADO STORM (WARZONE EDITION) ---
+// --- 7. TORNADO WARZONE ---
 
 // Represents a chunk of the ground ripped up by the storm
 class GroundDebris {
@@ -560,7 +828,7 @@ class GroundDebris {
         
         // Attraction towards funnel center
         this.vx += (targetX - this.x) * 0.005;
-        this.vy += -2.5; // Updraft
+        this.vy += -0.5; // BUG FIX: Weaker updraft
         
         this.vx *= 0.95; // Damping
         this.vy *= 0.95;
@@ -628,13 +896,13 @@ class RobotDebris {
         this.size = (1 + this.z) * 6;
         this.isDamaged = false;
         this.weaponCharge = 0;
-        this.fireCooldown = Math.random() * 100 + 50;
+        this.fireCooldown = Math.random() * 60 + 30; // BUG FIX: Reduced cooldown
         this.themeColors = themeColors;
     }
 
     takeDamage() {
         this.isDamaged = true;
-        // Could add more logic like reduced life, etc.
+        this.life -= 0.5; // BUG FIX: Take damage, 2 hits to kill
     }
 
     update(centerX: number, height: number, otherRobots: RobotDebris[], createLaserBolt: (from: RobotDebris, to: RobotDebris) => void) {
@@ -643,7 +911,7 @@ class RobotDebris {
         const targetX = centerX + Math.cos(this.angle) * funnelRadius;
         
         this.vx += (targetX - this.x) * 0.004;
-        this.vy += -2.5;
+        this.vy += -0.5; // BUG FIX: Weaker updraft
         
         this.vx *= 0.96; this.vy *= 0.96;
 
@@ -658,14 +926,13 @@ class RobotDebris {
             this.target = otherRobots[Math.floor(Math.random() * otherRobots.length)];
         }
 
-        // --- FIRING STATE MACHINE ---
         if (this.weaponState === WeaponState.IDLE && this.fireCooldown <= 0 && this.target && this.target.life > 0) {
             this.weaponState = WeaponState.CHARGING;
             this.chargeTime = 0;
         }
 
         if (this.weaponState === WeaponState.CHARGING) {
-            if (!this.target || this.target.life <= 0) { // Abort if target is lost
+            if (!this.target || this.target.life <= 0) {
                 this.weaponState = WeaponState.IDLE;
                 this.weaponCharge = 0;
                 this.chargeTime = 0;
@@ -687,7 +954,6 @@ class RobotDebris {
             this.chargeTime = 0;
             this.fireCooldown = Math.random() * 80 + 80;
         }
-        // --- END STATE MACHINE ---
 
         if (this.y < 0) this.life = 0;
     }
@@ -973,7 +1239,8 @@ class TornadoStormAnimation extends Animation {
 
         this.eyeState = { y: this.canvas.height * 0.4, radius: this.canvas.width * 0.05 + Math.sin(timestamp * 0.005) * 5, pulse: timestamp * 0.005 };
         const eyeGrad = this.ctx.createRadialGradient(this.canvas.width / 2, this.eyeState.y, 0, this.canvas.width / 2, this.eyeState.y, this.eyeState.radius);
-        eyeGrad.addColorStop(0, 'hsla(0, 100%, 50%, 0.8)'); eyeGrad.addColorStop(1, 'hsla(0, 100%, 50%, 0)');
+        eyeGrad.addColorStop(0, 'hsla(0, 100%, 50%, 0.8)');
+        eyeGrad.addColorStop(1, 'hsla(0, 100%, 50%, 0)');
         this.ctx.fillStyle = eyeGrad; this.ctx.beginPath(); this.ctx.arc(this.canvas.width / 2, this.eyeState.y, this.eyeState.radius, 0, Math.PI * 2); this.ctx.fill();
         
         this.ctx.globalCompositeOperation = 'source-over';
