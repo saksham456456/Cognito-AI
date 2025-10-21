@@ -1,4 +1,5 @@
 
+
 import React, { useRef, useEffect } from 'react';
 
 // Props interface
@@ -664,7 +665,7 @@ class RobotDebris {
         this.life -= 0.5;
     }
 
-    update(centerX: number, height: number, otherRobots: RobotDebris[], createLaserBolt: (from: RobotDebris, to: RobotDebris) => void) {
+    update(centerX: number, height: number, allRobots: RobotDebris[], createLaserBolt: (from: RobotDebris, to: RobotDebris) => void) {
         const climb = this.y / height;
         const funnelRadius = (1 - climb) * (centerX * 0.3);
         const targetX = centerX + Math.cos(this.angle) * funnelRadius;
@@ -681,8 +682,12 @@ class RobotDebris {
 
         this.fireCooldown--;
 
-        if ((!this.target || this.target.life <= 0) && otherRobots.length > 0) {
-            this.target = otherRobots[Math.floor(Math.random() * otherRobots.length)];
+        if ((!this.target || this.target.life <= 0) && allRobots.length > 1) {
+            let newTarget;
+            do {
+                newTarget = allRobots[Math.floor(Math.random() * allRobots.length)];
+            } while (newTarget === this); // Ensure it doesn't target itself
+            this.target = newTarget;
         }
 
         if (this.weaponState === WeaponState.IDLE && this.fireCooldown <= 0 && this.target && this.target.life > 0) {
@@ -1071,8 +1076,7 @@ class TornadoStormAnimation extends Animation {
             for(let i = pool.active.length - 1; i >= 0; i--) {
                 const p = pool.active[i] as any;
                 if (p.constructor.name === 'RobotDebris') {
-                    const potentialTargets = this.robotPool.active.filter(robot => robot !== p);
-                    p.update(this.canvas.width / 2, this.canvas.height, potentialTargets, this.addLaserBolt);
+                    p.update(this.canvas.width / 2, this.canvas.height, this.robotPool.active, this.addLaserBolt);
                 } else if (p.constructor.name === 'LaserBolt') {
                     if (p.update()) if (p.to) this.addExplosion(p.to.x, p.to.y, p.to);
                 } else if(p.constructor.name === 'GroundDebris') {
@@ -1104,9 +1108,14 @@ class TornadoStormAnimation extends Animation {
         this.ctx.globalCompositeOperation = 'lighter';
         
         this.rageBoltPool.active.forEach(b => b.draw(this.ctx));
+        
+        // OPTIMIZED DRAWING ORDER
+        this.debrisPool.active.sort((a, b) => a.z - b.z);
+        this.robotPool.active.sort((a, b) => a.z - b.z);
 
-        const allDebris = [...this.debrisPool.active, ...this.robotPool.active].sort((a, b) => a.z - b.z);
-        allDebris.forEach(d => d.draw(this.ctx));
+        this.debrisPool.active.forEach(d => d.draw(this.ctx));
+        this.robotPool.active.forEach(d => d.draw(this.ctx));
+        
         this.laserPool.active.forEach(b => b.draw(this.ctx));
         this.explosionPool.active.forEach(e => e.draw(this.ctx));
         this.groundFlashPool.active.forEach(f => f.draw(this.ctx));
