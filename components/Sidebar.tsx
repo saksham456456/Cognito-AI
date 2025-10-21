@@ -132,8 +132,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                   <li key={chat.id}>
                   <div
                       onClick={() => onSelectChat(chat.id)}
-                      className={`group relative flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
-                      isActive ? 'bg-primary/20 text-primary' : 'hover:bg-input'
+                      className={`group relative flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all duration-200 ${
+                      isActive ? 'bg-primary/20 text-primary' : 'hover:bg-input hover:translate-x-1'
                       }`}
                   >
                       {/* Active indicator */}
@@ -168,8 +168,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                           ) : (
                               // These controls will only appear on hover
                               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <button onClick={(e) => handleRenameStart(e, chat)} className="p-1 rounded hover:bg-primary/30"><PencilIcon className="w-4 h-4 text-text-medium"/></button>
-                                  <button onClick={(e) => handleDelete(e, chat.id)} className="p-1 rounded hover:bg-primary/30"><TrashIcon className="w-4 h-4 text-text-medium hover:text-red-500"/></button>
+                                  <button onClick={(e) => handleRenameStart(e, chat)} className="p-1 rounded hover:bg-primary/30 hover:scale-110 active:scale-95 transition-transform"><PencilIcon className="w-4 h-4 text-text-medium"/></button>
+                                  <button onClick={(e) => handleDelete(e, chat.id)} className="p-1 rounded hover:bg-primary/30 hover:scale-110 active:scale-95 transition-transform"><TrashIcon className="w-4 h-4 text-text-medium hover:text-red-500"/></button>
                               </div>
                           )}
                       </div>
@@ -184,7 +184,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       <div className="p-2 border-t border-card-border">
           {/* User profile section */}
           <div className="mt-2 p-2 rounded-lg bg-input/50 flex items-center justify-between border border-card-border">
-              <button onClick={onProfileClick} className="flex items-center gap-3 truncate text-left p-1 -m-1 rounded-md hover:bg-input w-full">
+              <button onClick={onProfileClick} className="flex items-center gap-3 truncate text-left p-1 -m-1 rounded-md hover:bg-input w-full transition-colors duration-200">
                   <UserCircleIcon className="w-10 h-10 text-primary" />
                   <div className="truncate">
                       <p className="font-semibold text-text-light">{userName}</p>
@@ -234,7 +234,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               <li>
                   <button
                       onClick={onAboutClick}
-                      className="w-full flex items-center gap-3 p-2 rounded-md text-sm text-text-medium hover:bg-input hover:text-text-light transition-colors group"
+                      className="w-full flex items-center gap-3 p-2 rounded-md text-sm text-text-medium hover:bg-input hover:text-text-light transition-all duration-200 group hover:pl-4"
                   >
                       <InfoIcon className="w-5 h-5" />
                       <span>{t('sidebar.about')}</span>
@@ -244,7 +244,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   <button
                       onClick={onExportChat}
                       disabled={!activeChatId}
-                      className="w-full flex items-center gap-3 p-2 rounded-md text-sm text-text-medium hover:bg-input hover:text-text-light transition-colors group disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full flex items-center gap-3 p-2 rounded-md text-sm text-text-medium hover:bg-input hover:text-text-light transition-all duration-200 group disabled:opacity-50 disabled:cursor-not-allowed hover:pl-4"
                   >
                       <DownloadIcon className="w-5 h-5" />
                       <span>{t('sidebar.exportLog')}</span>
@@ -254,7 +254,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   <button
                       onClick={onDeleteAllChats}
                       disabled={chats.length === 0}
-                      className="w-full flex items-center gap-3 p-2 rounded-md text-sm text-red-500 hover:bg-red-500/10 transition-colors group disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full flex items-center gap-3 p-2 rounded-md text-sm text-red-500 hover:bg-red-500/10 transition-all duration-200 group disabled:opacity-50 disabled:cursor-not-allowed hover:pl-4"
                   >
                       <TrashIcon className="w-5 h-5" />
                       <span>{t('sidebar.purgeLogs')}</span>

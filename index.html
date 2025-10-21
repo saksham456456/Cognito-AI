@@ -83,16 +83,24 @@
       
       /* Default state for the neon button */
       .neon-glow-button {
-        transition: all 0.3s ease;
+        transition: all 0.2s ease-in-out;
         box-shadow: 0 0 2px var(--primary-glow-faded), inset 0 0 2px var(--primary-glow-faded);
+        transform: translateY(0);
       }
 
       /* Hover and active state for the neon button */
-      .neon-glow-button:hover, .neon-glow-button.active {
+      .neon-glow-button:hover:not(:disabled), .neon-glow-button.active {
         color: var(--primary-glow);
         background: var(--primary-glow-faded);
         border-color: var(--primary-glow);
         box-shadow: 0 0 5px var(--primary-glow), 0 0 10px var(--primary-glow-faded), inset 0 0 5px var(--primary-glow-faded);
+        transform: translateY(-2px);
+      }
+
+      /* NEW: Active (pressed) state for the neon button */
+      .neon-glow-button:active:not(:disabled) {
+          transform: translateY(0px);
+          box-shadow: 0 0 2px var(--primary-glow), 0 0 5px var(--primary-glow-faded), inset 0 0 2px var(--primary-glow-faded);
       }
 
       /* Animation: Element fades in while moving up from the bottom */

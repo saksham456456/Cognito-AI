@@ -209,14 +209,14 @@ const MessageComponent: React.FC<MessageProps> = ({
   const MessageActions = () => (
     <div className="absolute -bottom-8 left-0 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
       {/* Copy button */}
-      <button onClick={handleCopy} title="Copy" className="p-1.5 rounded-full bg-input hover:bg-input-border transition-colors border border-card-border">
+      <button onClick={handleCopy} title="Copy" className="p-1.5 rounded-full bg-input hover:bg-input-border transition-all duration-200 border border-card-border hover:scale-110 active:scale-95">
         {isCopied ? <CheckIcon className="w-4 h-4 text-green-500" /> : <ClipboardIcon className="w-4 h-4 text-text-medium" />}
       </button>
       {/* Speak button */}
       <button 
         onClick={() => onSpeak(message)} 
         title="Speak" 
-        className="p-1.5 rounded-full bg-input hover:bg-input-border transition-colors border border-card-border"
+        className="p-1.5 rounded-full bg-input hover:bg-input-border transition-all duration-200 border border-card-border hover:scale-110 active:scale-95"
       >
         {isTtsLoading ? (
             <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
@@ -232,7 +232,7 @@ const MessageComponent: React.FC<MessageProps> = ({
       </button>
       {/* Regenerate button (only shown for the last model message) */}
       {isLastMessage && !isAiLoading && (
-        <button onClick={onRegenerate} title="Regenerate" className="p-1.5 rounded-full bg-input hover:bg-input-border transition-colors border border-card-border">
+        <button onClick={onRegenerate} title="Regenerate" className="p-1.5 rounded-full bg-input hover:bg-input-border transition-all duration-200 border border-card-border hover:scale-110 active:scale-95">
           <RefreshIcon className="w-4 h-4 text-text-medium" />
         </button>
       )}
