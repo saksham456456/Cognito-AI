@@ -109,15 +109,28 @@ export async function getTitleForChat(messages: Message[]): Promise<string> {
  */
 export async function generateSpeech(text: string): Promise<string | null> {
     try {
-        // Sanitize text for TTS by removing code blocks and other markdown that doesn't translate well to speech.
-        const sanitizedText = text.replace(/```[\s\S]*?```/g, 'Code snippet provided.');
+        // FIX: Sanitize text more thoroughly for TTS.
+        // The specialized TTS model is sensitive to markdown and special characters. This removes them to prevent API errors.
+        const sanitizedText = text
+            .replace(/```[\s\S]*?```/g, 'Code snippet provided.') // Remove code blocks
+            .replace(/(\*\*|__)(.*?)\1/g, '$2') // bold
+            .replace(/(\*|_)(.*?)\1/g, '$2') // italic
+            .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // links
+            .replace(/`([^`]+)`/g, '$1') // inline code
+            .replace(/^\s*[-*+]\s+/gm, '') // list items
+            .replace(/^\s*>\s+/gm, '') // blockquotes
+            .replace(/#{1,6}\s+(.*)/g, '$1') // headers
+            .trim();
+
+        if (!sanitizedText) {
+            console.log("Skipping TTS generation for empty text.");
+            return null;
+        }
 
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash-preview-tts",
             contents: [{ parts: [{ text: sanitizedText }] }],
             config: {
-                // NEW: System instruction to improve Hindi/Hinglish pronunciation.
-                systemInstruction: "You are a text-to-speech voice model. Your primary goal is to provide natural-sounding speech. You have a special instruction for pronunciation: When you encounter words from Hindi or Hinglish (a mix of Hindi and English) written in the Roman alphabet, you MUST pronounce them with an authentic Indian accent and correct Hindi pronunciation. Do not use a Western or anglicized pronunciation for these words. For example, the word 'acha' should be pronounced closer to 'uch-ha', and 'pyaar' should be pronounced with a clear 'py-aar' sound.",
                 responseModalities: [Modality.AUDIO],
                 speechConfig: {
                     voiceConfig: {
