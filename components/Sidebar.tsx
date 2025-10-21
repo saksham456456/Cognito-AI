@@ -223,8 +223,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                           onChange={(e) => onBackgroundAnimationChange(e.target.value)}
                           className="bg-input border border-input-border rounded-md px-2 py-1 text-xs text-text-light focus:outline-none focus:border-primary transition-colors"
                       >
+                          <option value="none">None</option>
                           <option value="particles">Plexus</option>
-                          <option value="lightning">Arc Lightning</option>
                           <option value="matrix">Matrix Rain</option>
                           <option value="circuits">Circuits</option>
                           <option value="tornado">Tornado</option>

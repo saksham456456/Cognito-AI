@@ -193,11 +193,12 @@ const App: React.FC = () => {
     const [isDbLoading, setIsDbLoading] = useState(true); // Are chats being loaded from the database?
     const [backgroundAnimation, setBackgroundAnimation] = useState<string>(() => {
         let saved = localStorage.getItem('backgroundAnimation');
-        // Migrate old/removed animation names to the new default
-        if (['hexagons', 'neural_scape', 'cognitive_flow', 'cognitive_convergence', 'data_storm'].includes(saved || '')) {
+        // Migrate old/removed animation names to a still-supported one
+        if (['hexagons', 'neural_scape', 'cognitive_flow', 'cognitive_convergence', 'data_storm', 'lightning'].includes(saved || '')) {
             saved = 'particles';
         }
-        return saved || 'particles';
+        // New users (saved is null) will get 'none'. Existing users keep their choice or get migrated.
+        return saved || 'none';
     });
     const [aiMode, setAiMode] = useState<AiMode>('cognito'); // Current AI mode.
     const [inputRect, setInputRect] = useState<DOMRect | null>(null); // Position of the input bar.
@@ -980,7 +981,7 @@ const App: React.FC = () => {
              {isSidebarOpen && <div onClick={() => setIsSidebarOpen(false)} className="fixed inset-0 bg-black/50 z-10 md:hidden"></div>}
             
             <main className="flex flex-col relative overflow-hidden">
-                <BackgroundCanvas animationType={backgroundAnimation} />
+                {backgroundAnimation !== 'none' && <BackgroundCanvas animationType={backgroundAnimation} />}
                 {renderCurrentView()}
             </main>
 
