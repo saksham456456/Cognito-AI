@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect } from 'react';
 
 // Props interface
@@ -316,6 +317,7 @@ class ArcLightningAnimation extends Animation {
     }
 
     animate(timestamp: number) {
+        if (!this.lastTimestamp) this.lastTimestamp = timestamp;
         const delta = timestamp - this.lastTimestamp;
         this.lastTimestamp = timestamp;
         
@@ -845,21 +847,130 @@ class Explosion {
     }
 }
 
+// --- NEW: FORKING LIGHTNING BOLT FOR TORNADO ---
+class TornadoLightningBolt {
+    segments: { x: number, y: number }[] = [];
+    life: number = 1.0;
+    color: string = '';
+    lineWidth: number = 1;
+    intensity: number = 1.0;
+
+    reset(x: number, y: number, endY: number, color: string, intensity: number = 1.0, isBranch = false, getBolt: () => TornadoLightningBolt | undefined): TornadoLightningBolt[] {
+        this.segments.length = 0;
+        this.life = 1.0;
+        this.color = color;
+        this.intensity = intensity;
+        this.lineWidth = (Math.random() * 1.5 + 0.5) * this.intensity;
+        const allNewChildren: TornadoLightningBolt[] = [];
+        
+        let lastSeg = { x, y };
+        this.segments.push(lastSeg);
+
+        while(lastSeg.y < endY) {
+            const angle = Math.PI / 2 + (Math.random() - 0.5) * 0.9;
+            const segLength = Math.random() * 20 + 10;
+            
+            let newX = lastSeg.x + Math.cos(angle) * segLength;
+            let newY = lastSeg.y + Math.sin(angle) * segLength;
+            newX += (Math.random() - 0.5) * 25;
+
+            const newSeg = { x: newX, y: newY };
+            this.segments.push(newSeg);
+            lastSeg = newSeg;
+            
+            // Forking logic
+            if (!isBranch && this.segments.length > 4 && Math.random() > 0.96) {
+                const branch = getBolt();
+                if (branch) {
+                    const grandChildren = branch.reset(newSeg.x, newSeg.y, endY, this.color, this.intensity * 0.7, true, getBolt);
+                    allNewChildren.push(branch, ...grandChildren);
+                }
+            }
+        }
+        return allNewChildren;
+    }
+
+    update() {
+        this.life -= 0.05;
+    }
+
+    draw(ctx: CanvasRenderingContext2D) {
+        if (this.life <= 0) return;
+        const alpha = Math.min(1.0, Math.pow(this.life, 1.5) * this.intensity);
+        if (alpha <= 0) return;
+        
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(this.segments[0].x, this.segments[0].y);
+        for (let i = 1; i < this.segments.length; i++) {
+            ctx.lineTo(this.segments[i].x, this.segments[i].y);
+        }
+
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = this.lineWidth;
+        ctx.globalAlpha = alpha * 0.8;
+        ctx.shadowBlur = 15 * this.intensity;
+        ctx.shadowColor = this.color;
+        ctx.stroke();
+
+        ctx.strokeStyle = 'hsla(0, 0%, 100%, 0.8)';
+        ctx.lineWidth = this.lineWidth * 0.5;
+        ctx.globalAlpha = alpha;
+        ctx.shadowBlur = 0;
+        ctx.stroke();
+        
+        ctx.restore();
+    }
+}
+
+class GroundFlash {
+    x: number=0; y: number=0;
+    radius: number = 0; maxRadius: number = 50;
+    life: number = 1.0; color: string = '';
+    
+    reset(x: number, y: number, color: string, maxRadius: number) {
+        this.x = x; this.y = y; this.color = color;
+        this.maxRadius = maxRadius;
+        this.life = 1.0; this.radius = 0;
+        return this;
+    }
+
+    update() { this.life -= 0.06; this.radius = (1 - (this.life * this.life)) * this.maxRadius; }
+
+    draw(ctx: CanvasRenderingContext2D) {
+        if (this.life <= 0) return;
+        ctx.save();
+        const opacity = this.life * this.life;
+        const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
+        grad.addColorStop(0, `${this.color.slice(0, -1)}, ${opacity})`);
+        grad.addColorStop(0.8, `${this.color.slice(0, -1)}, ${opacity * 0.2})`);
+        grad.addColorStop(1, `${this.color.slice(0, -1)}, 0)`);
+        ctx.fillStyle = grad;
+        ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+    }
+}
+
 class TornadoStormAnimation extends Animation {
     private debrisPool = { active: [] as GroundDebris[], inactive: [] as GroundDebris[] };
     private robotPool = { active: [] as RobotDebris[], inactive: [] as RobotDebris[] };
     private laserPool = { active: [] as LaserBolt[], inactive: [] as LaserBolt[] };
     private explosionPool = { active: [] as Explosion[], inactive: [] as Explosion[] };
+    private rageBoltPool = { active: [] as TornadoLightningBolt[], inactive: [] as TornadoLightningBolt[] };
+    private groundFlashPool = { active: [] as GroundFlash[], inactive: [] as GroundFlash[] };
     
     private eyeState = { y: 0, radius: 0, pulse: 0 };
     private cameraShake = { x: 0, y: 0, intensity: 0 };
-    private rageFlash: number = 0;
+    private flash: { opacity: number, color: string } = { opacity: 0, color: 'white' };
+    private rageCooldown: number = 0;
     
     init() {
         this.debrisPool = { active: [], inactive: [] };
         this.robotPool = { active: [], inactive: [] };
         this.laserPool = { active: [], inactive: [] };
         this.explosionPool = { active: [], inactive: [] };
+        this.rageBoltPool = { active: [], inactive: [] };
+        this.groundFlashPool = { active: [], inactive: [] };
 
         const debrisCount = this.canvas.width < 768 ? 100 : 200;
         for (let i = 0; i < debrisCount; i++) this.debrisPool.inactive.push(new GroundDebris());
@@ -869,6 +980,10 @@ class TornadoStormAnimation extends Animation {
         
         for (let i=0; i<50; i++) this.laserPool.inactive.push(new LaserBolt());
         for (let i=0; i<30; i++) this.explosionPool.inactive.push(new Explosion());
+        for (let i = 0; i < 50; i++) this.rageBoltPool.inactive.push(new TornadoLightningBolt()); // Increased pool for forks
+        for (let i=0; i<20; i++) this.groundFlashPool.inactive.push(new GroundFlash());
+
+        this.rageCooldown = 200; // Start with a cooldown
     }
 
     private addLaserBolt = (from: RobotDebris, to: RobotDebris) => {
@@ -886,6 +1001,13 @@ class TornadoStormAnimation extends Animation {
         hitRobot.takeDamage();
     };
 
+    private addGroundFlash = (x: number, y: number, color: string, intensity: number) => {
+        if (this.groundFlashPool.inactive.length > 0) {
+            const flash = this.groundFlashPool.inactive.pop()!.reset(x, y, color, 80 * intensity);
+            this.groundFlashPool.active.push(flash);
+        }
+    }
+
     private drawGroundGrid(ctx: CanvasRenderingContext2D, horizonY: number, perspective: number) {
         ctx.strokeStyle = "hsla(220, 100%, 65%, 0.1)"; ctx.lineWidth = 1;
         for (let i = 0; i <= 20; i++) {
@@ -899,78 +1021,95 @@ class TornadoStormAnimation extends Animation {
     }
     
     animate(timestamp: number) {
-        if (this.rageFlash > 0) this.rageFlash -= 0.02;
+        this.rageCooldown--;
+        if (this.rageCooldown <= 0) {
+            const colorPalette = ['hsl(0, 100%, 60%)', 'hsl(0, 100%, 60%)', 'hsl(0, 100%, 60%)', this.themeColors.primary, this.themeColors.accent1];
+            const strikeColor = colorPalette[Math.floor(Math.random() * colorPalette.length)];
 
-        // Manage debris population
+            this.flash = { opacity: 0.8, color: strikeColor };
+            this.cameraShake.intensity = 15;
+            this.rageCooldown = Math.random() * 300 + 240;
+
+            const numBolts = Math.floor(Math.random() * 2) + 1;
+            for (let i = 0; i < numBolts; i++) {
+                const getBolt = () => this.rageBoltPool.inactive.pop();
+                const mainBolt = getBolt();
+                if (mainBolt) {
+                    const startX = Math.random() * this.canvas.width;
+                    const endY = this.canvas.height * (0.7 + Math.random() * 0.3);
+                    const intensity = Math.random() * 0.5 + 0.8;
+                    const allNewBolts = mainBolt.reset(startX, 0, endY, strikeColor, intensity, false, getBolt);
+                    this.rageBoltPool.active.push(mainBolt, ...allNewBolts);
+                    
+                    const lastSeg = mainBolt.segments[mainBolt.segments.length - 1];
+                    if (lastSeg && lastSeg.y > this.canvas.height * 0.55) {
+                        this.addGroundFlash(lastSeg.x, lastSeg.y, strikeColor, intensity);
+                    }
+                }
+            }
+        }
+        
+        if (this.flash.opacity > 0) this.flash.opacity -= 0.05;
+
+        if (this.cameraShake.intensity > 0) {
+            this.cameraShake.x = (Math.random() - 0.5) * this.cameraShake.intensity;
+            this.cameraShake.y = (Math.random() - 0.5) * this.cameraShake.intensity;
+            this.cameraShake.intensity *= 0.9;
+        } else { this.cameraShake.x = 0; this.cameraShake.y = 0; }
+
         const maxDebris = this.canvas.width < 768 ? 100 : 200;
         while(this.debrisPool.active.length < maxDebris && this.debrisPool.inactive.length > 0) {
             this.debrisPool.active.push(this.debrisPool.inactive.pop()!.reset(this.canvas.width, this.canvas.height));
         }
 
-        // Manage robot population
         const maxRobots = this.canvas.width < 768 ? 8 : 15;
         while(this.robotPool.active.length < maxRobots && this.robotPool.inactive.length > 0) {
             this.robotPool.active.push(this.robotPool.inactive.pop()!.reset(this.canvas.width, this.canvas.height));
         }
 
-        // Update active objects
-        for(let i = this.debrisPool.active.length - 1; i >= 0; i--) {
-            const p = this.debrisPool.active[i];
-            p.update(this.canvas.width / 2, this.canvas.height);
-            if (p.life <= 0) {
-                this.debrisPool.inactive.push(p);
-                this.debrisPool.active.splice(i, 1);
+        [this.debrisPool, this.robotPool, this.laserPool, this.explosionPool, this.rageBoltPool, this.groundFlashPool].forEach(pool => {
+            for(let i = pool.active.length - 1; i >= 0; i--) {
+                const p = pool.active[i] as any;
+                if (p.constructor.name === 'RobotDebris') {
+                    const potentialTargets = this.robotPool.active.filter(robot => robot !== p);
+                    p.update(this.canvas.width / 2, this.canvas.height, potentialTargets, this.addLaserBolt);
+                } else if (p.constructor.name === 'LaserBolt') {
+                    if (p.update()) if (p.to) this.addExplosion(p.to.x, p.to.y, p.to);
+                } else if(p.constructor.name === 'GroundDebris') {
+                    p.update(this.canvas.width / 2, this.canvas.height);
+                } else {
+                    p.update();
+                }
+
+                if (p.life <= 0) {
+                    if (p.constructor.name === 'RobotDebris') this.addExplosion(p.x, p.y, p);
+                    (pool.inactive as any[]).push(p);
+                    pool.active.splice(i, 1);
+                }
             }
-        }
-        
-        for(let i = this.robotPool.active.length - 1; i >= 0; i--) {
-            const r = this.robotPool.active[i];
-            const potentialTargets = this.robotPool.active.filter(robot => robot !== r);
-            r.update(this.canvas.width / 2, this.canvas.height, potentialTargets, this.addLaserBolt);
-            if (r.life <= 0) {
-                this.addExplosion(r.x, r.y, r);
-                this.robotPool.inactive.push(r);
-                this.robotPool.active.splice(i, 1);
-            }
-        }
-        
-        for(let i = this.laserPool.active.length - 1; i >= 0; i--) {
-            const l = this.laserPool.active[i];
-            if (l.update()) {
-                if (l.to) this.addExplosion(l.to.x, l.to.y, l.to);
-            }
-            if (l.life <= 0) {
-                this.laserPool.inactive.push(l);
-                this.laserPool.active.splice(i, 1);
-            }
-        }
-        
-        for(let i = this.explosionPool.active.length - 1; i >= 0; i--) {
-            const e = this.explosionPool.active[i];
-            e.update();
-            if (e.life <= 0) {
-                this.explosionPool.inactive.push(e);
-                this.explosionPool.active.splice(i, 1);
-            }
-        }
+        });
 
         // Drawing
         this.ctx.save();
         this.ctx.translate(this.cameraShake.x, this.cameraShake.y);
         this.ctx.fillStyle = this.themeColors.bgDark;
         this.ctx.fillRect(0,0, this.canvas.width, this.canvas.height);
-        if (this.rageFlash > 0) {
-            this.ctx.fillStyle = `hsla(0, 100%, 50%, ${this.rageFlash})`;
+        if (this.flash.opacity > 0) {
+            this.ctx.fillStyle = this.flash.color.startsWith('hsl') ? `hsla(${this.flash.color.match(/\d+/g)!.join(',')}, ${this.flash.opacity * 0.5})` : `${this.flash.color.slice(0,-1)}, ${this.flash.opacity * 0.5})`;
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         }
 
         this.drawGroundGrid(this.ctx, this.canvas.height * 0.6, 2);
         
         this.ctx.globalCompositeOperation = 'lighter';
+        
+        this.rageBoltPool.active.forEach(b => b.draw(this.ctx));
+
         const allDebris = [...this.debrisPool.active, ...this.robotPool.active].sort((a, b) => a.z - b.z);
         allDebris.forEach(d => d.draw(this.ctx));
         this.laserPool.active.forEach(b => b.draw(this.ctx));
         this.explosionPool.active.forEach(e => e.draw(this.ctx));
+        this.groundFlashPool.active.forEach(f => f.draw(this.ctx));
 
         this.eyeState = { y: this.canvas.height * 0.4, radius: this.canvas.width * 0.05 + Math.sin(timestamp * 0.005) * 5, pulse: timestamp * 0.005 };
         const eyeGrad = this.ctx.createRadialGradient(this.canvas.width / 2, this.eyeState.y, 0, this.canvas.width / 2, this.eyeState.y, this.eyeState.radius);
