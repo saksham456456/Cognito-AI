@@ -97,9 +97,9 @@
         transform: translateY(-2px);
       }
 
-      /* NEW: Active (pressed) state for the neon button */
+      /* Active (pressed) state for the neon button */
       .neon-glow-button:active:not(:disabled) {
-          transform: translateY(0px);
+          transform: translateY(1px); /* Pushes the button "in" for a satisfying press */
           box-shadow: 0 0 2px var(--primary-glow), 0 0 5px var(--primary-glow-faded), inset 0 0 2px var(--primary-glow-faded);
       }
 

@@ -59,13 +59,13 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         <div className="mt-6 flex justify-end gap-3">
             <button
                 onClick={onClose}
-                className="px-4 py-2 rounded-lg bg-input hover:bg-input-border transition-all duration-200 border border-card-border hover:scale-105 active:scale-100"
+                className="px-4 py-2 rounded-lg bg-input hover:bg-input-border transition-all duration-200 border border-card-border hover:scale-105 active:scale-95"
             >
                 {t('modals.cancel')}
             </button>
             <button
                 onClick={onConfirm}
-                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-all duration-200 hover:scale-105 active:scale-100"
+                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-all duration-200 hover:scale-105 active:scale-95"
             >
                 {confirmButtonText}
             </button>

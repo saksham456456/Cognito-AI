@@ -184,7 +184,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       <div className="p-2 border-t border-card-border">
           {/* User profile section */}
           <div className="mt-2 p-2 rounded-lg bg-input/50 flex items-center justify-between border border-card-border">
-              <button onClick={onProfileClick} className="flex items-center gap-3 truncate text-left p-1 -m-1 rounded-md hover:bg-input w-full transition-colors duration-200">
+              <button onClick={onProfileClick} className="flex items-center gap-3 truncate text-left p-1 -m-1 rounded-md hover:bg-input w-full transition-all duration-200 hover:scale-[1.01] active:scale-100">
                   <UserCircleIcon className="w-10 h-10 text-primary" />
                   <div className="truncate">
                       <p className="font-semibold text-text-light">{userName}</p>

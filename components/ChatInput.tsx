@@ -19,7 +19,7 @@ interface ChatInputProps {
 const SuggestionButton: React.FC<{ text: string; onClick: () => void }> = ({ text, onClick }) => (
     <button
         onClick={onClick}
-        className="px-4 py-2 glassmorphism border border-card-border rounded-lg text-text-medium hover:text-primary hover:border-primary transition-all duration-300 neon-glow-button text-sm active:scale-95 active:translate-y-0"
+        className="px-4 py-2 glassmorphism border border-card-border rounded-lg text-text-medium hover:text-primary hover:border-primary transition-all duration-300 neon-glow-button text-sm"
     >
         {text}
     </button>
@@ -179,7 +179,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, showSug
                     type="button"
                     ref={modeButtonRef}
                     onClick={() => setIsModePickerOpen(prev => !prev)}
-                    className="flex-shrink-0 h-10 px-2 rounded-lg text-text-medium hover:bg-card-border flex items-center justify-center transition-all duration-200 disabled:opacity-50 z-10 hover:scale-110 active:scale-100"
+                    className="flex-shrink-0 h-10 px-2 rounded-lg text-text-medium hover:bg-card-border flex items-center justify-center transition-all duration-200 disabled:opacity-50 z-10 hover:scale-110 active:scale-95"
                     aria-label="Change AI mode"
                     disabled={isLoading}
                 >
@@ -189,7 +189,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, showSug
                     type="button"
                     ref={emojiButtonRef}
                     onClick={() => setIsEmojiPickerOpen(prev => !prev)}
-                    className="flex-shrink-0 w-10 h-10 rounded-lg text-text-medium hover:text-primary flex items-center justify-center transition-all duration-200 disabled:opacity-50 z-10 hover:scale-110 active:scale-100"
+                    className="flex-shrink-0 w-10 h-10 rounded-lg text-text-medium hover:text-primary flex items-center justify-center transition-all duration-200 disabled:opacity-50 z-10 hover:scale-110 active:scale-95"
                     aria-label="Add emoji"
                     disabled={isLoading}
                 >
@@ -212,7 +212,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, showSug
                 <button
                     type="submit"
                     disabled={isLoading || !inputValue.trim()}
-                    className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary text-primary-foreground flex items-center justify-center transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-yellow-400 hover:scale-110 active:scale-100 z-10"
+                    className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary text-primary-foreground flex items-center justify-center transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-yellow-400 hover:scale-110 active:scale-95 z-10"
                 >
                     {/* Show a spinner in the loading state, otherwise show the send icon */}
                     {isLoading ? (
