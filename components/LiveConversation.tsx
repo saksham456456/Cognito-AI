@@ -2,7 +2,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { startLiveConversation, encode, decode, decodeAudioData } from '../services/geminiService';
 import { PowerIcon, MicrophoneIcon, MicrophoneSlashIcon } from './icons';
-import type { LiveSession, LiveServerMessage, Blob } from '@google/genai';
+// FIX: Removed unexported 'LiveSession' type.
+import type { LiveServerMessage, Blob } from '@google/genai';
 
 interface LiveConversationProps {
     onClose: (transcript: { user: string, model: string }[]) => void;
@@ -55,7 +56,8 @@ const LiveConversation: React.FC<LiveConversationProps> = ({ onClose, t }) => {
     const currentModelTranscriptionRef = useRef(currentModelTranscription);
     currentModelTranscriptionRef.current = currentModelTranscription;
 
-    const sessionPromiseRef = useRef<Promise<LiveSession> | null>(null);
+    // FIX: Using ReturnType to infer the type of the session promise as LiveSession is not exported.
+    const sessionPromiseRef = useRef<ReturnType<typeof startLiveConversation> | null>(null);
     const inputAudioContextRef = useRef<AudioContext | null>(null);
     const outputAudioContextRef = useRef<AudioContext | null>(null);
     const scriptProcessorRef = useRef<ScriptProcessorNode | null>(null);
@@ -109,7 +111,7 @@ const LiveConversation: React.FC<LiveConversationProps> = ({ onClose, t }) => {
                         const source = inputAudioContext.createMediaStreamSource(stream);
                         mediaStreamSourceRef.current = source;
                         
-                        const scriptProcessor = inputAudioContext.createScriptProcessor(4096, 1, 1);
+                        const scriptProcessor = inputAudioContext.createScriptProcessor(1024, 1, 1);
                         scriptProcessorRef.current = scriptProcessor;
 
                         scriptProcessor.onaudioprocess = (audioProcessingEvent) => {

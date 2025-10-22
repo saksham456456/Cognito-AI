@@ -247,7 +247,7 @@ const App: React.FC = () => {
                     setActiveChatId(loadedChats[0].id); // Set the first chat as active.
                 }
                 const elapsedTime = Date.now() - startTime;
-                const minLoadingTime = 4000; // Show the loading screen for a minimum of 4.0 seconds.
+                const minLoadingTime = 2500; // Show the loading screen for a minimum of 2.5 seconds.
                 if (elapsedTime < minLoadingTime) {
                     await new Promise(resolve => setTimeout(resolve, minLoadingTime - elapsedTime));
                 }

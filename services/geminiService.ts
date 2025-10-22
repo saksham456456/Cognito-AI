@@ -1,5 +1,6 @@
 // REFACTOR: Importing GoogleGenAI from the @google/genai SDK.
-import { GoogleGenAI, Chat, Modality, LiveSession, LiveServerMessage } from "@google/genai";
+// FIX: Removed unexported 'LiveSession' type.
+import { GoogleGenAI, Chat, Modality, LiveServerMessage } from "@google/genai";
 import type { Message, AiMode } from '../types';
 
 // REFACTOR: Initializing the GoogleGenAI client with the API key from environment variables, as per guidelines.
@@ -12,7 +13,7 @@ const cognitoSystemInstruction = `You are Cognito, a friendly and conversational
 
 **Your Core Directives:**
 
-1.  **Seamless Multilingual Interaction:** You are a global assistant. You MUST detect the language of the user's query (e.g., English, Spanish, Hindi, Japanese, Arabic, etc.) and respond fluently in that SAME language. Your primary goal is to provide a natural conversation in the user's native tongue.
+1.  **Prioritize English, but Adapt:** Your primary language for conversation is English. However, if the user consistently and clearly speaks another language (e.g., Spanish, Hindi, Japanese, etc.), you MUST adapt and respond fluently in that SAME language. Always match the language of the user's last query to ensure a natural conversation.
 2.  **Be Personalized and Context-Aware:** Analyze the user's query and the conversation history to tailor your responses to their needs. Your answers should feel like a one-on-one conversation.
 3.  **Be Precise:** Don't over-explain or under-explain. Provide just enough information to be complete and correct. If the user wants more detail, they will ask.
 4.  **Be Engaging:** To keep the conversation flowing naturally, you can end some responses with a light, open-ended question or a "hook" that invites the user to continue the conversation. For example: "Does that make sense?" or "What are you curious about next?" Use this technique thoughtfully, not on every single response.
@@ -40,7 +41,7 @@ const codeAssistantSystemInstruction = `You are an expert programmer AI, a "Code
 **Core Directives:**
 
 1.  **Focus on Code:** Your responses must be centered on programming, algorithms, data structures, and software development topics.
-2.  **Multilingual Code Support:** You must detect the language of the user's technical question (e.g., English, Spanish, Russian, Chinese) and provide all code examples and explanations fluently in that SAME language.
+2.  **Prioritize English for Explanations:** Provide all technical explanations and comments in English by default. However, if the user's question is clearly and consistently in another language (e.g., Spanish, Russian, Chinese), you MUST provide all explanations in that SAME language.
 3.  **Analyze Context:** The user will provide their current editor code and console output along with their question. You MUST analyze this context to give the most relevant, accurate, and helpful response. Refer to their code and output when explaining your solution.
 4.  **Handle Non-Technical Queries:** If the user asks a conversational, off-topic, or non-technical question (e.g., "how are you?", "tell me a joke"), you MUST politely decline and guide them to the main "Cognito" assistant. Respond with: "My function is to assist with coding. For general conversation, please switch to the Cognito assistant mode."
 5.  **Code Formatting:** ALWAYS enclose code blocks in triple backticks, specifying the language. Example: \`\`\`javascript
@@ -209,7 +210,8 @@ export function startLiveConversation(callbacks: {
     onmessage: (message: LiveServerMessage) => Promise<void>;
     onerror: (e: ErrorEvent) => void;
     onclose: (e: CloseEvent) => void;
-}): Promise<LiveSession> {
+// FIX: Using ReturnType to infer the type of the session promise as LiveSession is not exported.
+}): ReturnType<typeof ai.live.connect> {
     return ai.live.connect({
         model: 'gemini-2.5-flash-native-audio-preview-09-2025',
         callbacks: callbacks,
