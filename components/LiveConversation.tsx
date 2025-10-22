@@ -1,7 +1,7 @@
 // FIX: Import `useCallback` from React.
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { startLiveConversation, encode, decode, decodeAudioData } from '../services/geminiService';
-import { PowerIcon } from './icons';
+import { PowerIcon, MicrophoneIcon, MicrophoneSlashIcon } from './icons';
 import type { LiveSession, LiveServerMessage, Blob } from '@google/genai';
 
 interface LiveConversationProps {
@@ -45,7 +45,16 @@ const LiveConversation: React.FC<LiveConversationProps> = ({ onClose, t }) => {
     const [currentUserTranscription, setCurrentUserTranscription] = useState('');
     const [currentModelTranscription, setCurrentModelTranscription] = useState('');
     const [isUserSpeaking, setIsUserSpeaking] = useState(false);
+    const [isMuted, setIsMuted] = useState(false);
     
+    // Refs for state values to be used in callbacks, preventing stale closures.
+    const isMutedRef = useRef(isMuted);
+    isMutedRef.current = isMuted;
+    const currentUserTranscriptionRef = useRef(currentUserTranscription);
+    currentUserTranscriptionRef.current = currentUserTranscription;
+    const currentModelTranscriptionRef = useRef(currentModelTranscription);
+    currentModelTranscriptionRef.current = currentModelTranscription;
+
     const sessionPromiseRef = useRef<Promise<LiveSession> | null>(null);
     const inputAudioContextRef = useRef<AudioContext | null>(null);
     const outputAudioContextRef = useRef<AudioContext | null>(null);
@@ -65,7 +74,6 @@ const LiveConversation: React.FC<LiveConversationProps> = ({ onClose, t }) => {
         mediaStreamSourceRef.current?.disconnect();
         mediaStreamRef.current?.getTracks().forEach(track => track.stop());
         
-        // FIX: Check if the context is already closed before attempting to close it.
         if (inputAudioContextRef.current && inputAudioContextRef.current.state !== 'closed') {
             inputAudioContextRef.current.close().catch(e => console.error("Error closing input context:", e));
         }
@@ -111,12 +119,14 @@ const LiveConversation: React.FC<LiveConversationProps> = ({ onClose, t }) => {
                                 sum += inputData[i] * inputData[i];
                             }
                             const rms = Math.sqrt(sum / inputData.length);
-                            setIsUserSpeaking(rms > 0.01);
+                            setIsUserSpeaking(rms > 0.01 && !isMutedRef.current);
 
                             if (thinkingTimeoutRef.current) clearTimeout(thinkingTimeoutRef.current);
                             thinkingTimeoutRef.current = window.setTimeout(() => {
-                                if (currentUserTranscription) setStatus('THINKING');
+                                if (currentUserTranscriptionRef.current) setStatus('THINKING');
                             }, 800);
+
+                            if (isMutedRef.current) return;
 
                             const pcmBlob: Blob = { data: encode(inputData), mimeType: 'audio/pcm;rate=16000' };
                             sessionPromiseRef.current?.then((session) => session.sendRealtimeInput({ media: pcmBlob }));
@@ -135,8 +145,8 @@ const LiveConversation: React.FC<LiveConversationProps> = ({ onClose, t }) => {
                         }
 
                         if (message.serverContent?.turnComplete) {
-                            const finalUser = currentUserTranscription;
-                            const finalModel = currentModelTranscription;
+                            const finalUser = currentUserTranscriptionRef.current;
+                            const finalModel = currentModelTranscriptionRef.current;
                             if (finalUser.trim() || finalModel.trim()) {
                                 setTranscriptions(prev => [...prev, { user: finalUser.trim(), model: finalModel.trim() }]);
                             }
@@ -202,15 +212,17 @@ const LiveConversation: React.FC<LiveConversationProps> = ({ onClose, t }) => {
 
         setup();
         return () => cleanup();
-    }, [cleanup, onClose, t]); // Removed transcriptions from deps to avoid re-running on each turn
+    }, [cleanup, onClose, t]);
 
-    const statusText = {
-        'CONNECTING': t('live.connecting'),
-        'LISTENING': t('live.speakNow'),
-        'THINKING': t('live.processing'),
-        'SPEAKING': t('live.processing'),
-        'ERROR': errorMessage,
-    }[status];
+    const statusText = isMuted
+        ? t('live.muted')
+        : {
+            'CONNECTING': t('live.connecting'),
+            'LISTENING': t('live.speakNow'),
+            'THINKING': t('live.processing'),
+            'SPEAKING': t('live.processing'),
+            'ERROR': errorMessage,
+        }[status];
 
     return (
         <div className="absolute inset-0 bg-background/80 backdrop-blur-xl z-30 flex flex-col items-center justify-center p-4 fade-in-up crt-effect">
@@ -228,21 +240,31 @@ const LiveConversation: React.FC<LiveConversationProps> = ({ onClose, t }) => {
                   <div className="w-full max-w-2xl mx-auto space-y-4 glassmorphism p-4 rounded-lg">
                     {transcriptions.map((turn, i) => (
                         <div key={i} className="transcription-line" style={{animationDelay: `${i*50}ms`}}>
-                            <p className="text-accent1 font-heading text-lg">You: <span className="text-text-light font-sans text-base">{turn.user}</span></p>
-                            <p className="text-primary font-heading text-lg">Cognito: <span className="text-text-light font-sans text-base">{turn.model}</span></p>
+                            <p className="text-green-400 font-heading text-lg">You: <span className="text-green-400 font-sans text-base font-medium">{turn.user}</span></p>
+                            <p className="text-accent2 font-heading text-lg">Cognito: <span className="text-accent2 font-sans text-base font-medium">{turn.model}</span></p>
                         </div>
                     ))}
-                    {currentUserTranscription && <p className="text-accent1 font-heading text-lg">You: <span className="text-text-light font-sans text-base">{currentUserTranscription}</span><span className="inline-block w-0.5 h-4 bg-accent1 ml-1 animate-cursor-blink" /></p>}
-                    {currentModelTranscription && <p className="text-primary font-heading text-lg">Cognito: <span className="text-text-light font-sans text-base">{currentModelTranscription}</span><span className="inline-block w-0.5 h-4 bg-primary ml-1 animate-cursor-blink" /></p>}
+                    {currentUserTranscription && <p className="text-green-400 font-heading text-lg">You: <span className="text-text-medium italic font-sans text-base">{currentUserTranscription}</span><span className="inline-block w-0.5 h-4 bg-green-400 ml-1 animate-cursor-blink" /></p>}
+                    {currentModelTranscription && <p className="text-accent2 font-heading text-lg">Cognito: <span className="text-text-medium italic font-sans text-base">{currentModelTranscription}</span><span className="inline-block w-0.5 h-4 bg-accent2 ml-1 animate-cursor-blink" /></p>}
                   </div>
                 </div>
 
                 <div className="flex flex-col items-center gap-8">
                     <CognitiveOrb status={status} userSpeaking={isUserSpeaking} />
-                    <button onClick={handleClose} className="flex items-center gap-3 px-6 py-3 rounded-full text-lg font-bold bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500/40 transition-all duration-300 neon-glow-button active">
-                        <PowerIcon className="w-6 h-6" />
-                        {t('live.disconnect')}
-                    </button>
+                    <div className="flex items-center gap-6">
+                        <button
+                            onClick={() => setIsMuted(prev => !prev)}
+                            disabled={status === 'CONNECTING' || status === 'ERROR'}
+                            className="p-4 rounded-full bg-input/50 text-text-medium border border-input-border hover:border-primary hover:text-primary transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                            title={isMuted ? "Unmute" : "Mute"}
+                        >
+                            {isMuted ? <MicrophoneSlashIcon className="w-6 h-6" /> : <MicrophoneIcon className="w-6 h-6" />}
+                        </button>
+                        <button onClick={handleClose} className="flex items-center gap-3 px-6 py-3 rounded-full text-lg font-bold bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500/40 transition-all duration-300 neon-glow-button active">
+                            <PowerIcon className="w-6 h-6" />
+                            {t('live.disconnect')}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

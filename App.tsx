@@ -39,7 +39,7 @@ const translations: any = {
     coreLoading: { title: "INITIALIZING CODE CORE", bootLog: ["[SYS] BOOT SEQUENCE INITIATED...", "[MEM] VIRTUAL MEMORY ALLOCATED", "[CPU] PROCESSOR KERNELS ONLINE", "[NET] SECURE LINK ESTABLISHED", "[ENV] RUNTIME ENVIRONMENT CALIBRATED", "[UI] INTEGRATING GRAPHICAL SHELL...", "[OK] CORE INITIALIZATION COMPLETE."] },
     coreDisintegration: { title: "DISENGAGING CODING CORE", shutdownLog: ["[SYS] SHUTDOWN SEQUENCE INITIATED...", "[MEM] VIRTUAL MEMORY DEALLOCATED", "[CPU] RELEASING PROCESSOR KERNELS", "[NET] SECURE LINK TERMINATED", "[UI] DISENGAGING GRAPHICAL SHELL...", "[OK] CORE SHUTDOWN COMPLETE.", "[SYS] RETURNING TO COGNITO INTERFACE."] },
     languages: { en: "English", es: "Español", hi: "हिन्दी", fr: "Français", sa: "संस्कृतम्", 'hi-en': "Hinglish" },
-    live: { connecting: "Establishing secure audio channel...", listening: "Listening...", speakNow: "Speak now", processing: "Processing...", disconnect: "Disconnect", error: "Connection Error", micError: "Microphone access denied. Please enable it in your browser settings." },
+    live: { connecting: "Establishing secure audio channel...", listening: "Listening...", speakNow: "Speak now", processing: "Processing...", disconnect: "Disconnect", error: "Connection Error", micError: "Microphone access denied. Please enable it in your browser settings.", muted: "Muted" },
   },
   es: {
     sidebar: { title: "Cognito AI", newSession: "Nuevo Chat Cognitivo", searchLogs: "Buscar Chats", background: "Fondo", about: "Acerca de Cognito AI", exportLog: "Exportar Chat", purgeLogs: "Borrar Todos los Chats", profileName: "Operador", language: "Idioma" },
@@ -60,7 +60,7 @@ const translations: any = {
     coreLoading: { title: "INICIALIZANDO NÚCLEO DE CÓDIGO", bootLog: ["[SIS] SECUENCIA DE ARRANQUE INICIADA...", "[MEM] MEMORIA VIRTUAL ASIGNADA", "[CPU] NÚCLEOS DE PROCESADOR EN LÍNEA", "[RED] ENLACE SEGURO ESTABLECIDO", "[ENT] ENTORNO DE EJECUCIÓN CALIBRADO", "[UI] INTEGRANDO SHELL GRÁFICO...", "[OK] INICIALIZACIÓN DEL NÚCLEO COMPLETA."] },
     coreDisintegration: { title: "DESCONECTANDO NÚCLEO DE CÓDIGO", shutdownLog: ["[SIS] SECUENCIA DE APAGADO INICIADA...", "[MEM] MEMORIA VIRTUAL DESASIGNADA", "[CPU] LIBERANDO NÚCLEOS DE PROCESADOR", "[RED] ENLACE SEGURO TERMINADO", "[UI] DESCONECTANDO SHELL GRÁFICO...", "[OK] APAGADO DEL NÚCLEO COMPLETO.", "[SIS] VOLVIENDO A LA INTERFAZ DE COGNITO."] },
     languages: { en: "English", es: "Español", hi: "हिन्दी", fr: "Français", sa: "संस्कृतम्", 'hi-en': "Hinglish" },
-    live: { connecting: "Estableciendo canal de audio seguro...", listening: "Escuchando...", speakNow: "Hable ahora", processing: "Procesando...", disconnect: "Desconectar", error: "Error de Conexión", micError: "Acceso al micrófono denegado. Por favor, habilítelo en la configuración de su navegador." }
+    live: { connecting: "Estableciendo canal de audio seguro...", listening: "Escuchando...", speakNow: "Hable ahora", processing: "Procesando...", disconnect: "Desconectar", error: "Error de Conexión", micError: "Acceso al micrófono denegado. Por favor, habilítelo en la configuración de su navegador.", muted: "Silenciado" }
   },
   hi: {
     sidebar: { title: "Cognito AI", newSession: "नया कॉग्निटिव चैट", searchLogs: "चैट खोजें", background: "पृष्ठभूमि", about: "कॉग्निटो एआई के बारे में", exportLog: "चैट निर्यात करें", purgeLogs: "सभी चैट साफ़ करें", profileName: "ऑपरेटर", language: "भाषा" },
@@ -81,7 +81,7 @@ const translations: any = {
     coreLoading: { title: "कोडिंग कोर शुरू हो रहा है", bootLog: ["[सिस्टम] बूट अनुक्रम शुरू...", "[मेमोरी] वर्चुअल मेमोरी आवंटित", "[सीपीयू] प्रोसेसर कर्नेल ऑनलाइन", "[नेट] सुरक्षित लिंक स्थापित", "[ईएनवी] रनटाइम वातावरण कैलिब्रेटेड", "[यूआई] ग्राफिकल शेल को एकीकृत करना...", "[ठीक है] कोर आरंभीकरण पूर्ण।"] },
     coreDisintegration: { title: "कोडिंग कोर को निष्क्रिय करना", shutdownLog: ["[सिस्टम] शटडाउन अनुक्रम शुरू...", "[मेमोरी] वर्चुअल मेमोरी डीलोकेटेड", "[सीपीयू] प्रोसेसर कर्नेल जारी करना", "[नेट] सुरक्षित लिंक समाप्त", "[यूआई] ग्राफिकल शेल को निष्क्रिय करना...", "[ठीक है] कोर शटडाउन पूर्ण।", "[सिस्टम] कॉग्निटो इंटरफ़ेस पर लौटना।"] },
     languages: { en: "English", es: "Español", hi: "हिन्दी", fr: "Français", sa: "संस्कृतम्", 'hi-en': "Hinglish" },
-    live: { connecting: "सुरक्षित ऑडियो चैनल स्थापित हो रहा है...", listening: "सुन रहा है...", speakNow: "अब बोलें", processing: "संसाधित हो रहा है...", disconnect: "डिस्कनेक्ट", error: "कनेक्शन त्रुटि", micError: "माइक्रोफ़ोन एक्सेस अस्वीकृत। कृपया इसे अपनी ब्राउज़र सेटिंग्स में सक्षम करें।" }
+    live: { connecting: "सुरक्षित ऑडियो चैनल स्थापित हो रहा है...", listening: "सुन रहा है...", speakNow: "अब बोलें", processing: "संसाधित हो रहा है...", disconnect: "डिस्कनेक्ट", error: "कनेक्शन त्रुटि", micError: "माइक्रोफ़ोन एक्सेस अस्वीकृत। कृपया इसे अपनी ब्राउज़र सेटिंग्स में सक्षम करें।", muted: "म्यूट" }
   },
   fr: {
     sidebar: { title: "Cognito AI", newSession: "Nouveau Chat Cognitif", searchLogs: "Rechercher les Chats", background: "Arrière-plan", about: "À propos de Cognito AI", exportLog: "Exporter le Chat", purgeLogs: "Effacer Tous les Chats", profileName: "Opérateur", language: "Langue" },
@@ -102,7 +102,7 @@ const translations: any = {
     coreLoading: { title: "INITIALISATION DU NOYAU DE CODAGE", bootLog: ["[SYS] SÉQUENCE DE DÉMARRAGE INITIÉE...", "[MEM] MÉMOIRE VIRTUELLE ALLOUÉE", "[CPU] COEURS DE PROCESSEUR EN LIGNE", "[NET] LIAISON SÉCURISÉE ÉTABLIE", "[ENV] ENVIRONNEMENT D'EXÉCUTION CALIBRÉ", "[UI] INTÉGRATION DE L'INTERFACE GRAPHIQUE...", "[OK] INITIALISATION DU NOYAU TERMINÉE."] },
     coreDisintegration: { title: "DÉSENGAGEMENT DU NOYAU DE CODAGE", shutdownLog: ["[SYS] SÉQUENCE D'ARRÊT INITIÉE...", "[MEM] MÉMOIRE VIRTUELLE DÉSALLOUÉE", "[CPU] LIBÉRATION DES COEURS DE PROCESSEUR", "[NET] LIAISON SÉCURISÉE TERMINÉE", "[UI] DÉSENGAGEMENT DE L'INTERFACE GRAPHIQUE...", "[OK] ARRÊT DU NOYAU TERMINÉ.", "[SYS] RETOUR À L'INTERFACE COGNITO."] },
     languages: { en: "English", es: "Español", hi: "हिन्दी", fr: "Français", sa: "संस्कृतम्", 'hi-en': "Hinglish" },
-    live: { connecting: "Établissement du canal audio sécurisé...", listening: "Écoute...", speakNow: "Parlez maintenant", processing: "Traitement...", disconnect: "Déconnecter", error: "Erreur de Connexion", micError: "Accès au microphone refusé. Veuillez l'activer dans les paramètres de votre navigateur." }
+    live: { connecting: "Établissement du canal audio sécurisé...", listening: "Écoute...", speakNow: "Parlez maintenant", processing: "Traitement...", disconnect: "Déconnecter", error: "Erreur de Connexion", micError: "Accès au microphone refusé. Veuillez l'activer dans les paramètres de votre navigateur.", muted: "Muet" }
   },
   sa: {
     sidebar: { title: "Cognito AI", newSession: "नवीनः संज्ञानात्मकः चैटः", searchLogs: "चैटान्वेषणम्...", background: "पृष्ठभूमिः", about: "कोग्निटो एआई विषये", exportLog: "चैटं निर्यातं कुरु", purgeLogs: "सर्वान् चैटान् निष्कासय", profileName: "प्रचालकः", language: "भाषा" },
@@ -123,7 +123,7 @@ const translations: any = {
     coreLoading: { title: "कूटलेखन-केन्द्रम् आरभ्यते", bootLog: ["[तन्त्रम्] बूट्-अनुक्रमः आरब्धः...", "[स्मृतिः] आभासी स्मृतिः वितरिता", "[सीपीयू] प्रोसेसर-केन्द्रकाणि ऑनलाइन्", "[जालम्] सुरक्षित-सम्पर्कः स्थापितः", "[पर्यावरणम्] रनटाइम-पर्यावरणं समंजितम्", "[यूआई] ग्राफिकल-शेल् एकीकृतम्...", "[ओके] केन्द्र-आरम्भः पूर्णः।"] },
     coreDisintegration: { title: "कूटलेखन-केन्द्रं वियोज्यते", shutdownLog: ["[तन्त्रम्] शटडाउन-अनुक्रमः आरब्धः...", "[स्मृतिः] आभासी स्मृतिः अविभाजिता", "[सीपीयू] प्रोसेसर-केन्द्रकाणि मुक्तानि", "[जालम्] सुरक्षित-सम्पर्कः समाप्तः", "[यूआई] ग्राफिकल-शेल् वियोजितम्...", "[ओके] केन्द्र-शटडाउन पूर्णम्।", "[तन्त्रम्] कोग्निटो-अन्तरापृष्ठं प्रति गमनम्।"] },
     languages: { en: "English", es: "Español", hi: "हिन्दी", fr: "Français", sa: "संस्कृतम्", 'hi-en': "Hinglish" },
-    live: { connecting: "सुरक्षित-ध्वनि-चैनलं स्थाप्यते...", listening: "शृण्वन्...", speakNow: "अधुना वदतु", processing: "संसाधनं कुर्वन्...", disconnect: "वियोजयतु", error: "सम्पर्क-त्रुटिः", micError: "माइक्रोफोन्-प्रवेशः निषिद्धः। कृपया भवतः ब्राउजर्-सेटिङ्ग्स् मध्ये तत् समर्थयतु।" }
+    live: { connecting: "सुरक्षित-ध्वनि-चैनलं स्थाप्यते...", listening: "शृण्वन्...", speakNow: "अधुना वदतु", processing: "संसाधनं कुर्वन्...", disconnect: "वियोजयतु", error: "सम्पर्क-त्रुटिः", micError: "माइक्रोफोन्-प्रवेशः निषिद्धः। कृपया भवतः ब्राउजर्-सेटिङ्ग्स् मध्ये तत् समर्थयतु।", muted: "मौनम्" }
   },
   'hi-en': {
     sidebar: { title: "Cognito AI", newSession: "New Cognitive Chat", searchLogs: "Chats search karo", background: "Background", about: "Cognito AI ke baare mein", exportLog: "Chat Export karo", purgeLogs: "Sab Chats Clear karo", profileName: "Operator", language: "Language" },
@@ -144,7 +144,7 @@ const translations: any = {
     coreLoading: { title: "INITIALIZING CODE CORE", bootLog: ["[SYS] BOOT SEQUENCE INITIATED...", "[MEM] VIRTUAL MEMORY ALLOCATED", "[CPU] PROCESSOR KERNELS ONLINE", "[NET] SECURE LINK ESTABLISHED", "[ENV] RUNTIME ENVIRONMENT CALIBRATED", "[UI] INTEGRATING GRAPHICAL SHELL...", "[OK] CORE INITIALIZATION COMPLETE."] },
     coreDisintegration: { title: "DISENGAGING CODING CORE", shutdownLog: ["[SYS] SHUTDOWN SEQUENCE INITIATED...", "[MEM] VIRTUAL MEMORY DEALLOCATED", "[CPU] RELEASING PROCESSOR KERNELS", "[NET] SECURE LINK TERMINATED", "[UI] DISENGAGING GRAPHICAL SHELL...", "[OK] CORE SHUTDOWN COMPLETE.", "[SYS] RETURNING TO COGNITO INTERFACE."] },
     languages: { en: "English", es: "Español", hi: "हिन्दी", fr: "Français", sa: "संस्कृतम्", 'hi-en': "Hinglish" },
-    live: { connecting: "Secure audio channel establish ho raha hai...", listening: "Sun raha hai...", speakNow: "Ab boliye", processing: "Processing...", disconnect: "Disconnect", error: "Connection Error", micError: "Microphone access denied. Please browser settings me enable karein." }
+    live: { connecting: "Secure audio channel establish ho raha hai...", listening: "Sun raha hai...", speakNow: "Ab boliye", processing: "Processing...", disconnect: "Disconnect", error: "Connection Error", micError: "Microphone access denied. Please browser settings me enable karein.", muted: "Muted" }
   }
 };
 
@@ -377,8 +377,8 @@ const App: React.FC = () => {
         }
     };
 
-    // NEW: Handles the end of a live session, saving the transcript as a new chat.
-    const handleLiveSessionEnd = (transcript: { user: string; model: string }[]) => {
+    // NEW & IMPROVED: Handles the end of a live session, wrapped in useCallback for stability.
+    const handleLiveSessionEnd = useCallback((transcript: { user: string; model: string }[]) => {
         setCurrentView('chat'); // Always switch back to the chat view.
         if (transcript.length === 0) return;
 
@@ -421,7 +421,7 @@ const App: React.FC = () => {
         setChats(prev => [newChat, ...prev]);
         setActiveChatId(newChatId);
         saveChat(newChat).catch(err => console.error("Failed to save audio log chat:", err));
-    };
+    }, []);
 
 
     // REVAMPED: This function handles when the user sends a message.
