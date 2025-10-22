@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { startChat, getTitleForChat, generateSpeech } from './services/geminiService';
+import { startChat, getTitleForChat, generateSpeech, decode, decodeAudioData } from './services/geminiService';
 import { saveChat, loadChats, deleteChat, deleteAllChats } from './services/dbService';
 import type { Message, Chat, AiMode, AppView } from './types';
 import MessageComponent from './components/Message';
@@ -15,13 +15,14 @@ import BackgroundCanvas from './components/BackgroundCanvas';
 import CoreLoadingScreen from './components/CoreLoadingScreen';
 import CodingPlayground from './components/CodingPlayground';
 import CoreDisintegrationScreen from './components/CoreDisintegrationScreen';
+import LiveConversation from './components/LiveConversation';
 
 const MAX_RENDERED_MESSAGES = 100;
 
 const translations: any = {
   en: {
     sidebar: { title: "Cognito AI", newSession: "New Cognitive Chat", searchLogs: "Search Chats", background: "Background", about: "About Cognito AI", exportLog: "Export Chat", purgeLogs: "Clear All Chats", profileName: "Operator", language: "Language" },
-    chatInput: { placeholderCognito: "Message Cognito...", placeholderCode: "Ask a coding question...", shiftEnter: "Shift + Enter for a new line.", suggestions: ["Draft a blueprint for a cyberpunk megacity", "Write a log entry from a starship captain discovering a new planet", "Invent a piece of futuristic technology and describe it", "Explain the concept of a neural network like I'm a detective", "Design a database schema for a colony on Mars", "Optimize this Python code for quantum processors", "What is the future of human-AI collaboration?", "Discuss the ethics of sentient machines", "Write a poem about the loneliness of data"], modeCognito: "Cognito Interface", modeCognitoDesc: "Conversational AI for general queries.", modeCode: "Code Core", modeCodeDesc: "Specialized interface for code & algorithms.", selectMode: "SELECT INTERFACE" },
+    chatInput: { placeholderCognito: "Message Cognito...", placeholderCode: "Ask a coding question...", shiftEnter: "Shift + Enter for a new line.", suggestions: ["Draft a blueprint for a cyberpunk megacity", "Write a log entry from a starship captain discovering a new planet", "Invent a piece of futuristic technology and describe it", "Explain the concept of a neural network like I'm a detective", "Design a database schema for a colony on Mars", "Optimize this Python code for quantum processors", "What is the future of human-AI collaboration?", "Discuss the ethics of sentient machines", "Write a poem about the loneliness of data"], modeCognito: "Cognito Interface", modeCognitoDesc: "Conversational AI for general queries.", modeCode: "Code Core", modeCodeDesc: "Specialized interface for code & algorithms.", selectMode: "SELECT INTERFACE", liveConversation: "Live Conversation" },
     welcome: {
       messages: [
         { greeting: "Cognito online. All circuits nominal.", prompt: "Ready for your query, Operator." },
@@ -37,12 +38,12 @@ const translations: any = {
     errors: { api: ["Signal lost. An anomaly has occurred in the data stream. Please try re-routing your query.", "Cognitive dissonance detected. My processors were unable to resolve your request. Please rephrase.", "A data corruption has been detected in the pipeline. I've purged the faulty packets. Please send your query again.", "My connection to the core has been severed. Please check your network link and retry."] },
     coreLoading: { title: "INITIALIZING CODE CORE", bootLog: ["[SYS] BOOT SEQUENCE INITIATED...", "[MEM] VIRTUAL MEMORY ALLOCATED", "[CPU] PROCESSOR KERNELS ONLINE", "[NET] SECURE LINK ESTABLISHED", "[ENV] RUNTIME ENVIRONMENT CALIBRATED", "[UI] INTEGRATING GRAPHICAL SHELL...", "[OK] CORE INITIALIZATION COMPLETE."] },
     coreDisintegration: { title: "DISENGAGING CODING CORE", shutdownLog: ["[SYS] SHUTDOWN SEQUENCE INITIATED...", "[MEM] VIRTUAL MEMORY DEALLOCATED", "[CPU] RELEASING PROCESSOR KERNELS", "[NET] SECURE LINK TERMINATED", "[UI] DISENGAGING GRAPHICAL SHELL...", "[OK] CORE SHUTDOWN COMPLETE.", "[SYS] RETURNING TO COGNITO INTERFACE."] },
-    languages: { en: "English", es: "Español", hi: "हिन्दी", fr: "Français", sa: "संस्कृतम्", 'hi-en': "Hinglish" }
+    languages: { en: "English", es: "Español", hi: "हिन्दी", fr: "Français", sa: "संस्कृतम्", 'hi-en': "Hinglish" },
+    live: { connecting: "Establishing secure audio channel...", listening: "Listening...", speakNow: "Speak now", processing: "Processing...", disconnect: "Disconnect", error: "Connection Error", micError: "Microphone access denied. Please enable it in your browser settings." },
   },
-  // NOTE: Other languages use English fallbacks for the new dynamic text for now.
   es: {
     sidebar: { title: "Cognito AI", newSession: "Nuevo Chat Cognitivo", searchLogs: "Buscar Chats", background: "Fondo", about: "Acerca de Cognito AI", exportLog: "Exportar Chat", purgeLogs: "Borrar Todos los Chats", profileName: "Operador", language: "Idioma" },
-    chatInput: { placeholderCognito: "Mensaje a Cognito...", placeholderCode: "Haz una pregunta de código...", shiftEnter: "Shift + Enter para nueva línea.", suggestions: ["Draft a blueprint for a cyberpunk megacity", "Write a log entry from a starship captain discovering a new planet", "Invent a piece of futuristic technology and describe it", "Explain the concept of a neural network like I'm a detective", "Design a database schema for a colony on Mars", "Optimize this Python code for quantum processors", "What is the future of human-AI collaboration?", "Discuss the ethics of sentient machines", "Write a poem about the loneliness of data"], modeCognito: "Interfaz Cognito", modeCognitoDesc: "IA conversacional para consultas generales.", modeCode: "Núcleo de Código", modeCodeDesc: "Interfaz especializada para código y algoritmos.", selectMode: "SELECCIONAR INTERFAZ" },
+    chatInput: { placeholderCognito: "Mensaje a Cognito...", placeholderCode: "Haz una pregunta de código...", shiftEnter: "Shift + Enter para nueva línea.", suggestions: ["Draft a blueprint for a cyberpunk megacity", "Write a log entry from a starship captain discovering a new planet", "Invent a piece of futuristic technology and describe it", "Explain the concept of a neural network like I'm a detective", "Design a database schema for a colony on Mars", "Optimize this Python code for quantum processors", "What is the future of human-AI collaboration?", "Discuss the ethics of sentient machines", "Write a poem about the loneliness of data"], modeCognito: "Interfaz Cognito", modeCognitoDesc: "IA conversacional para consultas generales.", modeCode: "Núcleo de Código", modeCodeDesc: "Interfaz especializada para código y algoritmos.", selectMode: "SELECCIONAR INTERFAZ", liveConversation: "Conversación en Vivo" },
     welcome: {
       messages: [
         { greeting: "Cognito en línea. Todos los circuitos nominales.", prompt: "Listo para su consulta, Operador." },
@@ -58,11 +59,12 @@ const translations: any = {
     errors: { api: ["Signal lost. An anomaly has occurred in the data stream. Please try re-routing your query.", "Cognitive dissonance detected. My processors were unable to resolve your request. Please rephrase.", "A data corruption has been detected in the pipeline. I've purged the faulty packets. Please send your query again.", "My connection to the core has been severed. Please check your network link and retry."] },
     coreLoading: { title: "INICIALIZANDO NÚCLEO DE CÓDIGO", bootLog: ["[SIS] SECUENCIA DE ARRANQUE INICIADA...", "[MEM] MEMORIA VIRTUAL ASIGNADA", "[CPU] NÚCLEOS DE PROCESADOR EN LÍNEA", "[RED] ENLACE SEGURO ESTABLECIDO", "[ENT] ENTORNO DE EJECUCIÓN CALIBRADO", "[UI] INTEGRANDO SHELL GRÁFICO...", "[OK] INICIALIZACIÓN DEL NÚCLEO COMPLETA."] },
     coreDisintegration: { title: "DESCONECTANDO NÚCLEO DE CÓDIGO", shutdownLog: ["[SIS] SECUENCIA DE APAGADO INICIADA...", "[MEM] MEMORIA VIRTUAL DESASIGNADA", "[CPU] LIBERANDO NÚCLEOS DE PROCESADOR", "[RED] ENLACE SEGURO TERMINADO", "[UI] DESCONECTANDO SHELL GRÁFICO...", "[OK] APAGADO DEL NÚCLEO COMPLETO.", "[SIS] VOLVIENDO A LA INTERFAZ DE COGNITO."] },
-    languages: { en: "English", es: "Español", hi: "हिन्दी", fr: "Français", sa: "संस्कृतम्", 'hi-en': "Hinglish" }
+    languages: { en: "English", es: "Español", hi: "हिन्दी", fr: "Français", sa: "संस्कृतम्", 'hi-en': "Hinglish" },
+    live: { connecting: "Estableciendo canal de audio seguro...", listening: "Escuchando...", speakNow: "Hable ahora", processing: "Procesando...", disconnect: "Desconectar", error: "Error de Conexión", micError: "Acceso al micrófono denegado. Por favor, habilítelo en la configuración de su navegador." }
   },
   hi: {
     sidebar: { title: "Cognito AI", newSession: "नया कॉग्निटिव चैट", searchLogs: "चैट खोजें", background: "पृष्ठभूमि", about: "कॉग्निटो एआई के बारे में", exportLog: "चैट निर्यात करें", purgeLogs: "सभी चैट साफ़ करें", profileName: "ऑपरेटर", language: "भाषा" },
-    chatInput: { placeholderCognito: "कॉग्निटो को संदेश भेजें...", placeholderCode: "कोडिंग प्रश्न पूछें...", shiftEnter: "नई लाइन के लिए Shift + Enter दबाएं।", suggestions: ["Draft a blueprint for a cyberpunk megacity", "Write a log entry from a starship captain discovering a new planet", "Invent a piece of futuristic technology and describe it", "Explain the concept of a neural network like I'm a detective", "Design a database schema for a colony on Mars", "Optimize this Python code for quantum processors", "What is the future of human-AI collaboration?", "Discuss the ethics of sentient machines", "Write a poem about the loneliness of data"], modeCognito: "कॉग्निटो इंटरफेस", modeCognitoDesc: "सामान्य प्रश्नों के लिए संवादी एआई।", modeCode: "कोड कोर", modeCodeDesc: "कोड और एल्गोरिदम के लिए विशेष इंटरफ़ेस।", selectMode: "इंटरफ़ेस चुनें" },
+    chatInput: { placeholderCognito: "कॉग्निटो को संदेश भेजें...", placeholderCode: "कोडिंग प्रश्न पूछें...", shiftEnter: "नई लाइन के लिए Shift + Enter दबाएं।", suggestions: ["Draft a blueprint for a cyberpunk megacity", "Write a log entry from a starship captain discovering a new planet", "Invent a piece of futuristic technology and describe it", "Explain the concept of a neural network like I'm a detective", "Design a database schema for a colony on Mars", "Optimize this Python code for quantum processors", "What is the future of human-AI collaboration?", "Discuss the ethics of sentient machines", "Write a poem about the loneliness of data"], modeCognito: "कॉग्निटो इंटरफेस", modeCognitoDesc: "सामान्य प्रश्नों के लिए संवादी एआई।", modeCode: "कोड कोर", modeCodeDesc: "कोड और एल्गोरिदम के लिए विशेष इंटरफ़ेस।", selectMode: "इंटरफ़ेस चुनें", liveConversation: "लाइव वार्तालाप" },
     welcome: {
       messages: [
         { greeting: "कॉग्निटो ऑनलाइन। सभी सर्किट सामान्य।", prompt: "आपकी क्वेरी के लिए तैयार, ऑपरेटर।" },
@@ -78,11 +80,12 @@ const translations: any = {
     errors: { api: ["Signal lost. An anomaly has occurred in the data stream. Please try re-routing your query.", "Cognitive dissonance detected. My processors were unable to resolve your request. Please rephrase.", "A data corruption has been detected in the pipeline. I've purged the faulty packets. Please send your query again.", "My connection to the core has been severed. Please check your network link and retry."] },
     coreLoading: { title: "कोडिंग कोर शुरू हो रहा है", bootLog: ["[सिस्टम] बूट अनुक्रम शुरू...", "[मेमोरी] वर्चुअल मेमोरी आवंटित", "[सीपीयू] प्रोसेसर कर्नेल ऑनलाइन", "[नेट] सुरक्षित लिंक स्थापित", "[ईएनवी] रनटाइम वातावरण कैलिब्रेटेड", "[यूआई] ग्राफिकल शेल को एकीकृत करना...", "[ठीक है] कोर आरंभीकरण पूर्ण।"] },
     coreDisintegration: { title: "कोडिंग कोर को निष्क्रिय करना", shutdownLog: ["[सिस्टम] शटडाउन अनुक्रम शुरू...", "[मेमोरी] वर्चुअल मेमोरी डीलोकेटेड", "[सीपीयू] प्रोसेसर कर्नेल जारी करना", "[नेट] सुरक्षित लिंक समाप्त", "[यूआई] ग्राफिकल शेल को निष्क्रिय करना...", "[ठीक है] कोर शटडाउन पूर्ण।", "[सिस्टम] कॉग्निटो इंटरफ़ेस पर लौटना।"] },
-    languages: { en: "English", es: "Español", hi: "हिन्दी", fr: "Français", sa: "संस्कृतम्", 'hi-en': "Hinglish" }
+    languages: { en: "English", es: "Español", hi: "हिन्दी", fr: "Français", sa: "संस्कृतम्", 'hi-en': "Hinglish" },
+    live: { connecting: "सुरक्षित ऑडियो चैनल स्थापित हो रहा है...", listening: "सुन रहा है...", speakNow: "अब बोलें", processing: "संसाधित हो रहा है...", disconnect: "डिस्कनेक्ट", error: "कनेक्शन त्रुटि", micError: "माइक्रोफ़ोन एक्सेस अस्वीकृत। कृपया इसे अपनी ब्राउज़र सेटिंग्स में सक्षम करें।" }
   },
   fr: {
     sidebar: { title: "Cognito AI", newSession: "Nouveau Chat Cognitif", searchLogs: "Rechercher les Chats", background: "Arrière-plan", about: "À propos de Cognito AI", exportLog: "Exporter le Chat", purgeLogs: "Effacer Tous les Chats", profileName: "Opérateur", language: "Langue" },
-    chatInput: { placeholderCognito: "Message à Cognito...", placeholderCode: "Posez une question de code...", shiftEnter: "Maj + Entrée pour une nouvelle ligne.", suggestions: ["Draft a blueprint for a cyberpunk megacity", "Write a log entry from a starship captain discovering a new planet", "Invent a piece of futuristic technology and describe it", "Explain the concept of a neural network like I'm a detective", "Design a database schema for a colony on Mars", "Optimize this Python code for quantum processors", "What is the future of human-AI collaboration?", "Discuss the ethics of sentient machines", "Write a poem about the loneliness of data"], modeCognito: "Interface Cognito", modeCognitoDesc: "IA conversationnelle pour requêtes générales.", modeCode: "Noyau de Code", modeCodeDesc: "Interface spécialisée pour code et algorithmes.", selectMode: "SÉLECTIONNER L'INTERFACE" },
+    chatInput: { placeholderCognito: "Message à Cognito...", placeholderCode: "Posez une question de code...", shiftEnter: "Maj + Entrée pour une nouvelle ligne.", suggestions: ["Draft a blueprint for a cyberpunk megacity", "Write a log entry from a starship captain discovering a new planet", "Invent a piece of futuristic technology and describe it", "Explain the concept of a neural network like I'm a detective", "Design a database schema for a colony on Mars", "Optimize this Python code for quantum processors", "What is the future of human-AI collaboration?", "Discuss the ethics of sentient machines", "Write a poem about the loneliness of data"], modeCognito: "Interface Cognito", modeCognitoDesc: "IA conversationnelle pour requêtes générales.", modeCode: "Noyau de Code", modeCodeDesc: "Interface spécialisée pour code et algorithmes.", selectMode: "SÉLECTIONNER L'INTERFACE", liveConversation: "Conversation en Direct" },
     welcome: {
       messages: [
         { greeting: "Cognito en ligne. Tous les circuits nominaux.", prompt: "Prêt pour votre requête, Opérateur." },
@@ -98,11 +101,12 @@ const translations: any = {
     errors: { api: ["Signal lost. An anomaly has occurred in the data stream. Please try re-routing your query.", "Cognitive dissonance detected. My processors were unable to resolve your request. Please rephrase.", "A data corruption has been detected in the pipeline. I've purged the faulty packets. Please send your query again.", "My connection to the core has been severed. Please check your network link and retry."] },
     coreLoading: { title: "INITIALISATION DU NOYAU DE CODAGE", bootLog: ["[SYS] SÉQUENCE DE DÉMARRAGE INITIÉE...", "[MEM] MÉMOIRE VIRTUELLE ALLOUÉE", "[CPU] COEURS DE PROCESSEUR EN LIGNE", "[NET] LIAISON SÉCURISÉE ÉTABLIE", "[ENV] ENVIRONNEMENT D'EXÉCUTION CALIBRÉ", "[UI] INTÉGRATION DE L'INTERFACE GRAPHIQUE...", "[OK] INITIALISATION DU NOYAU TERMINÉE."] },
     coreDisintegration: { title: "DÉSENGAGEMENT DU NOYAU DE CODAGE", shutdownLog: ["[SYS] SÉQUENCE D'ARRÊT INITIÉE...", "[MEM] MÉMOIRE VIRTUELLE DÉSALLOUÉE", "[CPU] LIBÉRATION DES COEURS DE PROCESSEUR", "[NET] LIAISON SÉCURISÉE TERMINÉE", "[UI] DÉSENGAGEMENT DE L'INTERFACE GRAPHIQUE...", "[OK] ARRÊT DU NOYAU TERMINÉ.", "[SYS] RETOUR À L'INTERFACE COGNITO."] },
-    languages: { en: "English", es: "Español", hi: "हिन्दी", fr: "Français", sa: "संस्कृतम्", 'hi-en': "Hinglish" }
+    languages: { en: "English", es: "Español", hi: "हिन्दी", fr: "Français", sa: "संस्कृतम्", 'hi-en': "Hinglish" },
+    live: { connecting: "Établissement du canal audio sécurisé...", listening: "Écoute...", speakNow: "Parlez maintenant", processing: "Traitement...", disconnect: "Déconnecter", error: "Erreur de Connexion", micError: "Accès au microphone refusé. Veuillez l'activer dans les paramètres de votre navigateur." }
   },
   sa: {
     sidebar: { title: "Cognito AI", newSession: "नवीनः संज्ञानात्मकः चैटः", searchLogs: "चैटान्वेषणम्...", background: "पृष्ठभूमिः", about: "कोग्निटो एआई विषये", exportLog: "चैटं निर्यातं कुरु", purgeLogs: "सर्वान् चैटान् निष्कासय", profileName: "प्रचालकः", language: "भाषा" },
-    chatInput: { placeholderCognito: "कोग्निटो कृते सन्देशः...", placeholderCode: "कूटलेखनप्रश्नं पृच्छतु...", shiftEnter: "नवीनपङ्क्तये Shift + Enter", suggestions: ["Draft a blueprint for a cyberpunk megacity", "Write a log entry from a starship captain discovering a new planet", "Invent a piece of futuristic technology and describe it", "Explain the concept of a neural network like I'm a detective", "Design a database schema for a colony on Mars", "Optimize this Python code for quantum processors", "What is the future of human-AI collaboration?", "Discuss the ethics of sentient machines", "Write a poem about the loneliness of data"], modeCognito: "कोग्निटो-अन्तरापृष्ठम्", modeCognitoDesc: "सामान्यप्रश्नेभ्यः संवादी एआई।", modeCode: "कूट-केन्द्रम्", modeCodeDesc: "कूट-अल्गोरिदम-कृते विशिष्टम् अन्तरापृष्ठम्।", selectMode: "अन्तरापृष्ठं चिनोतु" },
+    chatInput: { placeholderCognito: "कोग्निटो कृते सन्देशः...", placeholderCode: "कूटलेखनप्रश्नं पृच्छतु...", shiftEnter: "नवीनपङ्क्तये Shift + Enter", suggestions: ["Draft a blueprint for a cyberpunk megacity", "Write a log entry from a starship captain discovering a new planet", "Invent a piece of futuristic technology and describe it", "Explain the concept of a neural network like I'm a detective", "Design a database schema for a colony on Mars", "Optimize this Python code for quantum processors", "What is the future of human-AI collaboration?", "Discuss the ethics of sentient machines", "Write a poem about the loneliness of data"], modeCognito: "कोग्निटो-अन्तरापृष्ठम्", modeCognitoDesc: "सामान्यप्रश्नेभ्यः संवादी एआई।", modeCode: "कूट-केन्द्रम्", modeCodeDesc: "कूट-अल्गोरिदम-कृते विशिष्टम् अन्तरापृष्ठम्।", selectMode: "अन्तरापृष्ठं चिनोतु", liveConversation: "सजीव-वार्तालापः" },
     welcome: {
       messages: [
         { greeting: "कोग्निटो ऑनलाइन। सर्वे सर्किटाः सामान्याः।", prompt: "भवतः प्रश्नार्थं सज्जः, प्रचालकः।" },
@@ -118,11 +122,12 @@ const translations: any = {
     errors: { api: ["Signal lost. An anomaly has occurred in the data stream. Please try re-routing your query.", "Cognitive dissonance detected. My processors were unable to resolve your request. Please rephrase.", "A data corruption has been detected in the pipeline. I've purged the faulty packets. Please send your query again.", "My connection to the core has been severed. Please check your network link and retry."] },
     coreLoading: { title: "कूटलेखन-केन्द्रम् आरभ्यते", bootLog: ["[तन्त्रम्] बूट्-अनुक्रमः आरब्धः...", "[स्मृतिः] आभासी स्मृतिः वितरिता", "[सीपीयू] प्रोसेसर-केन्द्रकाणि ऑनलाइन्", "[जालम्] सुरक्षित-सम्पर्कः स्थापितः", "[पर्यावरणम्] रनटाइम-पर्यावरणं समंजितम्", "[यूआई] ग्राफिकल-शेल् एकीकृतम्...", "[ओके] केन्द्र-आरम्भः पूर्णः।"] },
     coreDisintegration: { title: "कूटलेखन-केन्द्रं वियोज्यते", shutdownLog: ["[तन्त्रम्] शटडाउन-अनुक्रमः आरब्धः...", "[स्मृतिः] आभासी स्मृतिः अविभाजिता", "[सीपीयू] प्रोसेसर-केन्द्रकाणि मुक्तानि", "[जालम्] सुरक्षित-सम्पर्कः समाप्तः", "[यूआई] ग्राफिकल-शेल् वियोजितम्...", "[ओके] केन्द्र-शटडाउन पूर्णम्।", "[तन्त्रम्] कोग्निटो-अन्तरापृष्ठं प्रति गमनम्।"] },
-    languages: { en: "English", es: "Español", hi: "हिन्दी", fr: "Français", sa: "संस्कृतम्", 'hi-en': "Hinglish" }
+    languages: { en: "English", es: "Español", hi: "हिन्दी", fr: "Français", sa: "संस्कृतम्", 'hi-en': "Hinglish" },
+    live: { connecting: "सुरक्षित-ध्वनि-चैनलं स्थाप्यते...", listening: "शृण्वन्...", speakNow: "अधुना वदतु", processing: "संसाधनं कुर्वन्...", disconnect: "वियोजयतु", error: "सम्पर्क-त्रुटिः", micError: "माइक्रोफोन्-प्रवेशः निषिद्धः। कृपया भवतः ब्राउजर्-सेटिङ्ग्स् मध्ये तत् समर्थयतु।" }
   },
   'hi-en': {
     sidebar: { title: "Cognito AI", newSession: "New Cognitive Chat", searchLogs: "Chats search karo", background: "Background", about: "Cognito AI ke baare mein", exportLog: "Chat Export karo", purgeLogs: "Sab Chats Clear karo", profileName: "Operator", language: "Language" },
-    chatInput: { placeholderCognito: "Cognito ko message bhejo...", placeholderCode: "Coding ka sawaal pucho...", shiftEnter: "Nayi line ke liye Shift + Enter.", suggestions: ["Draft a blueprint for a cyberpunk megacity", "Write a log entry from a starship captain discovering a new planet", "Invent a piece of futuristic technology and describe it", "Explain the concept of a neural network like I'm a detective", "Design a database schema for a colony on Mars", "Optimize this Python code for quantum processors", "What is the future of human-AI collaboration?", "Discuss the ethics of sentient machines", "Write a poem about the loneliness of data"], modeCognito: "Cognito Interface", modeCognitoDesc: "General sawaalon ke liye conversational AI.", modeCode: "Code Core", modeCodeDesc: "Code aur algorithms ke liye special interface.", selectMode: "INTERFACE SELECT KARO" },
+    chatInput: { placeholderCognito: "Cognito ko message bhejo...", placeholderCode: "Coding ka sawaal pucho...", shiftEnter: "Nayi line ke liye Shift + Enter.", suggestions: ["Draft a blueprint for a cyberpunk megacity", "Write a log entry from a starship captain discovering a new planet", "Invent a piece of futuristic technology and describe it", "Explain the concept of a neural network like I'm a detective", "Design a database schema for a colony on Mars", "Optimize this Python code for quantum processors", "What is the future of human-AI collaboration?", "Discuss the ethics of sentient machines", "Write a poem about the loneliness of data"], modeCognito: "Cognito Interface", modeCognitoDesc: "General sawaalon ke liye conversational AI.", modeCode: "Code Core", modeCodeDesc: "Code aur algorithms ke liye special interface.", selectMode: "INTERFACE SELECT KARO", liveConversation: "Live Conversation" },
     welcome: {
       messages: [
         { greeting: "Cognito online. Sab circuits nominal.", prompt: "Aapke query ke liye taiyaar, Operator." },
@@ -138,43 +143,10 @@ const translations: any = {
     errors: { api: ["Signal lost. An anomaly has occurred in the data stream. Please try re-routing your query.", "Cognitive dissonance detected. My processors were unable to resolve your request. Please rephrase.", "A data corruption has been detected in the pipeline. I've purged the faulty packets. Please send your query again.", "My connection to the core has been severed. Please check your network link and retry."] },
     coreLoading: { title: "INITIALIZING CODE CORE", bootLog: ["[SYS] BOOT SEQUENCE INITIATED...", "[MEM] VIRTUAL MEMORY ALLOCATED", "[CPU] PROCESSOR KERNELS ONLINE", "[NET] SECURE LINK ESTABLISHED", "[ENV] RUNTIME ENVIRONMENT CALIBRATED", "[UI] INTEGRATING GRAPHICAL SHELL...", "[OK] CORE INITIALIZATION COMPLETE."] },
     coreDisintegration: { title: "DISENGAGING CODING CORE", shutdownLog: ["[SYS] SHUTDOWN SEQUENCE INITIATED...", "[MEM] VIRTUAL MEMORY DEALLOCATED", "[CPU] RELEASING PROCESSOR KERNELS", "[NET] SECURE LINK TERMINATED", "[UI] DISENGAGING GRAPHICAL SHELL...", "[OK] CORE SHUTDOWN COMPLETE.", "[SYS] RETURNING TO COGNITO INTERFACE."] },
-    languages: { en: "English", es: "Español", hi: "हिन्दी", fr: "Français", sa: "संस्कृतम्", 'hi-en': "Hinglish" }
+    languages: { en: "English", es: "Español", hi: "हिन्दी", fr: "Français", sa: "संस्कृतम्", 'hi-en': "Hinglish" },
+    live: { connecting: "Secure audio channel establish ho raha hai...", listening: "Sun raha hai...", speakNow: "Ab boliye", processing: "Processing...", disconnect: "Disconnect", error: "Connection Error", micError: "Microphone access denied. Please browser settings me enable karein." }
   }
 };
-
-// --- NEW: Audio decoding helper functions for Gemini TTS ---
-// Decodes a base64 string into a byte array.
-function decode(base64: string): Uint8Array {
-  const binaryString = atob(base64);
-  const len = binaryString.length;
-  const bytes = new Uint8Array(len);
-  for (let i = 0; i < len; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-  return bytes;
-}
-
-// Decodes raw PCM audio data into an AudioBuffer for playback.
-async function decodeAudioData(
-  data: Uint8Array,
-  ctx: AudioContext,
-  sampleRate: number,
-  numChannels: number,
-): Promise<AudioBuffer> {
-  // The raw data is 16-bit PCM, so we create a Int16Array view on the buffer.
-  const dataInt16 = new Int16Array(data.buffer);
-  const frameCount = dataInt16.length / numChannels;
-  const buffer = ctx.createBuffer(numChannels, frameCount, sampleRate);
-
-  for (let channel = 0; channel < numChannels; channel++) {
-    const channelData = buffer.getChannelData(channel);
-    for (let i = 0; i < frameCount; i++) {
-      // Normalize the 16-bit integer samples to the [-1.0, 1.0] range for the Web Audio API.
-      channelData[i] = dataInt16[i * numChannels + channel] / 32768.0;
-    }
-  }
-  return buffer;
-}
 
 
 const App: React.FC = () => {
@@ -386,6 +358,69 @@ const App: React.FC = () => {
         } else {
              setAiMode(newMode);
         }
+    };
+    
+    // NEW: Enters the live conversation mode.
+    const enterLiveMode = () => {
+        // Can't start live chat from coding view, so switch to chat first if needed.
+        if (currentView === 'coding') {
+            setIsExiting(true);
+            setTimeout(() => {
+                setCurrentView('chat');
+                setAiMode('cognito');
+                setIsExiting(false);
+                // Now enter live mode
+                setCurrentView('live');
+            }, 500);
+        } else {
+            setCurrentView('live');
+        }
+    };
+
+    // NEW: Handles the end of a live session, saving the transcript as a new chat.
+    const handleLiveSessionEnd = (transcript: { user: string; model: string }[]) => {
+        setCurrentView('chat'); // Always switch back to the chat view.
+        if (transcript.length === 0) return;
+
+        const newChatId = Date.now().toString();
+        
+        // Create a title from the first user utterance.
+        const firstUserMessage = transcript[0]?.user || "Untitled Audio Log";
+        const title = `Audio Log: ${firstUserMessage.substring(0, 30)}${firstUserMessage.length > 30 ? '...' : ''}`;
+
+        // Convert the transcript into the standard Message format.
+        const newMessages: Message[] = transcript.flatMap((turn, index) => {
+            const messages: Message[] = [];
+            if (turn.user.trim()) {
+                messages.push({
+                    id: `${newChatId}-user-${index}`,
+                    role: 'user',
+                    content: turn.user.trim(),
+                });
+            }
+            if (turn.model.trim()) {
+                messages.push({
+                    id: `${newChatId}-model-${index}`,
+                    role: 'model',
+                    content: turn.model.trim(),
+                });
+            }
+            return messages;
+        });
+        
+        if (newMessages.length === 0) return;
+
+        const newChat: Chat = {
+            id: newChatId,
+            title,
+            messages: newMessages,
+            isAudioLog: true, // Mark this as an audio log.
+        };
+
+        // Update state and save to database.
+        setChats(prev => [newChat, ...prev]);
+        setActiveChatId(newChatId);
+        saveChat(newChat).catch(err => console.error("Failed to save audio log chat:", err));
     };
 
 
@@ -924,6 +959,7 @@ const App: React.FC = () => {
                     aiMode={aiMode}
                     onAiModeChange={handleAiModeChange}
                     onRectChange={setInputRect}
+                    onToggleLiveMode={enterLiveMode}
                     t={t}
                 />
             </div>
@@ -931,6 +967,9 @@ const App: React.FC = () => {
     );
 
     const renderCurrentView = () => {
+        if (currentView === 'live') {
+            return <LiveConversation onClose={handleLiveSessionEnd} t={t} />;
+        }
         if (currentView === 'coding') {
              return (
                 <CodingPlayground 

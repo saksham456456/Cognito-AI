@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import type { Chat } from '../types';
 import { CognitoLogo } from './Logo';
-import { PlusIcon, MessageSquareIcon, SearchIcon, PencilIcon, CheckIcon, XIcon, UserCircleIcon, SunIcon, MoonIcon, DownloadIcon, TrashIcon, InfoIcon, CodeBracketIcon, LayersIcon, GlobeIcon } from './icons';
+import { PlusIcon, MessageSquareIcon, SearchIcon, PencilIcon, CheckIcon, XIcon, UserCircleIcon, SunIcon, MoonIcon, DownloadIcon, TrashIcon, InfoIcon, CodeBracketIcon, LayersIcon, GlobeIcon, MicrophoneIcon } from './icons';
 
 // Interface for the Sidebar's props.
 interface SidebarProps {
@@ -153,7 +153,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                           />
                       ) : (
                           <div className="flex items-center gap-3 truncate ml-2">
-                              <MessageSquareIcon className="w-5 h-5 flex-shrink-0" />
+                              {chat.isAudioLog ? (
+                                <MicrophoneIcon className="w-5 h-5 flex-shrink-0" />
+                              ) : (
+                                <MessageSquareIcon className="w-5 h-5 flex-shrink-0" />
+                              )}
                               <span className="truncate">{chat.title}</span>
                           </div>
                       )}

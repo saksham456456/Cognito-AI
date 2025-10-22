@@ -504,6 +504,58 @@
       .header-glow {
         box-shadow: 0 2px 8px -2px var(--primary-glow-faded), 0 4px 12px -4px var(--primary-glow-faded);
       }
+      
+      /* --- NEW: LIVE CONVERSATION UI --- */
+      .live-bg-grid {
+        position: absolute;
+        inset: 0;
+        background-image:
+            radial-gradient(circle at center, hsla(220, 100%, 65%, 0.15) 0%, transparent 40%);
+        animation: live-bg-pulse 10s infinite ease-in-out;
+      }
+      @keyframes live-bg-pulse {
+        0%, 100% { transform: scale(1); opacity: 0.8; }
+        50% { transform: scale(1.1); opacity: 1; }
+      }
+
+      .live-orb {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      }
+      .live-orb-outer {
+        animation: spin 20s linear infinite;
+        transition: all 0.4s ease;
+      }
+      .live-orb-inner {
+        animation: spin 15s linear infinite reverse;
+        transition: all 0.4s ease;
+      }
+
+      /* State-based animations for the orb */
+      .orb-state-listening .live-orb-inner {
+        animation-play-state: running;
+        transform: scale(1);
+      }
+      .orb-state-speaking .live-orb-inner {
+        animation: orb-pulse-speak 1.2s infinite ease-in-out;
+        transform: scale(1.1);
+      }
+      .orb-state-thinking .live-orb-outer {
+        animation: spin 5s linear infinite;
+      }
+      .orb-state-thinking .live-orb-inner {
+        transform: scale(0.9);
+        animation: spin 3s linear infinite reverse;
+      }
+      @keyframes orb-pulse-speak {
+        0%, 100% { box-shadow: 0 0 20px var(--primary-glow), 0 0 40px var(--primary-glow-faded); transform: scale(1.1); }
+        50% { box-shadow: 0 0 30px var(--primary-glow), 0 0 60px var(--primary-glow); transform: scale(1.15); }
+      }
+
+      .transcription-line {
+        opacity: 0;
+        transform: translateY(10px);
+        animation: fadeInUp 0.5s ease-out forwards;
+      }
     </style>
     <script>
     // Configuring Tailwind CSS

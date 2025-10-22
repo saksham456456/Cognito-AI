@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
-import { SendIcon, EmojiHappyIcon, CodeBracketIcon } from './icons';
+import { SendIcon, EmojiHappyIcon, CodeBracketIcon, MicrophoneIcon } from './icons';
 import { CognitoLogo } from './Logo';
 import type { AiMode } from '../types';
 
@@ -12,6 +12,7 @@ interface ChatInputProps {
   aiMode: AiMode;
   onAiModeChange: (mode: AiMode) => void;
   onRectChange: (rect: DOMRect | null) => void; // Reports the input's position.
+  onToggleLiveMode: () => void; // NEW: Prop to enter live conversation mode.
   t: (key: string, fallback?: any) => any;
 }
 
@@ -25,7 +26,7 @@ const SuggestionButton: React.FC<{ text: string; onClick: () => void }> = ({ tex
     </button>
 )
 
-const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, showSuggestions, suggestions, aiMode, onAiModeChange, onRectChange, t }) => {
+const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, showSuggestions, suggestions, aiMode, onAiModeChange, onRectChange, onToggleLiveMode, t }) => {
   // State variables
   const [inputValue, setInputValue] = useState(''); // The current value of the textarea.
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false); // Is the emoji picker open?
@@ -208,6 +209,17 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading, showSug
                     className="flex-grow bg-transparent text-text-light placeholder:text-text-medium resize-none focus:outline-none p-2 max-h-48 custom-scrollbar z-10"
                     disabled={isLoading}
                 />
+                 {/* NEW: Live Conversation Button */}
+                <button
+                    type="button"
+                    onClick={onToggleLiveMode}
+                    disabled={isLoading}
+                    className="flex-shrink-0 w-10 h-10 rounded-lg text-text-medium hover:text-primary flex items-center justify-center transition-all duration-200 disabled:opacity-50 z-10 hover:scale-110 active:scale-95"
+                    aria-label={t('chatInput.liveConversation')}
+                    title={t('chatInput.liveConversation')}
+                >
+                    <MicrophoneIcon className="w-6 h-6" />
+                </button>
                 {/* Send/Submit button */}
                 <button
                     type="submit"

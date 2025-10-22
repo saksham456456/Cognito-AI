@@ -1,5 +1,5 @@
 // REFACTOR: Importing GoogleGenAI from the @google/genai SDK.
-import { GoogleGenAI, Chat, Modality } from "@google/genai";
+import { GoogleGenAI, Chat, Modality, LiveSession, LiveServerMessage } from "@google/genai";
 import type { Message, AiMode } from '../types';
 
 // REFACTOR: Initializing the GoogleGenAI client with the API key from environment variables, as per guidelines.
@@ -147,4 +147,78 @@ export async function generateSpeech(text: string): Promise<string | null> {
         console.error("Error generating speech with Gemini:", error);
         return null;
     }
+}
+
+
+// --- NEW: Audio helper functions for Live API and TTS ---
+
+// Encodes raw Float32 audio data into a base64 string of 16-bit PCM data.
+export function encode(data: Float32Array): string {
+  const l = data.length;
+  const int16 = new Int16Array(l);
+  for (let i = 0; i < l; i++) {
+    // Clamp the value to avoid issues, then convert to 16-bit integer.
+    int16[i] = Math.max(-1, Math.min(1, data[i])) * 32768;
+  }
+  const bytes = new Uint8Array(int16.buffer);
+  let binary = '';
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+// Decodes a base64 string into a byte array.
+export function decode(base64: string): Uint8Array {
+  const binaryString = atob(base64);
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
+}
+
+// Decodes raw PCM audio data into an AudioBuffer for playback.
+export async function decodeAudioData(
+  data: Uint8Array,
+  ctx: AudioContext,
+  sampleRate: number,
+  numChannels: number,
+): Promise<AudioBuffer> {
+  const dataInt16 = new Int16Array(data.buffer);
+  const frameCount = dataInt16.length / numChannels;
+  const buffer = ctx.createBuffer(numChannels, frameCount, sampleRate);
+
+  for (let channel = 0; channel < numChannels; channel++) {
+    const channelData = buffer.getChannelData(channel);
+    for (let i = 0; i < frameCount; i++) {
+      channelData[i] = dataInt16[i * numChannels + channel] / 32768.0;
+    }
+  }
+  return buffer;
+}
+
+
+// --- NEW: Function to start a Live API conversation ---
+export function startLiveConversation(callbacks: {
+    onopen: () => void;
+    onmessage: (message: LiveServerMessage) => Promise<void>;
+    onerror: (e: ErrorEvent) => void;
+    onclose: (e: CloseEvent) => void;
+}): Promise<LiveSession> {
+    return ai.live.connect({
+        model: 'gemini-2.5-flash-native-audio-preview-09-2025',
+        callbacks: callbacks,
+        config: {
+            responseModalities: [Modality.AUDIO],
+            speechConfig: {
+                voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' } },
+            },
+            systemInstruction: cognitoSystemInstruction,
+            inputAudioTranscription: {}, // Enable transcription for user input.
+            outputAudioTranscription: {}, // Enable transcription for model output.
+        },
+    });
 }

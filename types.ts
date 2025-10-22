@@ -14,10 +14,11 @@ export interface Chat {
     id: string; // A unique ID for each chat.
     title: string; // The title of the chat, e.g., "Quantum Computing Explained".
     messages: Message[]; // An array of all messages in this chat.
+    isAudioLog?: boolean; // NEW: To identify chats originating from a live audio session.
 }
 
 // Defines the different modes of the AI.
 export type AiMode = 'cognito' | 'code-assistant';
 
 // Defines the main views of the app.
-export type AppView = 'chat' | 'coding';
+export type AppView = 'chat' | 'coding' | 'live';

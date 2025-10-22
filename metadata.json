@@ -1,5 +1,7 @@
 {
   "name": "Cognito AI Assistant",
   "description": "A modern, premium personal AI assistant app with a sleek black and yellow theme, designed to provide intelligent and responsive answers.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "microphone"
+  ]
 }
