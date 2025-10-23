@@ -37,29 +37,29 @@ const AnimatedCognitoLogo = () => {
                 <circle 
                     cx="80" cy="80" r="10" 
                     fill="url(#goldGradient)"
-                    style={anim('core-pulse-grow', '0.2s', '0.8s')}
+                    style={anim('core-pulse-grow', '0.2s', '1.0s')}
                 />
                 
                 {/* Main Body Parts */}
                 <g stroke="url(#goldGradient)" fill="none" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="55" y="40" width="50" height="40" rx="8" style={{ transformOrigin: '80px 80px', ...anim('materialize-from-center', '0.6s', '0.7s') }} />
-                    <rect x="45" y="85" width="70" height="45" rx="8" style={{ transformOrigin: '80px 80px', ...anim('materialize-from-center', '0.7s', '0.7s') }} />
+                    <rect x="55" y="40" width="50" height="40" rx="8" style={{ transformOrigin: '80px 80px', ...anim('materialize-from-center', '0.8s', '0.7s') }} />
+                    <rect x="45" y="85" width="70" height="45" rx="8" style={{ transformOrigin: '80px 80px', ...anim('materialize-from-center', '1.0s', '0.7s') }} />
 
                     {/* Outer Arcs - Drawn in */}
-                    <path d="M 30 25 A 50 50 0 0 1 130 25" style={draw(160, '1.0s')} />
-                    <path d="M 30 135 A 50 50 0 0 0 130 135" transform="rotate(180, 80, 80)" style={draw(160, '1.0s')} />
+                    <path d="M 30 25 A 50 50 0 0 1 130 25" style={draw(160, '1.5s', '1.2s')} />
+                    <path d="M 30 135 A 50 50 0 0 0 130 135" transform="rotate(180, 80, 80)" style={draw(160, '1.5s', '1.2s')} />
                 </g>
 
                 {/* Appendages and Details */}
                 <g stroke="url(#goldGradient)" fill="none" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="70" cy="60" r="7" fill="url(#goldGradient)" stroke="none" style={anim('snap-in-place', '1.6s', '0.4s')} />
-                    <circle cx="90" cy="60" r="7" fill="url(#goldGradient)" stroke="none" style={anim('snap-in-place', '1.6s', '0.4s')} />
-                    <circle cx="50" cy="60" r="4" style={anim('snap-in-place', '1.7s', '0.4s')} />
-                    <circle cx="110" cy="60" r="4" style={anim('snap-in-place', '1.7s', '0.4s')} />
-                    <path d="M 45 95 Q 30 90, 30 105" style={anim('snap-in-place', '1.8s', '0.4s')} />
-                    <path d="M 115 95 Q 130 90, 130 105" style={anim('snap-in-place', '1.8s', '0.4s')} />
-                    <path d="M 60 130 L 60 140" style={anim('snap-in-place', '1.9s', '0.4s')} />
-                    <path d="M 100 130 L 100 140" style={anim('snap-in-place', '1.9s', '0.4s')} />
+                    <circle cx="70" cy="60" r="7" fill="url(#goldGradient)" stroke="none" style={anim('snap-in-place', '2.5s', '0.5s')} />
+                    <circle cx="90" cy="60" r="7" fill="url(#goldGradient)" stroke="none" style={anim('snap-in-place', '2.5s', '0.5s')} />
+                    <circle cx="50" cy="60" r="4" style={anim('snap-in-place', '2.7s', '0.5s')} />
+                    <circle cx="110" cy="60" r="4" style={anim('snap-in-place', '2.7s', '0.5s')} />
+                    <path d="M 45 95 Q 30 90, 30 105" style={anim('snap-in-place', '2.9s', '0.5s')} />
+                    <path d="M 115 95 Q 130 90, 130 105" style={anim('snap-in-place', '2.9s', '0.5s')} />
+                    <path d="M 60 130 L 60 140" style={anim('snap-in-place', '3.1s', '0.5s')} />
+                    <path d="M 100 130 L 100 140" style={anim('snap-in-place', '3.1s', '0.5s')} />
                 </g>
             </svg>
         </div>
@@ -74,12 +74,12 @@ const LoadingScreen = ({ t }: { t: (key: string, fallback?: any) => any }) => {
             <div className="splash-grid-bg"></div>
             <div className="relative flex flex-col items-center justify-center z-10">
                 <AnimatedCognitoLogo />
-                <h1 className="font-heading text-5xl font-bold tracking-[0.2em] text-primary mt-4 opacity-0 animate-neon-flicker" style={{ animationDelay: '2.4s' }}>
+                <h1 className="font-heading text-5xl font-bold tracking-[0.2em] text-primary mt-4 opacity-0 animate-neon-flicker" style={{ animationDelay: '4.0s' }}>
                     Cognito AI
                 </h1>
                 <div className="font-code text-sm text-text-medium mt-8 w-96 h-28 p-2 text-left">
                     {Array.isArray(bootLogMessages) && bootLogMessages.map((msg, i) => (
-                        <p key={i} className="opacity-0 fade-in-up" style={{ animationDelay: `${2.6 + i * 0.15}s` }}>
+                        <p key={i} className="opacity-0 fade-in-up" style={{ animationDelay: `${4.2 + i * 0.15}s` }}>
                             <span className="text-primary">{msg.substring(0, msg.indexOf(']') + 1)}</span>
                             <span className="text-text-light">{msg.substring(msg.indexOf(']') + 1)}</span>
                         </p>

@@ -256,7 +256,7 @@ to_js({"stdout": stdout_val, "stderr": stderr_val})
     };
 
     return (
-        <div className={`flex flex-col h-full bg-background crt-effect relative overflow-hidden z-10 ${isExiting ? 'animate-fade-out-quick' : ''}`}>
+        <div className={`flex flex-col h-full bg-background crt-effect relative overflow-hidden z-10`}>
              <header className="flex-shrink-0 flex items-center justify-between p-4 border-b border-card-border/50 bg-background/80 relative">
                 <button onClick={onToggleSidebar} className="p-1 rounded-md border border-transparent hover:border-card-border absolute left-4 top-1/2 -translate-y-1/2 md:hidden">
                     <MenuIcon className="h-6 w-6" />
