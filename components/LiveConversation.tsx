@@ -1,5 +1,5 @@
 // FIX: Import `useCallback` from React.
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { startLiveConversation, encode, decode, decodeAudioData } from '../services/geminiService';
 import { PowerIcon, MicrophoneIcon, MicrophoneSlashIcon } from './icons';
 // FIX: Removed unexported 'LiveSession' type.
@@ -12,32 +12,123 @@ interface LiveConversationProps {
 
 type ConnectionStatus = 'CONNECTING' | 'LISTENING' | 'THINKING' | 'SPEAKING' | 'ERROR';
 
-// --- NEW: Cognitive Orb Component ---
-const CognitiveOrb: React.FC<{ status: ConnectionStatus; userSpeaking: boolean }> = ({ status, userSpeaking }) => {
-    const stateClass = `orb-state-${status.toLowerCase()}`;
-    const speakingPulseStyle = {
-      transform: `scale(${userSpeaking ? 1.1 : 1})`,
-      boxShadow: userSpeaking ? '0 0 25px var(--accent1-glow)' : 'none'
-    };
+// --- NEW: Expert AI Voice Orb ---
+const ExpertOrb: React.FC<{
+    status: ConnectionStatus;
+    analyser: AnalyserNode | null;
+}> = ({ status, analyser }) => {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+
+    const coreColor = useMemo(() => ({
+        LISTENING: 'hsl(220, 100%, 65%)', // blue
+        THINKING: 'hsl(310, 100%, 65%)', // purple
+        SPEAKING: 'hsl(48, 100%, 55%)',  // amber
+        CONNECTING: 'hsl(0, 0%, 50%)',   // grey
+        ERROR: 'hsl(0, 80%, 60%)',      // red
+    }[status] || 'hsl(0, 0%, 50%)'), [status]);
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas || !analyser) return;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        analyser.fftSize = 256;
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+        
+        let animationFrameId: number;
+
+        const draw = () => {
+            animationFrameId = requestAnimationFrame(draw);
+            analyser.getByteFrequencyData(dataArray);
+
+            const { width, height } = canvas;
+            ctx.clearRect(0, 0, width, height);
+            
+            const centerX = width / 2;
+            const centerY = height / 2;
+
+            const overallLoudness = dataArray.reduce((sum, value) => sum + value, 0) / bufferLength;
+
+            // Draw flowing data streams
+            const radius = width * 0.35 + overallLoudness * 0.1;
+            const barCount = 64; // Use a subset for clearer visuals
+
+            for (let i = 0; i < barCount; i++) {
+                const index = Math.floor(i * (bufferLength / barCount));
+                const barHeight = dataArray[index] / 2.0;
+                
+                if (barHeight < 1) continue;
+
+                const angle = (i / barCount) * Math.PI * 2;
+
+                const x1 = centerX + Math.cos(angle) * (radius - barHeight * 0.2);
+                const y1 = centerY + Math.sin(angle) * (radius - barHeight * 0.2);
+                const x2 = centerX + Math.cos(angle) * (radius + barHeight * 0.4);
+                const y2 = centerY + Math.sin(angle) * (radius + barHeight * 0.4);
+
+                const gradient = ctx.createLinearGradient(x1, y1, x2, y2);
+                const hue = 200 + (dataArray[index] / 255) * 120;
+                gradient.addColorStop(0, `hsla(${hue}, 100%, 70%, 0)`);
+                gradient.addColorStop(0.5, `hsla(${hue}, 100%, 70%, ${Math.min(1, dataArray[index] / 150)})`);
+                gradient.addColorStop(1, `hsla(${hue}, 100%, 70%, 0)`);
+
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = gradient;
+                ctx.stroke();
+            }
+        };
+
+        draw();
+
+        return () => cancelAnimationFrame(animationFrameId);
+
+    }, [analyser]);
 
     return (
-        <div className={`relative w-48 h-48 flex items-center justify-center transition-all duration-300 ${stateClass}`}>
-            {/* Outer spinning ring */}
-            <div className="live-orb-outer absolute inset-0 border-2 border-primary/20 rounded-full"></div>
-             {/* Inner spinning ring */}
-            <div className="live-orb-inner absolute inset-4 border-2 border-accent1/20 rounded-full"></div>
-            {/* Central core with animated gradient and pulse */}
-            <div className="live-orb absolute w-3/4 h-3/4 rounded-full bg-gradient-to-br from-accent1/30 to-primary/30" style={speakingPulseStyle}>
-                 {/* Static icon */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                    <svg className="w-16 h-16 text-primary/80" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 016 0v8.25a3 3 0 01-3 3z" />
-                    </svg>
-                </div>
+        <div className="expert-orb-container">
+            <div className="expert-orb-base"></div>
+            <div className="expert-orb-wrapper">
+                <div className="expert-orb-surface"></div>
+                <div className="expert-orb-core" style={{ backgroundColor: coreColor, boxShadow: `0 0 60px 10px ${coreColor}` }}></div>
+                <div className="expert-orb-ring ring-1"></div>
+                <div className="expert-orb-ring ring-2"></div>
+                <div className="expert-orb-ring ring-3"></div>
+                <canvas ref={canvasRef} width="180" height="180" className="expert-orb-canvas"></canvas>
             </div>
         </div>
     );
 };
+
+// --- NEW: Subtle Background Particles ---
+const BackgroundParticles = React.memo(() => {
+    const particles = useMemo(() => {
+        const particleArray = [];
+        for (let i = 0; i < 30; i++) {
+            const style = {
+                '--x-start': `${Math.random() * 100}vw`,
+                '--x-end': `${Math.random() * 100}vw`,
+                '--scale': `${Math.random() * 0.5 + 0.2}`,
+                '--opacity': `${Math.random() * 0.3 + 0.1}`,
+                animationDuration: `${Math.random() * 15 + 15}s`,
+                animationDelay: `${Math.random() * 20}s`,
+                backgroundColor: ['var(--primary-glow)', 'var(--accent1-glow)', 'var(--accent2-glow)'][Math.floor(Math.random() * 3)],
+            };
+            particleArray.push(
+                <div key={i} className="particle" style={style as React.CSSProperties} />
+            );
+        }
+        return particleArray;
+    }, []);
+
+    return <div className="live-particles">{particles}</div>;
+});
+
 
 const LiveConversation: React.FC<LiveConversationProps> = ({ onClose, t }) => {
     const [status, setStatus] = useState<ConnectionStatus>('CONNECTING');
@@ -67,6 +158,11 @@ const LiveConversation: React.FC<LiveConversationProps> = ({ onClose, t }) => {
     const mediaStreamRef = useRef<MediaStream | null>(null);
     const mediaStreamSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
     
+    // NEW: Refs for audio visualization
+    const inputAnalyserRef = useRef<AnalyserNode | null>(null);
+    const outputAnalyserRef = useRef<AnalyserNode | null>(null);
+    const activeAnalyser = isUserSpeaking ? inputAnalyserRef.current : (status === 'SPEAKING' ? outputAnalyserRef.current : null);
+
     const nextStartTimeRef = useRef(0);
     const sourcesRef = useRef(new Set<AudioBufferSourceNode>());
     const thinkingTimeoutRef = useRef<number | null>(null);
@@ -77,6 +173,7 @@ const LiveConversation: React.FC<LiveConversationProps> = ({ onClose, t }) => {
 
         scriptProcessorRef.current?.disconnect();
         mediaStreamSourceRef.current?.disconnect();
+        inputAnalyserRef.current?.disconnect();
         mediaStreamRef.current?.getTracks().forEach(track => track.stop());
         
         if (inputAudioContextRef.current && inputAudioContextRef.current.state !== 'closed') {
@@ -147,6 +244,8 @@ const LiveConversation: React.FC<LiveConversationProps> = ({ onClose, t }) => {
                     
                     const scriptProcessor = inputAudioContext.createScriptProcessor(1024, 1, 1);
                     scriptProcessorRef.current = scriptProcessor;
+
+                    inputAnalyserRef.current = inputAudioContext.createAnalyser();
     
                     scriptProcessor.onaudioprocess = (audioProcessingEvent) => {
                         const inputData = audioProcessingEvent.inputBuffer.getChannelData(0);
@@ -167,7 +266,10 @@ const LiveConversation: React.FC<LiveConversationProps> = ({ onClose, t }) => {
                         const pcmBlob: Blob = { data: encode(inputData), mimeType: 'audio/pcm;rate=16000' };
                         sessionPromiseRef.current?.then((session) => session.sendRealtimeInput({ media: pcmBlob }));
                     };
-                    source.connect(scriptProcessor);
+                    
+                    // NEW: Connect audio chain with analyser
+                    source.connect(inputAnalyserRef.current);
+                    inputAnalyserRef.current.connect(scriptProcessor);
                     scriptProcessor.connect(inputAudioContext.destination);
                 },
                 onmessage: async (message: LiveServerMessage) => {
@@ -202,12 +304,20 @@ const LiveConversation: React.FC<LiveConversationProps> = ({ onClose, t }) => {
                         }
                         const outputAudioContext = outputAudioContextRef.current;
                         
+                        // Create analyser for output if it doesn't exist
+                        if (!outputAnalyserRef.current) {
+                            outputAnalyserRef.current = outputAudioContext.createAnalyser();
+                        }
+                        
                         nextStartTimeRef.current = Math.max(nextStartTimeRef.current, outputAudioContext.currentTime);
                         const audioBuffer = await decodeAudioData(decode(base64Audio), outputAudioContext, 24000, 1);
                         
                         const source = outputAudioContext.createBufferSource();
                         source.buffer = audioBuffer;
-                        source.connect(outputAudioContext.destination);
+                        
+                        // NEW: Connect output chain with analyser
+                        source.connect(outputAnalyserRef.current);
+                        outputAnalyserRef.current.connect(outputAudioContext.destination);
                         
                         source.addEventListener('ended', () => {
                             sourcesRef.current.delete(source);
@@ -280,7 +390,7 @@ const LiveConversation: React.FC<LiveConversationProps> = ({ onClose, t }) => {
 
     return (
         <div className="absolute inset-0 bg-background/80 backdrop-blur-xl z-30 flex flex-col items-center justify-center p-4 fade-in-up crt-effect">
-            <div className="live-bg-grid" />
+            <BackgroundParticles />
             <div className="w-full max-w-4xl h-full flex flex-col items-center justify-between py-8 z-10">
                 
                 <div className="text-center">
@@ -304,7 +414,7 @@ const LiveConversation: React.FC<LiveConversationProps> = ({ onClose, t }) => {
                 </div>
 
                 <div className="flex flex-col items-center gap-8">
-                    <CognitiveOrb status={status} userSpeaking={isUserSpeaking} />
+                    <ExpertOrb status={status} analyser={activeAnalyser} />
                     <div className="flex items-center gap-6">
                         <button
                             onClick={() => setIsMuted(prev => !prev)}
