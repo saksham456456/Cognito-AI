@@ -17,9 +17,7 @@ class NebulaParticle {
     x: number; y: number; z: number;
     color: string;
     size: number;
-    vx: number = 0; vy: number = 0; vz: number = 0; // For data streams
-    life: number = 1;
-
+    
     constructor(radius: number, color: string) {
         const theta = Math.random() * Math.PI * 2;
         const phi = Math.acos(2 * Math.random() - 1);
@@ -46,14 +44,54 @@ class ResonanceFlare {
     }
 }
 
+// NEW: Particle class for the voice wave effect
+class VoiceParticle {
+    x: number; y: number;
+    vx: number; vy: number;
+    life: number = 1;
+    size: number;
+    color: string;
+    opacity: number = 1;
+
+    constructor(canvasWidth: number, canvasHeight: number, initialLoudness: number) {
+        this.x = canvasWidth / 2 + (Math.random() - 0.5) * (initialLoudness * 0.8);
+        this.y = canvasHeight - 40; // Emitter at bottom
+        this.vx = (Math.random() - 0.5) * 0.8;
+        this.vy = -(Math.random() * 2.0 + 2.0) - (initialLoudness / 15); // Upward velocity based on loudness
+        this.size = Math.random() * 1.5 + 1;
+        this.color = `hsla(220, 100%, ${70 + Math.random() * 30}%, 1)`; // Shades of blue
+    }
+
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy *= 0.98; // Gradual deceleration
+        this.vy += 0.03; // Gentle upward pull towards center
+        this.life -= 0.018;
+        this.opacity = this.life > 0 ? this.life : 0;
+    }
+    
+    draw(ctx: CanvasRenderingContext2D) {
+        if (this.life <= 0) return;
+        ctx.fillStyle = this.color;
+        ctx.globalAlpha = this.opacity;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
 
 const NebulaCore: React.FC<{
     status: ConnectionStatus;
     analyser: AnalyserNode | null;
-}> = ({ status, analyser }) => {
+    isUserSpeaking: boolean;
+}> = ({ status, analyser, isUserSpeaking }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const particles = useRef<NebulaParticle[]>([]).current;
     const flares = useRef<ResonanceFlare[]>([]).current;
+    const voiceParticles = useRef<VoiceParticle[]>([]).current;
+    const smoothedLoudness = useRef(0);
     
     const coreColor = useMemo(() => ({
         LISTENING: 'hsl(220, 100%, 65%)', // blue
@@ -112,33 +150,43 @@ const NebulaCore: React.FC<{
                 analyser.getByteFrequencyData(dataArray);
                 const overallLoudness = dataArray.reduce((s, v) => s + v, 0) / dataArray.length;
                 
-                // Trigger data streams
-                if (overallLoudness > 20 && Math.random() > 0.8) {
-                    for (let i = 0; i < 3; i++) {
-                       const p = particles[Math.floor(Math.random() * particles.length)];
-                       p.vx = (Math.random() - 0.5) * 5;
-                       p.vy = (Math.random() - 0.5) * 5;
-                       p.vz = (Math.random() - 0.5) * 5;
-                       p.life = 1;
+                // Smooth the loudness value for fluid animations
+                smoothedLoudness.current = smoothedLoudness.current * 0.9 + overallLoudness * 0.1;
+
+                // NEW: Emit voice particles when the user is speaking
+                if (isUserSpeaking && smoothedLoudness.current > 5) {
+                    const particlesToEmit = Math.floor(smoothedLoudness.current / 12);
+                     for (let i = 0; i < particlesToEmit; i++) {
+                        if (voiceParticles.length < 200) { // Limit total particles for performance
+                            voiceParticles.push(new VoiceParticle(width, height, smoothedLoudness.current));
+                        }
                     }
                 }
                 
-                // Trigger resonance flares
-                if (overallLoudness > 60 && Math.random() > 0.9) {
+                // Trigger resonance flares on sharp peaks
+                if (overallLoudness > 80 && Math.random() > 0.9) {
                     if (flares.length < 3) {
                        flares.push(new ResonanceFlare(width * 0.6));
                     }
                 }
             }
             
+            // Update and draw voice particles
+            for(let i = voiceParticles.length - 1; i >= 0; i--) {
+                const p = voiceParticles[i];
+                p.update();
+                p.draw(ctx);
+                if (p.life <= 0) {
+                    voiceParticles.splice(i, 1);
+                }
+            }
+            ctx.globalAlpha = 1;
+
+
             // Sort particles by Z for correct depth
             particles.sort((a, b) => b.z - a.z);
             
             particles.forEach(p => {
-                // Apply data stream velocity
-                p.x += p.vx; p.y += p.vy; p.z += p.vz;
-                p.vx *= 0.9; p.vy *= 0.9; p.vz *= 0.9;
-                
                 // Rotation
                 const cosYaw = Math.cos(yaw); const sinYaw = Math.sin(yaw);
                 const cosPitch = Math.cos(pitch); const sinPitch = Math.sin(pitch);
@@ -155,13 +203,11 @@ const NebulaCore: React.FC<{
                 const py = y * scale + centerY;
                 const pSize = p.size * scale;
                 
-                p.life = Math.max(0, p.life - 0.02);
-                
                 if (pSize > 0) {
                     ctx.beginPath();
                     ctx.arc(px, py, pSize, 0, Math.PI * 2);
                     ctx.fillStyle = p.color;
-                    ctx.globalAlpha = scale * 0.8 + (p.life * 0.5); // Fade in/out and glow for data streams
+                    ctx.globalAlpha = scale * 0.8;
                     ctx.fill();
                 }
             });
@@ -171,7 +217,6 @@ const NebulaCore: React.FC<{
             flares.forEach(flare => {
                 ctx.beginPath();
                 ctx.arc(centerX, centerY, flare.radius, 0, Math.PI * 2);
-                // FIX: Ensure the inner radius for the gradient is not negative.
                 const innerRadius = Math.max(0, flare.radius - 20);
                 const grad = ctx.createRadialGradient(centerX, centerY, innerRadius, centerX, centerY, flare.radius);
                 grad.addColorStop(0, 'hsla(48, 100%, 70%, 0)');
@@ -186,10 +231,12 @@ const NebulaCore: React.FC<{
                 if (flares[i].life <= 0) flares.splice(i, 1);
             }
             
-            // Draw core
-            const corePulse = 1 + Math.sin(time * 0.002) * 0.1;
-            const coreRadius = 15 * corePulse;
-            // Ensure core radius is non-negative before creating gradient
+            // Draw core, now influenced by voice loudness
+            const baseCoreRadius = 15;
+            const loudnessPulse = isUserSpeaking ? (smoothedLoudness.current / 50) * 8 : 0;
+            const sinePulse = Math.sin(time * 0.002) * (isUserSpeaking ? 3 : 1.5);
+            const coreRadius = baseCoreRadius + loudnessPulse + sinePulse;
+
             if (coreRadius > 0) {
                 const coreGrad = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, coreRadius);
                 coreGrad.addColorStop(0, `${coreColor.slice(0,-1)}, 0.9)`);
@@ -205,7 +252,7 @@ const NebulaCore: React.FC<{
 
         return () => cancelAnimationFrame(animationFrameId);
 
-    }, [analyser, coreColor, particles, flares]);
+    }, [analyser, coreColor, particles, flares, isUserSpeaking, voiceParticles]);
 
     return (
         <div className="orb-container">
@@ -356,6 +403,7 @@ const LiveConversation: React.FC<LiveConversationProps> = ({ onClose, t }) => {
                     scriptProcessorRef.current = scriptProcessor;
 
                     inputAnalyserRef.current = inputAudioContext.createAnalyser();
+                    inputAnalyserRef.current.fftSize = 256;
     
                     scriptProcessor.onaudioprocess = (audioProcessingEvent) => {
                         const inputData = audioProcessingEvent.inputBuffer.getChannelData(0);
@@ -417,6 +465,7 @@ const LiveConversation: React.FC<LiveConversationProps> = ({ onClose, t }) => {
                         // Create analyser for output if it doesn't exist
                         if (!outputAnalyserRef.current) {
                             outputAnalyserRef.current = outputAudioContext.createAnalyser();
+                            outputAnalyserRef.current.fftSize = 256;
                         }
                         
                         nextStartTimeRef.current = Math.max(nextStartTimeRef.current, outputAudioContext.currentTime);
@@ -524,7 +573,7 @@ const LiveConversation: React.FC<LiveConversationProps> = ({ onClose, t }) => {
                 </div>
 
                 <div className="flex flex-col items-center gap-8">
-                    <NebulaCore status={status} analyser={activeAnalyser} />
+                    <NebulaCore status={status} analyser={activeAnalyser} isUserSpeaking={isUserSpeaking} />
                     <div className="flex items-center gap-6">
                         <button
                             onClick={() => setIsMuted(prev => !prev)}
