@@ -55,6 +55,9 @@ const LiveConversation: React.FC<LiveConversationProps> = ({ onClose, t }) => {
     currentUserTranscriptionRef.current = currentUserTranscription;
     const currentModelTranscriptionRef = useRef(currentModelTranscription);
     currentModelTranscriptionRef.current = currentModelTranscription;
+    const retryCountRef = useRef(0);
+    const maxRetries = 3;
+
 
     // FIX: Using ReturnType to infer the type of the session promise as LiveSession is not exported.
     const sessionPromiseRef = useRef<ReturnType<typeof startLiveConversation> | null>(null);
@@ -95,126 +98,175 @@ const LiveConversation: React.FC<LiveConversationProps> = ({ onClose, t }) => {
     }, [cleanup, onClose, transcriptions]);
 
     useEffect(() => {
-        const setup = async () => {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaStreamRef.current = stream;
-
-                const sessionPromise = startLiveConversation({
-                    onopen: () => {
-                        console.log('Live session opened.');
-                        setStatus('LISTENING');
-                        
-                        const inputAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
-                        inputAudioContextRef.current = inputAudioContext;
-
-                        const source = inputAudioContext.createMediaStreamSource(stream);
-                        mediaStreamSourceRef.current = source;
-                        
-                        const scriptProcessor = inputAudioContext.createScriptProcessor(1024, 1, 1);
-                        scriptProcessorRef.current = scriptProcessor;
-
-                        scriptProcessor.onaudioprocess = (audioProcessingEvent) => {
-                            const inputData = audioProcessingEvent.inputBuffer.getChannelData(0);
-                            let sum = 0;
-                            for (let i = 0; i < inputData.length; i++) {
-                                sum += inputData[i] * inputData[i];
-                            }
-                            const rms = Math.sqrt(sum / inputData.length);
-                            setIsUserSpeaking(rms > 0.01 && !isMutedRef.current);
-
-                            if (thinkingTimeoutRef.current) clearTimeout(thinkingTimeoutRef.current);
-                            thinkingTimeoutRef.current = window.setTimeout(() => {
-                                if (currentUserTranscriptionRef.current) setStatus('THINKING');
-                            }, 800);
-
-                            if (isMutedRef.current) return;
-
-                            const pcmBlob: Blob = { data: encode(inputData), mimeType: 'audio/pcm;rate=16000' };
-                            sessionPromiseRef.current?.then((session) => session.sendRealtimeInput({ media: pcmBlob }));
-                        };
-                        source.connect(scriptProcessor);
-                        scriptProcessor.connect(inputAudioContext.destination);
-                    },
-                    onmessage: async (message: LiveServerMessage) => {
+        let isMounted = true;
+    
+        const attemptConnection = async () => {
+            if (!isMounted) return;
+    
+            // Get microphone stream only if we don't have it.
+            if (!mediaStreamRef.current) {
+                try {
+                    mediaStreamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
+                } catch (err) {
+                    console.error("Failed to get user media:", err);
+                    if (isMounted) {
+                        setErrorMessage(t('live.micError'));
+                        setStatus('ERROR');
+                    }
+                    return; // Stop if we can't get the mic
+                }
+            }
+            const stream = mediaStreamRef.current;
+            
+            setStatus('CONNECTING');
+    
+            // Clean up previous processor if it exists from a failed attempt
+            if (scriptProcessorRef.current) {
+                scriptProcessorRef.current.disconnect();
+                scriptProcessorRef.current = null;
+            }
+            if (mediaStreamSourceRef.current) {
+                mediaStreamSourceRef.current.disconnect();
+                mediaStreamSourceRef.current = null;
+            }
+    
+            const sessionPromise = startLiveConversation({
+                onopen: () => {
+                    if (!isMounted) return;
+                    console.log('Live session opened.');
+                    retryCountRef.current = 0; // Reset retries on successful connection
+                    setStatus('LISTENING');
+                    
+                    const inputAudioContext = inputAudioContextRef.current && inputAudioContextRef.current.state !== 'closed'
+                        ? inputAudioContextRef.current
+                        : new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
+                    inputAudioContextRef.current = inputAudioContext;
+    
+                    const source = inputAudioContext.createMediaStreamSource(stream);
+                    mediaStreamSourceRef.current = source;
+                    
+                    const scriptProcessor = inputAudioContext.createScriptProcessor(1024, 1, 1);
+                    scriptProcessorRef.current = scriptProcessor;
+    
+                    scriptProcessor.onaudioprocess = (audioProcessingEvent) => {
+                        const inputData = audioProcessingEvent.inputBuffer.getChannelData(0);
+                        let sum = 0;
+                        for (let i = 0; i < inputData.length; i++) {
+                            sum += inputData[i] * inputData[i];
+                        }
+                        const rms = Math.sqrt(sum / inputData.length);
+                        setIsUserSpeaking(rms > 0.01 && !isMutedRef.current);
+    
                         if (thinkingTimeoutRef.current) clearTimeout(thinkingTimeoutRef.current);
+                        thinkingTimeoutRef.current = window.setTimeout(() => {
+                            if (currentUserTranscriptionRef.current) setStatus('THINKING');
+                        }, 800);
+    
+                        if (isMutedRef.current) return;
+    
+                        const pcmBlob: Blob = { data: encode(inputData), mimeType: 'audio/pcm;rate=16000' };
+                        sessionPromiseRef.current?.then((session) => session.sendRealtimeInput({ media: pcmBlob }));
+                    };
+                    source.connect(scriptProcessor);
+                    scriptProcessor.connect(inputAudioContext.destination);
+                },
+                onmessage: async (message: LiveServerMessage) => {
+                    if (!isMounted) return;
+                    if (thinkingTimeoutRef.current) clearTimeout(thinkingTimeoutRef.current);
 
-                        if (message.serverContent?.outputTranscription) {
-                            setCurrentModelTranscription(prev => prev + message.serverContent.outputTranscription.text);
-                        } 
-                        if (message.serverContent?.inputTranscription) {
-                            setCurrentUserTranscription(prev => prev + message.serverContent.inputTranscription.text);
+                    if (message.serverContent?.outputTranscription) {
+                        setCurrentModelTranscription(prev => prev + message.serverContent.outputTranscription.text);
+                    } 
+                    if (message.serverContent?.inputTranscription) {
+                        setCurrentUserTranscription(prev => prev + message.serverContent.inputTranscription.text);
+                    }
+
+                    if (message.serverContent?.turnComplete) {
+                        const finalUser = currentUserTranscriptionRef.current;
+                        const finalModel = currentModelTranscriptionRef.current;
+                        if (finalUser.trim() || finalModel.trim()) {
+                            setTranscriptions(prev => [...prev, { user: finalUser.trim(), model: finalModel.trim() }]);
                         }
-
-                        if (message.serverContent?.turnComplete) {
-                            const finalUser = currentUserTranscriptionRef.current;
-                            const finalModel = currentModelTranscriptionRef.current;
-                            if (finalUser.trim() || finalModel.trim()) {
-                                setTranscriptions(prev => [...prev, { user: finalUser.trim(), model: finalModel.trim() }]);
-                            }
-                            setCurrentUserTranscription('');
-                            setCurrentModelTranscription('');
-                            if (status === 'THINKING' || status === 'SPEAKING') {
-                                setStatus('LISTENING');
-                            }
-                        }
-
-                        const base64Audio = message.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
-                        if (base64Audio) {
-                            setStatus('SPEAKING');
-                            if (!outputAudioContextRef.current || outputAudioContextRef.current.state === 'closed') {
-                                outputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
-                            }
-                            const outputAudioContext = outputAudioContextRef.current;
-                            
-                            nextStartTimeRef.current = Math.max(nextStartTimeRef.current, outputAudioContext.currentTime);
-                            const audioBuffer = await decodeAudioData(decode(base64Audio), outputAudioContext, 24000, 1);
-                            
-                            const source = outputAudioContext.createBufferSource();
-                            source.buffer = audioBuffer;
-                            source.connect(outputAudioContext.destination);
-                            
-                            source.addEventListener('ended', () => {
-                                sourcesRef.current.delete(source);
-                                if (sourcesRef.current.size === 0) {
-                                    setStatus('LISTENING');
-                                }
-                            });
-
-                            source.start(nextStartTimeRef.current);
-                            nextStartTimeRef.current += audioBuffer.duration;
-                            sourcesRef.current.add(source);
-                        }
-
-                        if (message.serverContent?.interrupted) {
-                            sourcesRef.current.forEach(s => { s.stop(); sourcesRef.current.delete(s); });
-                            nextStartTimeRef.current = 0;
+                        setCurrentUserTranscription('');
+                        setCurrentModelTranscription('');
+                        if (status === 'THINKING' || status === 'SPEAKING') {
                             setStatus('LISTENING');
                         }
-                    },
-                    onerror: (e: ErrorEvent) => {
-                        console.error('Live session error:', e);
-                        setErrorMessage(t('live.error'));
-                        setStatus('ERROR');
-                        cleanup();
-                    },
-                    onclose: (e: CloseEvent) => {
-                        console.log('Live session closed.');
-                        onClose(transcriptions);
-                    },
-                });
+                    }
 
-                sessionPromiseRef.current = sessionPromise;
-            } catch (err) {
-                console.error("Failed to get user media:", err);
-                setErrorMessage(t('live.micError'));
-                setStatus('ERROR');
-            }
+                    const base64Audio = message.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
+                    if (base64Audio) {
+                        setStatus('SPEAKING');
+                        if (!outputAudioContextRef.current || outputAudioContextRef.current.state === 'closed') {
+                            outputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
+                        }
+                        const outputAudioContext = outputAudioContextRef.current;
+                        
+                        nextStartTimeRef.current = Math.max(nextStartTimeRef.current, outputAudioContext.currentTime);
+                        const audioBuffer = await decodeAudioData(decode(base64Audio), outputAudioContext, 24000, 1);
+                        
+                        const source = outputAudioContext.createBufferSource();
+                        source.buffer = audioBuffer;
+                        source.connect(outputAudioContext.destination);
+                        
+                        source.addEventListener('ended', () => {
+                            sourcesRef.current.delete(source);
+                            if (sourcesRef.current.size === 0 && isMounted) {
+                                setStatus('LISTENING');
+                            }
+                        });
+
+                        source.start(nextStartTimeRef.current);
+                        nextStartTimeRef.current += audioBuffer.duration;
+                        sourcesRef.current.add(source);
+                    }
+
+                    if (message.serverContent?.interrupted) {
+                        sourcesRef.current.forEach(s => { s.stop(); sourcesRef.current.delete(s); });
+                        nextStartTimeRef.current = 0;
+                        setStatus('LISTENING');
+                    }
+                },
+                onerror: (e: ErrorEvent) => {
+                    console.error(`Live session error (attempt ${retryCountRef.current + 1}):`, e);
+                    sessionPromiseRef.current?.then(s => s.close()).catch(err => console.error("Error closing failed session:", err));
+
+                    if (retryCountRef.current < maxRetries) {
+                        retryCountRef.current++;
+                        const delay = Math.pow(2, retryCountRef.current) * 1000; // 2s, 4s, 8s
+                        if (isMounted) {
+                            setStatus('ERROR');
+                            const retryMessage = t('live.retrying', 'Connection error. Retrying in {{delay}}s... ({{current}}/{{max}})')
+                                .replace('{{delay}}', (delay / 1000).toString())
+                                .replace('{{current}}', retryCountRef.current.toString())
+                                .replace('{{max}}', maxRetries.toString());
+                            setErrorMessage(retryMessage);
+                        }
+                        setTimeout(attemptConnection, delay);
+                    } else {
+                        if (isMounted) {
+                            setErrorMessage(t('live.retryFailed', 'Connection failed after multiple retries.'));
+                            setStatus('ERROR');
+                        }
+                    }
+                },
+                onclose: (e: CloseEvent) => {
+                    console.log('Live session closed.', e);
+                    // Let the user-initiated disconnection or retry logic handle the UI state.
+                },
+            });
+
+            sessionPromiseRef.current = sessionPromise;
         };
 
-        setup();
-        return () => cleanup();
-    }, [cleanup, onClose, t]);
+        attemptConnection();
+    
+        return () => {
+            isMounted = false;
+            cleanup();
+        };
+    }, [cleanup, t]);
+
 
     const statusText = isMuted
         ? t('live.muted')
