@@ -12,13 +12,49 @@ interface LiveConversationProps {
 
 type ConnectionStatus = 'CONNECTING' | 'LISTENING' | 'THINKING' | 'SPEAKING' | 'ERROR';
 
-// --- NEW: Expert AI Voice Orb ---
-const ExpertOrb: React.FC<{
+// --- NEW: Nebula Core Visualization ---
+class NebulaParticle {
+    x: number; y: number; z: number;
+    color: string;
+    size: number;
+    vx: number = 0; vy: number = 0; vz: number = 0; // For data streams
+    life: number = 1;
+
+    constructor(radius: number, color: string) {
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(2 * Math.random() - 1);
+        this.x = radius * Math.sin(phi) * Math.cos(theta);
+        this.y = radius * Math.sin(phi) * Math.sin(theta);
+        this.z = radius * Math.cos(phi);
+        this.color = color;
+        this.size = Math.random() * 1.2 + 0.5;
+    }
+}
+
+class ResonanceFlare {
+    radius: number = 0;
+    life: number = 1;
+    maxRadius: number;
+
+    constructor(maxRadius: number) {
+        this.maxRadius = maxRadius;
+    }
+
+    update() {
+        this.life -= 0.02;
+        this.radius = (1 - this.life * this.life) * this.maxRadius;
+    }
+}
+
+
+const NebulaCore: React.FC<{
     status: ConnectionStatus;
     analyser: AnalyserNode | null;
 }> = ({ status, analyser }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
-
+    const particles = useRef<NebulaParticle[]>([]).current;
+    const flares = useRef<ResonanceFlare[]>([]).current;
+    
     const coreColor = useMemo(() => ({
         LISTENING: 'hsl(220, 100%, 65%)', // blue
         THINKING: 'hsl(310, 100%, 65%)', // purple
@@ -26,81 +62,155 @@ const ExpertOrb: React.FC<{
         CONNECTING: 'hsl(0, 0%, 50%)',   // grey
         ERROR: 'hsl(0, 80%, 60%)',      // red
     }[status] || 'hsl(0, 0%, 50%)'), [status]);
+    
+    // Initialize particles
+    useEffect(() => {
+        if (particles.length > 0) return;
+        const radius = 100;
+        const numParticles = 300;
+        const colors = ['hsl(48, 100%, 55%)', 'hsl(220, 100%, 65%)', 'hsl(0, 0%, 90%)'];
+        for (let i = 0; i < numParticles; i++) {
+            particles.push(new NebulaParticle(radius, colors[i % 3]));
+        }
+    }, [particles]);
 
     useEffect(() => {
         const canvas = canvasRef.current;
-        if (!canvas || !analyser) return;
-
+        if (!canvas) return;
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
-
-        analyser.fftSize = 256;
-        const bufferLength = analyser.frequencyBinCount;
-        const dataArray = new Uint8Array(bufferLength);
         
+        // Update the CSS variable for the base glow
+        const orbBase = document.querySelector('.orb-base');
+        if (orbBase) {
+            (orbBase as HTMLElement).style.setProperty('--orb-glow-color', `${coreColor.slice(0, -1)}, 0.5)`);
+        }
+        const orbCanvas = document.querySelector('.orb-canvas');
+        if (orbCanvas) {
+            (orbCanvas as HTMLElement).style.setProperty('--orb-glow-color', `${coreColor.slice(0, -1)}, 0.5)`);
+        }
+        
+        let yaw = 0;
+        let pitch = 0;
         let animationFrameId: number;
 
-        const draw = () => {
+        const draw = (time: number) => {
             animationFrameId = requestAnimationFrame(draw);
-            analyser.getByteFrequencyData(dataArray);
+            yaw += 0.001;
+            pitch += 0.0005;
 
             const { width, height } = canvas;
             ctx.clearRect(0, 0, width, height);
-            
+
+            const focalLength = 250;
             const centerX = width / 2;
             const centerY = height / 2;
-
-            const overallLoudness = dataArray.reduce((sum, value) => sum + value, 0) / bufferLength;
-
-            // Draw flowing data streams
-            const radius = width * 0.35 + overallLoudness * 0.1;
-            const barCount = 64; // Use a subset for clearer visuals
-
-            for (let i = 0; i < barCount; i++) {
-                const index = Math.floor(i * (bufferLength / barCount));
-                const barHeight = dataArray[index] / 2.0;
+            
+            // Handle audio visualization
+            if (analyser) {
+                const dataArray = new Uint8Array(analyser.frequencyBinCount);
+                analyser.getByteFrequencyData(dataArray);
+                const overallLoudness = dataArray.reduce((s, v) => s + v, 0) / dataArray.length;
                 
-                if (barHeight < 1) continue;
+                // Trigger data streams
+                if (overallLoudness > 20 && Math.random() > 0.8) {
+                    for (let i = 0; i < 3; i++) {
+                       const p = particles[Math.floor(Math.random() * particles.length)];
+                       p.vx = (Math.random() - 0.5) * 5;
+                       p.vy = (Math.random() - 0.5) * 5;
+                       p.vz = (Math.random() - 0.5) * 5;
+                       p.life = 1;
+                    }
+                }
+                
+                // Trigger resonance flares
+                if (overallLoudness > 60 && Math.random() > 0.9) {
+                    if (flares.length < 3) {
+                       flares.push(new ResonanceFlare(width * 0.6));
+                    }
+                }
+            }
+            
+            // Sort particles by Z for correct depth
+            particles.sort((a, b) => b.z - a.z);
+            
+            particles.forEach(p => {
+                // Apply data stream velocity
+                p.x += p.vx; p.y += p.vy; p.z += p.vz;
+                p.vx *= 0.9; p.vy *= 0.9; p.vz *= 0.9;
+                
+                // Rotation
+                const cosYaw = Math.cos(yaw); const sinYaw = Math.sin(yaw);
+                const cosPitch = Math.cos(pitch); const sinPitch = Math.sin(pitch);
+                
+                let x = p.x * cosYaw - p.z * sinYaw;
+                let z = p.x * sinYaw + p.z * cosYaw;
+                
+                let y = p.y * cosPitch - z * sinPitch;
+                z = p.y * sinPitch + z * cosPitch;
+                
+                // Projection
+                const scale = focalLength / (focalLength + z);
+                const px = x * scale + centerX;
+                const py = y * scale + centerY;
+                const pSize = p.size * scale;
+                
+                p.life = Math.max(0, p.life - 0.02);
+                
+                if (pSize > 0) {
+                    ctx.beginPath();
+                    ctx.arc(px, py, pSize, 0, Math.PI * 2);
+                    ctx.fillStyle = p.color;
+                    ctx.globalAlpha = scale * 0.8 + (p.life * 0.5); // Fade in/out and glow for data streams
+                    ctx.fill();
+                }
+            });
+            ctx.globalAlpha = 1;
 
-                const angle = (i / barCount) * Math.PI * 2;
-
-                const x1 = centerX + Math.cos(angle) * (radius - barHeight * 0.2);
-                const y1 = centerY + Math.sin(angle) * (radius - barHeight * 0.2);
-                const x2 = centerX + Math.cos(angle) * (radius + barHeight * 0.4);
-                const y2 = centerY + Math.sin(angle) * (radius + barHeight * 0.4);
-
-                const gradient = ctx.createLinearGradient(x1, y1, x2, y2);
-                const hue = 200 + (dataArray[index] / 255) * 120;
-                gradient.addColorStop(0, `hsla(${hue}, 100%, 70%, 0)`);
-                gradient.addColorStop(0.5, `hsla(${hue}, 100%, 70%, ${Math.min(1, dataArray[index] / 150)})`);
-                gradient.addColorStop(1, `hsla(${hue}, 100%, 70%, 0)`);
-
+            // Draw and update flares
+            flares.forEach(flare => {
                 ctx.beginPath();
-                ctx.moveTo(x1, y1);
-                ctx.lineTo(x2, y2);
+                ctx.arc(centerX, centerY, flare.radius, 0, Math.PI * 2);
+                // FIX: Ensure the inner radius for the gradient is not negative.
+                const innerRadius = Math.max(0, flare.radius - 20);
+                const grad = ctx.createRadialGradient(centerX, centerY, innerRadius, centerX, centerY, flare.radius);
+                grad.addColorStop(0, 'hsla(48, 100%, 70%, 0)');
+                grad.addColorStop(0.8, `hsla(48, 100%, 70%, ${flare.life * 0.5})`);
+                grad.addColorStop(1, 'hsla(48, 100%, 70%, 0)');
+                ctx.strokeStyle = grad;
                 ctx.lineWidth = 2;
-                ctx.strokeStyle = gradient;
                 ctx.stroke();
+                flare.update();
+            });
+            for(let i = flares.length - 1; i >= 0; i--) {
+                if (flares[i].life <= 0) flares.splice(i, 1);
+            }
+            
+            // Draw core
+            const corePulse = 1 + Math.sin(time * 0.002) * 0.1;
+            const coreRadius = 15 * corePulse;
+            // Ensure core radius is non-negative before creating gradient
+            if (coreRadius > 0) {
+                const coreGrad = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, coreRadius);
+                coreGrad.addColorStop(0, `${coreColor.slice(0,-1)}, 0.9)`);
+                coreGrad.addColorStop(0.8, `${coreColor.slice(0,-1)}, 0.3)`);
+                coreGrad.addColorStop(1, `${coreColor.slice(0,-1)}, 0)`);
+                ctx.fillStyle = coreGrad;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, coreRadius, 0, Math.PI * 2);
+                ctx.fill();
             }
         };
-
-        draw();
+        draw(0);
 
         return () => cancelAnimationFrame(animationFrameId);
 
-    }, [analyser]);
+    }, [analyser, coreColor, particles, flares]);
 
     return (
-        <div className="expert-orb-container">
-            <div className="expert-orb-base"></div>
-            <div className="expert-orb-wrapper">
-                <div className="expert-orb-surface"></div>
-                <div className="expert-orb-core" style={{ backgroundColor: coreColor, boxShadow: `0 0 60px 10px ${coreColor}` }}></div>
-                <div className="expert-orb-ring ring-1"></div>
-                <div className="expert-orb-ring ring-2"></div>
-                <div className="expert-orb-ring ring-3"></div>
-                <canvas ref={canvasRef} width="180" height="180" className="expert-orb-canvas"></canvas>
-            </div>
+        <div className="orb-container">
+            <div className="orb-base"></div>
+            <canvas ref={canvasRef} width="350" height="350" className="orb-canvas"></canvas>
         </div>
     );
 };
@@ -414,7 +524,7 @@ const LiveConversation: React.FC<LiveConversationProps> = ({ onClose, t }) => {
                 </div>
 
                 <div className="flex flex-col items-center gap-8">
-                    <ExpertOrb status={status} analyser={activeAnalyser} />
+                    <NebulaCore status={status} analyser={activeAnalyser} />
                     <div className="flex items-center gap-6">
                         <button
                             onClick={() => setIsMuted(prev => !prev)}

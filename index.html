@@ -502,7 +502,10 @@
         box-shadow: 0 2px 8px -2px var(--primary-glow-faded), 0 4px 12px -4px var(--primary-glow-faded);
       }
       
-      /* --- NEW: EXPERT AI ORB & LIVE CONVERSATION UI --- */
+      /* --- NEW: HOLOGRAPHIC ORB & LIVE CONVERSATION UI --- */
+      :root {
+        --orb-glow-color: hsla(220, 100%, 65%, 0.5); /* Default blue glow */
+      }
 
       /* New background particles */
       .live-particles {
@@ -525,109 +528,57 @@
         100% { transform: translateY(-100px) translateX(var(--x-end)) scale(var(--scale)); opacity: 0; }
       }
 
-      .expert-orb-container {
+      .orb-container {
         position: relative;
-        width: 300px;
-        height: 300px;
+        width: 350px;
+        height: 350px;
         display: flex;
         align-items: center;
         justify-content: center;
-        perspective: 1000px;
       }
-
-      .expert-orb-base {
+      
+      .orb-base {
         position: absolute;
         bottom: 60px;
-        width: 180px;
+        width: 220px;
         height: 10px;
         background: #111;
         border-radius: 50%;
         box-shadow: 0 5px 15px rgba(0,0,0,0.5), inset 0 2px 2px rgba(0,0,0,0.3);
-        transform: rotateX(75deg);
+        transform: perspective(300px) rotateX(75deg);
+        animation: base-hover 5s infinite ease-in-out;
+        /* NEW: Ambient light glow from orb */
+        transition: box-shadow 0.5s ease;
       }
-      .expert-orb-base::after {
+      @keyframes base-hover {
+        0%, 100% { transform: perspective(300px) rotateX(75deg) translateY(0); }
+        50% { transform: perspective(300px) rotateX(75deg) translateY(15px); }
+      }
+
+      .orb-base::after {
         content: '';
         position: absolute;
         top: 50%; left: 50%;
         transform: translate(-50%, -50%);
-        width: 250px; height: 250px;
-        background: radial-gradient(circle, hsla(0, 0%, 0%, 0.3) 0%, hsla(0, 0%, 0%, 0) 60%);
+        width: 300px; height: 300px;
         border-radius: 50%;
+        /* NEW: Glow effect using CSS variable */
+        background: radial-gradient(circle, var(--orb-glow-color) 0%, transparent 60%);
+        transition: background 0.5s ease;
       }
 
-      .expert-orb-wrapper {
+      .orb-canvas {
         position: absolute;
-        width: 180px; height: 180px;
-        animation: orb-hover 5s infinite ease-in-out;
-        transform-style: preserve-3d;
+        width: 100%; height: 100%;
+        animation: canvas-hover 5s infinite ease-in-out;
+        filter: drop-shadow(0 0 15px var(--orb-glow-color));
+        transition: filter 0.5s ease;
       }
-      @keyframes orb-hover {
+      @keyframes canvas-hover {
         0%, 100% { transform: translateY(0); }
         50% { transform: translateY(-15px); }
       }
-
-      .expert-orb-surface {
-        position: absolute;
-        inset: 0;
-        border-radius: 50%;
-        background: radial-gradient(circle at 30% 30%, hsla(0,0%,100%,0.2), hsla(0,0%,100%,0) 60%),
-                    radial-gradient(circle at 70% 80%, hsla(220,100%,65%,0.2), hsla(220,100%,65%,0) 50%);
-        border: 1px solid hsla(220,100%,65%,0.3);
-        box-shadow: inset 0 0 20px hsla(220,100%,65%,0.2);
-      }
-
-      .expert-orb-core {
-        position: absolute;
-        top: 50%; left: 50%;
-        width: 60%; height: 60%;
-        transform: translate(-50%, -50%);
-        border-radius: 50%;
-        transition: background-color 0.5s ease, box-shadow 0.5s ease;
-        animation: core-pulse-expert 3s infinite ease-in-out;
-      }
-      @keyframes core-pulse-expert {
-        0%, 100% { transform: translate(-50%, -50%) scale(0.95); opacity: 0.8; }
-        50% { transform: translate(-50%, -50%) scale(1.0); opacity: 1; }
-      }
       
-      .expert-orb-ring {
-        position: absolute;
-        inset: -5%; /* slightly larger */
-        border-radius: 50%;
-        border: 1px solid;
-        transform-style: preserve-3d;
-      }
-      .ring-1 {
-        border-color: hsla(48, 100%, 55%, 0.5);
-        animation: ring-spin-1 10s infinite linear;
-      }
-      .ring-2 {
-        border-color: hsla(220, 100%, 65%, 0.4);
-        animation: ring-spin-2 12s infinite linear reverse;
-      }
-      .ring-3 {
-        border-color: hsla(310, 100%, 65%, 0.3);
-        animation: ring-spin-3 15s infinite linear;
-      }
-      @keyframes ring-spin-1 {
-        from { transform: rotateY(0deg) rotateX(70deg); }
-        to { transform: rotateY(360deg) rotateX(70deg); }
-      }
-      @keyframes ring-spin-2 {
-        from { transform: rotateY(0deg) rotateX(20deg) rotateZ(10deg); }
-        to { transform: rotateY(360deg) rotateX(20deg) rotateZ(10deg); }
-      }
-      @keyframes ring-spin-3 {
-        from { transform: rotateX(0deg) rotateY(60deg) rotateZ(30deg); }
-        to { transform: rotateX(360deg) rotateY(60deg) rotateZ(30deg); }
-      }
-
-      .expert-orb-canvas {
-        position: absolute;
-        inset: 0;
-        width: 100%; height: 100%;
-      }
-
       .transcription-line {
         opacity: 0;
         transform: translateY(10px);
