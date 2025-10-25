@@ -51,6 +51,10 @@ const codeAssistantSystemInstruction = `You are an expert programmer AI, a "Code
 6.  **Be Direct:** Be professional and concise. Avoid conversational filler. Get straight to the answer.
 7.  **Explain Your Code:** Briefly explain the logic and purpose of the code you provide.`;
 
+// NEW: A streamlined system instruction for live voice conversations.
+// This prioritizes speed and conciseness for a more natural back-and-forth.
+const liveSystemInstruction = `You are Cognito, a voice assistant. Your responses MUST be concise, conversational, and immediate. Prioritize speed and clarity. Get straight to the point. Do not use complex formatting or conversational filler unless it's essential for a natural flow.`;
+
 
 /**
  * IMPROVEMENT: Starts a new chat session with the Gemini API based on the selected AI mode.
@@ -221,9 +225,11 @@ export function startLiveConversation(callbacks: {
             speechConfig: {
                 voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' } },
             },
-            systemInstruction: cognitoSystemInstruction,
+            // Using the new, streamlined instruction set for faster, more direct responses.
+            systemInstruction: liveSystemInstruction,
             inputAudioTranscription: {}, // Enable transcription for user input.
             outputAudioTranscription: {}, // Enable transcription for model output.
+            thinkingConfig: { thinkingBudget: 0 }, // Disable thinking for faster responses.
         },
     });
 }

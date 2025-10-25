@@ -399,7 +399,7 @@ const LiveConversation: React.FC<LiveConversationProps> = ({ onClose, t }) => {
                     const source = inputAudioContext.createMediaStreamSource(stream);
                     mediaStreamSourceRef.current = source;
                     
-                    const scriptProcessor = inputAudioContext.createScriptProcessor(1024, 1, 1);
+                    const scriptProcessor = inputAudioContext.createScriptProcessor(4096, 1, 1);
                     scriptProcessorRef.current = scriptProcessor;
 
                     inputAnalyserRef.current = inputAudioContext.createAnalyser();
@@ -550,7 +550,7 @@ const LiveConversation: React.FC<LiveConversationProps> = ({ onClose, t }) => {
     return (
         <div className="absolute inset-0 bg-background/80 backdrop-blur-xl z-30 flex flex-col items-center justify-center p-4 fade-in-up crt-effect">
             <BackgroundParticles />
-            <div className="w-full max-w-4xl h-full flex flex-col items-center justify-between py-8 z-10">
+            <div className="w-full max-w-4xl h-full flex flex-col items-center justify-between pt-4 pb-6 z-10">
                 
                 <div className="text-center">
                     <h1 className="font-heading text-3xl font-bold text-primary tracking-widest uppercase text-glow-primary">
@@ -559,7 +559,7 @@ const LiveConversation: React.FC<LiveConversationProps> = ({ onClose, t }) => {
                     <p className="font-code text-text-medium mt-2 h-6 transition-opacity duration-300">{statusText}</p>
                 </div>
                 
-                <div className="w-full flex-1 my-4 overflow-y-auto custom-scrollbar p-4 flex flex-col justify-end">
+                <div className="w-full flex-1 mb-4 overflow-y-auto custom-scrollbar p-4 flex flex-col justify-end">
                   <div className="w-full max-w-2xl mx-auto space-y-4 glassmorphism p-4 rounded-lg">
                     {transcriptions.map((turn, i) => (
                         <div key={i} className="transcription-line" style={{animationDelay: `${i*50}ms`}}>
