@@ -1,8 +1,6 @@
-
-
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import type { Message, Chat } from '../types';
-import { MenuIcon, CodeBracketIcon, PythonLogoIcon, SendIcon, ClipboardIcon, CheckIcon } from './icons';
+import { MenuIcon, CodeBracketIcon, PythonLogoIcon, SendIcon, ClipboardIcon, CheckIcon, ChevronDownIcon, PlayIcon, PowerIcon, XIcon } from './icons';
 import { CognitoLogo } from './Logo';
 import MarkdownRenderer from './MarkdownRenderer';
 
@@ -23,7 +21,6 @@ const PulsingDotsIndicator = () => (
         <div className="h-1.5 w-1.5 bg-current rounded-full animate-pulse" style={{ animationDelay: '400ms' }}></div>
     </div>
 );
-
 
 const languageInfo: Record<Language, { name: string, boilerplate: string, icon: React.ReactNode }> = {
     python: { 
@@ -60,7 +57,7 @@ interface CodingPlaygroundProps {
     isLoading: boolean;
     onCopyCode: (code: string) => void;
     isExiting: boolean;
-    t: (key: string) => string;
+    t: (key: string, fallback?: any) => any;
 }
 
 const CodingPlayground: React.FC<CodingPlaygroundProps> = ({ 
@@ -86,21 +83,22 @@ const CodingPlayground: React.FC<CodingPlaygroundProps> = ({
     const [isExecuting, setIsExecuting] = useState(false);
     const [isCopied, setIsCopied] = useState(false);
     
-    // AI Assistant input state is now local to this component
+    // REVAMPED: State for new responsive layout
+    const [isAssistantVisible, setIsAssistantVisible] = useState(window.innerWidth >= 1024);
+    const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
+    
     const [assistantInput, setAssistantInput] = useState('');
 
     const pyodideRef = useRef<any>(null);
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const assistantChatContainerRef = useRef<HTMLDivElement>(null);
+    const langDropdownRef = useRef<HTMLDivElement>(null);
 
-    // This effect handles loading the Pyodide script and initializing the runtime.
-    // It runs only once when the component mounts.
+    // Effect for Pyodide initialization
     useEffect(() => {
         const loadPyodideEnvironment = async () => {
             setIsPyodideLoading(true);
             setError('');
-            
-            // Step 1: Load the pyodide.js script if it doesn't exist
             const PYODIDE_SCRIPT_ID = 'pyodide-script';
             if (!document.getElementById(PYODIDE_SCRIPT_ID)) {
                 await new Promise<void>((resolve, reject) => {
@@ -112,20 +110,10 @@ const CodingPlayground: React.FC<CodingPlaygroundProps> = ({
                     document.head.appendChild(script);
                 });
             }
-
-            // Step 2: Initialize the Pyodide runtime now that the script is loaded
             try {
-                if (!window.loadPyodide) {
-                    throw new Error("window.loadPyodide is not available. Script might have failed silently.");
-                }
-                const pyodide = await window.loadPyodide({
-                    indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.25.1/full/'
-                });
-                
-                if (!pyodide || typeof pyodide.runPythonAsync !== 'function') {
-                    throw new Error("Pyodide object is invalid or not fully initialized.");
-                }
-                
+                if (!window.loadPyodide) throw new Error("window.loadPyodide is not available.");
+                const pyodide = await window.loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.25.1/full/' });
+                if (!pyodide || typeof pyodide.runPythonAsync !== 'function') throw new Error("Pyodide object is invalid.");
                 pyodideRef.current = pyodide;
             } catch (err: any) {
                 console.error("Pyodide initialization failed:", err);
@@ -134,18 +122,38 @@ const CodingPlayground: React.FC<CodingPlaygroundProps> = ({
                 setIsPyodideLoading(false);
             }
         };
-
         loadPyodideEnvironment();
-    }, []); // Empty dependency array ensures this runs only once on mount.
+    }, []);
 
-    // This effect now runs after the DOM is updated but before the browser paints,
-    // ensuring the chat is scrolled to the bottom without any flickering.
+    // Effect for responsive UI and click-outside listeners
+    useEffect(() => {
+        const handleResize = () => {
+             if (window.innerWidth < 1024) {
+                setIsAssistantVisible(false);
+            } else {
+                setIsAssistantVisible(true);
+            }
+        };
+        const handleClickOutside = (event: MouseEvent) => {
+            if (langDropdownRef.current && !langDropdownRef.current.contains(event.target as Node)) {
+                setIsLangDropdownOpen(false);
+            }
+        };
+
+        window.addEventListener('resize', handleResize);
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
+
     useLayoutEffect(() => {
         const chatContainer = assistantChatContainerRef.current;
         if (chatContainer) {
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
-    }, [chat?.messages]);
+    }, [chat?.messages, isAssistantVisible]);
     
     const handleCodeChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setCodes(prev => ({ ...prev, [activeLang]: e.target.value }));
@@ -169,7 +177,6 @@ const CodingPlayground: React.FC<CodingPlaygroundProps> = ({
         setIsExecuting(false);
     };
 
-    // REVAMPED: More robust Python execution with full error tracebacks.
     const runPythonCode = async () => {
         const pyodide = pyodideRef.current;
         if (!pyodide || isPyodideLoading) {
@@ -177,70 +184,37 @@ const CodingPlayground: React.FC<CodingPlaygroundProps> = ({
             return;
         };
         try {
-            // Set the user's code as a global variable within the Python environment.
             pyodide.globals.set("user_code", codes.python);
-
-            // This Python script will execute in Pyodide.
-            // It captures stdout, stderr, and any exceptions.
             const executionWrapper = `
 import sys, io, traceback
-
-# Redirect stdout and stderr to capture the output.
 sys.stdout = io.StringIO()
 sys.stderr = io.StringIO()
 error = None
-
 try:
-    # 'user_code' is a global variable in this scope, set from JavaScript.
-    # We can execute it directly. The 'from js import user_code' was incorrect
-    # and has been removed.
     exec(user_code, globals())
 except Exception:
-    # If an exception occurs, capture the full traceback for better debugging.
     error = traceback.format_exc()
-
-# Get the captured output.
 stdout_val = sys.stdout.getvalue()
 stderr_val = sys.stderr.getvalue()
-
-# The full traceback is the most useful error message.
 if error:
     stderr_val = error
-
-# Convert the Python dictionary to a JavaScript object to return it.
 from pyodide.ffi import to_js
 to_js({"stdout": stdout_val, "stderr": stderr_val})
             `;
-            
             const results = await pyodide.runPythonAsync(executionWrapper);
-            
             const stdout = results.get("stdout");
             const stderr = results.get("stderr");
-            // The object returned by `to_js` is a native JS object (Map), not a PyProxy.
-            // It doesn't need to be destroyed and doesn't have a .destroy() method.
-
-            if (stderr) {
-                setError(stderr.trim());
-            } else {
-                setOutput(stdout.trim());
-            }
+            if (stderr) { setError(stderr.trim()); } 
+            else { setOutput(stdout.trim()); }
         } catch (err: any) { 
-            // Catch errors from pyodide.runPythonAsync itself.
             setError(err.toString()); 
         }
     };
 
     const runWebCode = () => {
         const combinedHtml = `
-            <html>
-                <head>
-                    <style>${codes.css}</style>
-                </head>
-                <body>
-                    ${codes.html}
-                    <script>${codes.javascript}</script>
-                </body>
-            </html>
+            <html><head><style>${codes.css}</style></head>
+            <body>${codes.html}<script>${codes.javascript}</script></body></html>
         `;
         if (iframeRef.current) {
             iframeRef.current.srcdoc = combinedHtml;
@@ -254,58 +228,80 @@ to_js({"stdout": stdout_val, "stderr": stderr_val})
         onSendMessage(assistantInput, { code: codes[activeLang], output: consoleContent, lang: activeLang });
         setAssistantInput('');
     };
+    
+    const LanguageDropdown = () => (
+        <div className="relative" ref={langDropdownRef}>
+            <button onClick={() => setIsLangDropdownOpen(o => !o)} className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-md transition-all duration-200 bg-input hover:bg-input-border text-text-light border border-input-border">
+                {languageInfo[activeLang].icon}
+                <span>{languageInfo[activeLang].name}</span>
+                <ChevronDownIcon className={`w-4 h-4 transition-transform ${isLangDropdownOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {isLangDropdownOpen && (
+                <div className="absolute top-full mt-1 w-40 glassmorphism rounded-lg p-1 z-20 shadow-lg border border-card-border fade-in-up" style={{animationDuration: '150ms'}}>
+                    {Object.keys(languageInfo).map(langStr => {
+                        const lang = langStr as Language;
+                        return (
+                            <button key={lang} onClick={() => { setActiveLang(lang); setIsLangDropdownOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors ${activeLang === lang ? 'bg-primary/20 text-primary' : 'text-text-medium hover:bg-input'}`}>
+                                {languageInfo[lang].icon}
+                                <span>{languageInfo[lang].name}</span>
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
 
     return (
         <div className={`flex flex-col h-full bg-background crt-effect relative overflow-hidden z-10`}>
              <header className="flex-shrink-0 flex items-center justify-between p-4 border-b border-card-border/50 bg-background/80 relative">
-                <button onClick={onToggleSidebar} className="p-1 rounded-md border border-transparent hover:border-card-border absolute left-4 top-1/2 -translate-y-1/2 md:hidden">
-                    <MenuIcon className="h-6 w-6" />
-                </button>
-                <div className="flex items-center gap-2">
-                    <CodeBracketIcon className="h-6 w-6 text-primary animate-pulse" />
-                    <h1 className="font-heading text-xl font-bold tracking-widest text-primary uppercase" style={{textShadow: '0 0 5px var(--primary-glow)'}}>
-                        {t('coding.title')}
-                    </h1>
+                <div className="flex items-center gap-4">
+                    <button onClick={onToggleSidebar} className="p-1 rounded-md border border-transparent hover:border-card-border md:hidden">
+                        <MenuIcon className="h-6 w-6" />
+                    </button>
+                    <div className="flex items-center gap-2">
+                        <CodeBracketIcon className="h-6 w-6 text-primary animate-pulse" />
+                        <h1 className="font-heading text-xl font-bold tracking-widest text-primary uppercase" style={{textShadow: '0 0 5px var(--primary-glow)'}}>
+                            {t('coding.title')}
+                        </h1>
+                    </div>
                 </div>
-                 <button onClick={onExit} className="px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 border border-red-500/30 hover:border-red-500/50 transition-all duration-200 text-sm font-bold flex items-center gap-2 hover:scale-105 active:scale-95">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>
-                    {t('coding.exit')}
-                </button>
+                 <div className="flex items-center gap-4">
+                    <button onClick={() => setIsAssistantVisible(v => !v)} className="flex lg:hidden items-center gap-2 px-3 py-1.5 text-sm rounded-lg border border-input-border hover:border-primary text-text-medium hover:text-primary transition-all duration-200 neon-glow-button">
+                       <CognitoLogo className="w-5 h-5" />
+                       <span className="hidden sm:inline">{t('coding.toggleAssistant')}</span>
+                    </button>
+                    <button onClick={onExit} className="px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 border border-red-500/30 hover:border-red-500/50 transition-all duration-200 text-sm font-bold flex items-center gap-2 hover:scale-105 active:scale-95">
+                        <PowerIcon className="w-5 h-5"/>
+                        <span className="hidden sm:inline">{t('coding.exit')}</span>
+                    </button>
+                 </div>
             </header>
-            <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-2 p-2 min-h-0">
-                {/* Editor & Console */}
-                <div className="lg:col-span-2 flex flex-col gap-2 min-h-0">
-                    {/* Editor */}
-                    <div className="flex flex-col h-3/5">
-                        <div className="flex items-center justify-between p-2 border-b border-primary/20 bg-black/30 rounded-t-lg">
-                           <div className="flex items-center gap-1">
-                                {Object.keys(languageInfo).map(lang => (
-                                    <button 
-                                        key={lang}
-                                        onClick={() => setActiveLang(lang as Language)}
-                                        className={`flex items-center gap-2 px-3 py-1 text-xs rounded-md transition-all duration-200 hover:scale-105 active:scale-95 ${activeLang === lang ? 'bg-primary/20 text-primary font-bold' : 'text-text-medium hover:bg-input'}`}
-                                    >
-                                        {languageInfo[lang as Language].icon}
-                                        {languageInfo[lang as Language].name}
-                                    </button>
-                                ))}
-                           </div>
-                            <div className="flex items-center gap-2">
-                               <button onClick={handleCopy} className="px-3 py-1.5 rounded-md bg-input/50 text-text-medium hover:text-primary transition-all duration-200 border border-input-border text-xs font-bold flex items-center gap-2 hover:scale-105 active:scale-95">
-                                    {isCopied ? <CheckIcon className="w-4 h-4 text-green-500"/> : <ClipboardIcon className="w-4 h-4"/>}
-                                    <span>{isCopied ? t('coding.copied') : t('coding.copyCode')}</span>
-                               </button>
-                               <button onClick={runCode} disabled={isExecuting || (activeLang === 'python' && isPyodideLoading)} className="px-4 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-yellow-400 transition-all duration-200 border border-primary-foreground/20 text-sm font-bold disabled:opacity-50 disabled:cursor-wait flex items-center gap-2 hover:scale-105 active:scale-95">
-                                   {isPyodideLoading && activeLang === 'python' ? t('coding.initializing') : isExecuting ? t('coding.executing') : t('coding.run')}
-                                </button>
-                            </div>
+            
+            <div className="flex-1 flex gap-2 p-2 min-h-0">
+                {/* Editor & Console Panel */}
+                <div className="flex flex-col gap-2 flex-1 min-h-0">
+                    {/* Editor Panel */}
+                    <div className="flex flex-col flex-1 min-h-0">
+                        <div className="flex-shrink-0 flex items-center justify-between p-2 border-b border-primary/20 bg-black/30 rounded-t-lg">
+                           <LanguageDropdown />
+                           <button onClick={handleCopy} className="px-3 py-1.5 rounded-md bg-input hover:bg-input-border text-text-medium hover:text-primary transition-all duration-200 border border-input-border text-xs font-bold flex items-center gap-2 hover:scale-105 active:scale-95">
+                                {isCopied ? <CheckIcon className="w-4 h-4 text-green-500"/> : <ClipboardIcon className="w-4 h-4"/>}
+                                <span className="hidden sm:inline">{isCopied ? t('coding.copied') : t('coding.copyCode')}</span>
+                           </button>
                         </div>
                         <textarea value={codes[activeLang]} onChange={handleCodeChange} className="flex-1 p-3 bg-black/50 border border-primary/20 rounded-b-lg text-green-400 focus:outline-none focus:border-primary/50 transition-colors resize-none font-code text-sm custom-scrollbar" spellCheck="false" />
                     </div>
-                     {/* Console */}
-                    <div className="flex flex-col h-2/5">
-                         <div className="p-2 border-b border-primary/20 bg-black/30 rounded-t-lg">
+                     {/* Console Panel */}
+                    <div className="flex flex-col h-2/5 min-h-[200px]">
+                         <div className="flex-shrink-0 flex items-center justify-between p-2 border-b border-primary/20 bg-black/30 rounded-t-lg">
                             <h2 className="font-code font-semibold text-primary/80 text-sm">{t('coding.consoleHeader')}</h2>
+                            <button onClick={runCode} disabled={isExecuting || (activeLang === 'python' && isPyodideLoading)} className="px-4 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-yellow-400 transition-all duration-200 border border-primary-foreground/20 text-sm font-bold disabled:opacity-50 disabled:cursor-wait flex items-center gap-2 hover:scale-105 active:scale-95">
+                               {(isPyodideLoading && activeLang === 'python') || isExecuting ? <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div> : <PlayIcon className="w-4 h-4"/>}
+                               <span className="hidden sm:inline">
+                                {(isPyodideLoading && activeLang === 'python') ? t('coding.initializing') : isExecuting ? t('coding.running') : t('coding.run')}
+                               </span>
+                            </button>
                         </div>
                         <div className="flex-1 p-3 bg-black/50 border border-primary/20 rounded-b-lg overflow-y-auto custom-scrollbar">
                             {activeLang === 'python' ? (
@@ -321,11 +317,24 @@ to_js({"stdout": stdout_val, "stderr": stderr_val})
                     </div>
                 </div>
 
-                {/* AI Assistant */}
-                <div className="lg:col-span-1 flex flex-col min-h-0 h-full border border-primary/20 rounded-lg bg-black/30">
-                     <div className="p-2 border-b border-primary/20 bg-black/30 rounded-t-lg flex items-center gap-2">
-                        <CognitoLogo className="w-5 h-5"/>
-                        <h2 className="font-code font-semibold text-primary/80 text-sm">{t('coding.assistantHeader')}</h2>
+                {/* Backdrop for mobile assistant overlay */}
+                {isAssistantVisible && <div className="lg:hidden fixed inset-0 bg-black/60 z-30" onClick={() => setIsAssistantVisible(false)} />}
+                
+                {/* AI Assistant Panel - Combined for Mobile and Desktop */}
+                <div className={`
+                    ${isAssistantVisible ? 'translate-x-0' : 'translate-x-full'}
+                    fixed top-0 right-0 h-full w-[90%] max-w-md bg-background border-l border-primary/20 z-40 transition-transform duration-300 ease-in-out
+                    lg:static lg:h-auto lg:w-full lg:max-w-sm xl:max-w-md lg:translate-x-0 lg:border lg:rounded-lg lg:bg-black/30 lg:flex-shrink-0
+                    flex flex-col min-h-0
+                `}>
+                     <div className="flex-shrink-0 p-2 border-b border-primary/20 bg-black/30 rounded-t-lg flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <CognitoLogo className="w-5 h-5"/>
+                            <h2 className="font-code font-semibold text-primary/80 text-sm">{t('coding.assistantHeader')}</h2>
+                        </div>
+                        <button onClick={() => setIsAssistantVisible(false)} className="lg:hidden p-1 rounded-full hover:bg-input">
+                          <XIcon className="w-5 h-5 text-text-medium" />
+                        </button>
                     </div>
                     <div ref={assistantChatContainerRef} className="flex-1 p-3 overflow-y-auto custom-scrollbar space-y-4 min-h-0">
                         {chat?.messages.map((msg, index) => {
@@ -344,7 +353,7 @@ to_js({"stdout": stdout_val, "stderr": stderr_val})
                              )
                         })}
                     </div>
-                    <div className="p-2 border-t border-primary/20">
+                    <div className="flex-shrink-0 p-2 border-t border-primary/20">
                          <div className="flex items-center gap-2 p-1 bg-input rounded-lg border border-input-border focus-within:glow-border-active focus-within:border-primary transition-all duration-300">
                              <input type="text" value={assistantInput} onChange={e => setAssistantInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAssistantSend()} placeholder={t('coding.assistantPlaceholder')} className="flex-grow bg-transparent p-1 focus:outline-none text-sm"/>
                              <button onClick={handleAssistantSend} disabled={isLoading} className="w-8 h-8 rounded-md bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0 disabled:opacity-50 transition-transform hover:scale-110 active:scale-95">
