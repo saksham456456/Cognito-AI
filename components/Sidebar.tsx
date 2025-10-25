@@ -166,8 +166,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                       <div className="flex items-center gap-1 flex-shrink-0">
                           {editingChatId === chat.id ? (
                               <>
-                                  <button onClick={handleRenameSave} className="p-1 rounded hover:bg-primary/30"><CheckIcon className="w-4 h-4 text-green-500"/></button>
-                                  <button onClick={handleRenameCancel} className="p-1 rounded hover:bg-primary/30"><XIcon className="w-4 h-4 text-red-500"/></button>
+                                  <button onMouseDown={(e) => e.preventDefault()} onClick={handleRenameSave} className="p-1 rounded hover:bg-primary/30"><CheckIcon className="w-4 h-4 text-green-500"/></button>
+                                  <button onMouseDown={(e) => e.preventDefault()} onClick={handleRenameCancel} className="p-1 rounded hover:bg-primary/30"><XIcon className="w-4 h-4 text-red-500"/></button>
                               </>
                           ) : (
                               // These controls will only appear on hover
